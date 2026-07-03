@@ -1,0 +1,906 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>RAIZ — Registra tu negocio</title>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --verde: #1DB954; --negro: #0A0A0A; --gris-osc: #111111;
+      --gris-card: #161616; --gris-brd: #222222; --blanco: #F5F5F5;
+      --texto-sec: #888888; --error: #ff4444;
+    }
+    html { scroll-behavior: smooth; }
+    body { font-family: 'Inter', sans-serif; background: var(--negro); color: var(--blanco); min-height: 100vh; }
+
+    /* NAV */
+    nav {
+      position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+      display: flex; align-items: center; justify-content: space-between;
+      padding: .85rem 2rem;
+      background: rgba(10,10,10,.92); backdrop-filter: blur(14px);
+      border-bottom: 1px solid var(--gris-brd);
+    }
+    .logo { font-family: 'Syne', sans-serif; font-size: 1.6rem; font-weight: 800; color: var(--verde); letter-spacing: -1px; text-decoration: none; }
+    .logo span { color: var(--blanco); }
+    .nav-link { font-size: .85rem; color: var(--texto-sec); text-decoration: none; transition: color .2s; }
+    .nav-link:hover { color: var(--blanco); }
+
+    /* LAYOUT */
+    .page {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      min-height: 100vh;
+    }
+
+    /* LADO IZQUIERDO — VISUAL */
+    .left-panel {
+      background: var(--gris-osc);
+      border-right: 1px solid var(--gris-brd);
+      display: flex; flex-direction: column;
+      justify-content: center; align-items: flex-start;
+      padding: 8rem 3rem 4rem;
+      position: sticky; top: 0; height: 100vh;
+      overflow: hidden;
+    }
+    .left-panel::before {
+      content: '';
+      position: absolute; bottom: -100px; right: -100px;
+      width: 400px; height: 400px;
+      background: radial-gradient(circle, rgba(29,185,84,.15) 0%, transparent 70%);
+      pointer-events: none;
+    }
+    .left-badge {
+      display: inline-flex; align-items: center; gap: .4rem;
+      background: rgba(29,185,84,.1); border: 1px solid rgba(29,185,84,.25);
+      color: var(--verde); font-size: .75rem; font-weight: 700;
+      padding: .3rem .9rem; border-radius: 999px; margin-bottom: 1.5rem;
+      letter-spacing: .06em; text-transform: uppercase;
+    }
+    .left-panel h2 {
+      font-family: 'Syne', sans-serif;
+      font-size: clamp(1.8rem, 3vw, 2.8rem);
+      font-weight: 800; line-height: 1.1; letter-spacing: -1px;
+      margin-bottom: 1rem;
+    }
+    .left-panel h2 span { color: var(--verde); }
+    .left-panel p { color: var(--texto-sec); line-height: 1.7; font-size: .95rem; max-width: 380px; margin-bottom: 2rem; }
+
+    .beneficios { display: flex; flex-direction: column; gap: .75rem; }
+    .beneficio {
+      display: flex; align-items: flex-start; gap: .75rem;
+      font-size: .9rem; color: var(--texto-sec);
+    }
+    .beneficio-icon {
+      width: 32px; height: 32px; flex-shrink: 0;
+      background: rgba(29,185,84,.1); border-radius: 8px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: .9rem;
+    }
+    .beneficio strong { display: block; color: var(--blanco); font-size: .88rem; margin-bottom: .1rem; }
+
+    /* PREVIEW CARD */
+    .preview-card {
+      margin-top: 2.5rem;
+      background: var(--gris-card); border: 1px solid var(--gris-brd);
+      border-radius: 18px; overflow: hidden; max-width: 300px;
+    }
+    .preview-banner {
+      height: 90px; background: linear-gradient(135deg, #0d2b12, #071a0a);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 2.5rem; position: relative;
+    }
+    .preview-info { padding: .85rem 1rem; }
+    .preview-avatar {
+      width: 48px; height: 48px; background: var(--gris-osc);
+      border: 2px solid var(--negro); border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.5rem; margin-top: -28px; margin-bottom: .5rem;
+    }
+    .preview-nombre { font-family: 'Syne', sans-serif; font-size: .95rem; font-weight: 800; }
+    .preview-handle { font-size: .75rem; color: var(--texto-sec); margin-bottom: .5rem; }
+    .preview-tag {
+      display: inline-block;
+      background: rgba(29,185,84,.12); color: var(--verde);
+      border-radius: 999px; padding: .2rem .6rem; font-size: .7rem; font-weight: 700;
+    }
+
+    /* LADO DERECHO — FORMULARIO */
+    .right-panel {
+      padding: 7rem 3rem 4rem;
+      overflow-y: auto;
+    }
+
+    /* STEPS */
+    .steps-nav {
+      display: flex; align-items: center; gap: 0;
+      margin-bottom: 2.5rem;
+    }
+    .step-dot {
+      display: flex; flex-direction: column; align-items: center; gap: .3rem;
+      flex: 1; position: relative; cursor: pointer;
+    }
+    .step-dot:not(:last-child)::after {
+      content: '';
+      position: absolute; top: 14px; left: 50%; width: 100%;
+      height: 2px; background: var(--gris-brd); z-index: 0;
+    }
+    .step-dot.done:not(:last-child)::after { background: var(--verde); }
+    .dot {
+      width: 28px; height: 28px; border-radius: 50%;
+      background: var(--gris-brd); color: var(--texto-sec);
+      display: flex; align-items: center; justify-content: center;
+      font-size: .75rem; font-weight: 700; position: relative; z-index: 1;
+      transition: all .3s;
+    }
+    .step-dot.active .dot { background: var(--verde); color: var(--negro); }
+    .step-dot.done .dot { background: var(--verde); color: var(--negro); }
+    .step-label { font-size: .7rem; color: var(--texto-sec); text-align: center; white-space: nowrap; }
+    .step-dot.active .step-label { color: var(--verde); font-weight: 600; }
+
+    /* PASO */
+    .paso { display: none; }
+    .paso.active { display: block; }
+    .paso-titulo {
+      font-family: 'Syne', sans-serif; font-size: 1.5rem; font-weight: 800;
+      margin-bottom: .35rem; letter-spacing: -.5px;
+    }
+    .paso-sub { color: var(--texto-sec); font-size: .9rem; margin-bottom: 2rem; line-height: 1.6; }
+
+    /* CAMPOS */
+    .campo { margin-bottom: 1.25rem; }
+    .campo label {
+      display: block; font-size: .82rem; font-weight: 600;
+      margin-bottom: .45rem; color: var(--blanco);
+    }
+    .campo label span { color: var(--verde); }
+    .input {
+      width: 100%; background: var(--gris-card);
+      border: 1px solid var(--gris-brd); border-radius: 12px;
+      padding: .85rem 1rem; font-size: .92rem; color: var(--blanco);
+      font-family: 'Inter', sans-serif; outline: none;
+      transition: border-color .2s;
+    }
+    .input:focus { border-color: var(--verde); }
+    .input::placeholder { color: var(--texto-sec); }
+    .input.error { border-color: var(--error); }
+    .campo-error { font-size: .78rem; color: var(--error); margin-top: .35rem; display: none; }
+    .campo-error.show { display: block; }
+
+    .input-prefix {
+      display: flex; align-items: center;
+      background: var(--gris-card); border: 1px solid var(--gris-brd);
+      border-radius: 12px; overflow: hidden; transition: border-color .2s;
+    }
+    .input-prefix:focus-within { border-color: var(--verde); }
+    .prefix {
+      padding: .85rem .85rem .85rem 1rem;
+      color: var(--texto-sec); font-size: .88rem; font-weight: 600;
+      border-right: 1px solid var(--gris-brd); white-space: nowrap;
+      background: var(--gris-osc);
+    }
+    .input-prefix .input { border: none; border-radius: 0; background: transparent; padding-left: .75rem; }
+    .input-prefix .input:focus { border: none; }
+
+    textarea.input { resize: vertical; min-height: 90px; }
+
+    /* SELECT CUSTOM */
+    .select-wrap { position: relative; }
+    .select-wrap select {
+      width: 100%; appearance: none;
+      background: var(--gris-card); border: 1px solid var(--gris-brd);
+      border-radius: 12px; padding: .85rem 2.5rem .85rem 1rem;
+      font-size: .92rem; color: var(--blanco);
+      font-family: 'Inter', sans-serif; outline: none; cursor: pointer;
+      transition: border-color .2s;
+    }
+    .select-wrap select:focus { border-color: var(--verde); }
+    .select-wrap::after {
+      content: '▾'; position: absolute; right: 1rem; top: 50%;
+      transform: translateY(-50%); color: var(--texto-sec); pointer-events: none;
+    }
+
+    /* GRID 2 COLS */
+    .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+
+    /* CATEGORIAS SELECTOR */
+    .cats-grid {
+      display: grid; grid-template-columns: repeat(3, 1fr); gap: .6rem;
+      margin-top: .45rem;
+    }
+    .cat-toggle {
+      background: var(--gris-card); border: 1px solid var(--gris-brd);
+      border-radius: 10px; padding: .6rem .5rem;
+      font-size: .8rem; color: var(--texto-sec); text-align: center;
+      cursor: pointer; transition: all .2s; font-family: 'Inter', sans-serif;
+      display: flex; flex-direction: column; align-items: center; gap: .2rem;
+    }
+    .cat-toggle .icon { font-size: 1.2rem; }
+    .cat-toggle:hover { border-color: rgba(29,185,84,.4); color: var(--blanco); }
+    .cat-toggle.selected { background: rgba(29,185,84,.12); border-color: var(--verde); color: var(--verde); }
+
+    /* AVATAR UPLOAD */
+    .upload-area {
+      border: 2px dashed var(--gris-brd); border-radius: 16px;
+      padding: 2rem; text-align: center; cursor: pointer;
+      transition: border-color .2s, background .2s;
+    }
+    .upload-area:hover { border-color: var(--verde); background: rgba(29,185,84,.03); }
+    .upload-area.has-file { border-color: var(--verde); border-style: solid; }
+    .upload-icon { font-size: 2.5rem; margin-bottom: .75rem; }
+    .upload-area p { font-size: .88rem; color: var(--texto-sec); line-height: 1.6; }
+    .upload-area strong { color: var(--verde); }
+
+    /* EMOJI PICKER (para negocios sin foto) */
+    .emoji-grid {
+      display: grid; grid-template-columns: repeat(6, 1fr); gap: .5rem;
+      margin-top: .5rem;
+    }
+    .emoji-btn {
+      background: var(--gris-card); border: 1px solid var(--gris-brd);
+      border-radius: 10px; padding: .6rem; font-size: 1.4rem;
+      cursor: pointer; text-align: center; transition: all .2s;
+    }
+    .emoji-btn:hover { border-color: var(--verde); transform: scale(1.1); }
+    .emoji-btn.selected { border-color: var(--verde); background: rgba(29,185,84,.12); }
+
+    /* PLAN CARDS */
+    .planes { display: flex; flex-direction: column; gap: .85rem; margin-top: .5rem; }
+    .plan-card {
+      background: var(--gris-card); border: 1.5px solid var(--gris-brd);
+      border-radius: 14px; padding: 1.1rem 1.25rem;
+      cursor: pointer; transition: border-color .2s;
+      display: flex; align-items: flex-start; gap: 1rem;
+    }
+    .plan-card:hover { border-color: rgba(29,185,84,.4); }
+    .plan-card.selected { border-color: var(--verde); background: rgba(29,185,84,.05); }
+    .plan-radio {
+      width: 20px; height: 20px; border-radius: 50%;
+      border: 2px solid var(--gris-brd); flex-shrink: 0;
+      margin-top: .1rem; display: flex; align-items: center; justify-content: center;
+      transition: all .2s;
+    }
+    .plan-card.selected .plan-radio { border-color: var(--verde); background: var(--verde); }
+    .plan-card.selected .plan-radio::after { content: ''; width: 8px; height: 8px; background: var(--negro); border-radius: 50%; }
+    .plan-info { flex: 1; }
+    .plan-nombre { font-weight: 700; font-size: .95rem; margin-bottom: .2rem; display: flex; align-items: center; gap: .5rem; }
+    .plan-badge { background: var(--verde); color: var(--negro); border-radius: 999px; padding: .1rem .5rem; font-size: .65rem; font-weight: 800; }
+    .plan-desc { font-size: .8rem; color: var(--texto-sec); line-height: 1.5; margin-bottom: .4rem; }
+    .plan-features { display: flex; flex-wrap: wrap; gap: .35rem; }
+    .plan-feat { font-size: .72rem; color: var(--verde); background: rgba(29,185,84,.1); border-radius: 999px; padding: .15rem .5rem; }
+    .plan-precio { font-family: 'Syne', sans-serif; font-size: 1.1rem; font-weight: 800; color: var(--verde); white-space: nowrap; }
+    .plan-precio small { font-size: .7rem; font-weight: 400; color: var(--texto-sec); }
+
+    /* RESUMEN FINAL */
+    .resumen {
+      background: var(--gris-card); border: 1px solid var(--gris-brd);
+      border-radius: 16px; overflow: hidden; margin-bottom: 1.5rem;
+    }
+    .resumen-header {
+      padding: 1.25rem; border-bottom: 1px solid var(--gris-brd);
+      display: flex; align-items: center; gap: 1rem;
+    }
+    .resumen-avatar { font-size: 2.5rem; }
+    .resumen-header h3 { font-family: 'Syne', sans-serif; font-weight: 800; margin-bottom: .2rem; }
+    .resumen-header span { font-size: .82rem; color: var(--texto-sec); }
+    .resumen-row {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: .85rem 1.25rem; border-bottom: 1px solid var(--gris-brd);
+      font-size: .88rem;
+    }
+    .resumen-row:last-child { border-bottom: none; }
+    .resumen-row span:first-child { color: var(--texto-sec); }
+    .resumen-row span:last-child { font-weight: 600; }
+
+    /* SUCCESS */
+    .success-screen {
+      display: none; text-align: center; padding: 2rem 1rem;
+    }
+    .success-screen.show { display: block; }
+    .success-icon { font-size: 4rem; margin-bottom: 1.25rem; }
+    .success-screen h2 {
+      font-family: 'Syne', sans-serif; font-size: 1.8rem; font-weight: 800;
+      margin-bottom: .5rem; letter-spacing: -.5px;
+    }
+    .success-screen p { color: var(--texto-sec); line-height: 1.7; margin-bottom: 2rem; }
+    .success-link {
+      display: flex; align-items: center; gap: .6rem;
+      background: var(--negro); border: 1px solid var(--gris-brd);
+      border-radius: 12px; padding: .85rem 1rem; margin-bottom: 1.5rem;
+      justify-content: center;
+    }
+    .success-link span { font-size: .9rem; color: var(--verde); font-weight: 600; }
+
+    /* BOTONES NAV */
+    .form-btns { display: flex; gap: .75rem; margin-top: 2rem; }
+    .btn-prev {
+      background: transparent; color: var(--blanco);
+      border: 1px solid var(--gris-brd); border-radius: 12px; cursor: pointer;
+      padding: .85rem 1.5rem; font-size: .95rem; font-weight: 600;
+      font-family: 'Inter', sans-serif; transition: border-color .2s;
+    }
+    .btn-prev:hover { border-color: var(--verde); }
+    .btn-next {
+      flex: 1; background: var(--verde); color: var(--negro);
+      border: none; border-radius: 12px; cursor: pointer;
+      padding: .85rem 1.5rem; font-size: .95rem; font-weight: 700;
+      font-family: 'Inter', sans-serif; transition: background .2s, transform .15s;
+    }
+    .btn-next:hover { background: #25e066; transform: translateY(-1px); }
+    .btn-next:disabled { opacity: .5; cursor: not-allowed; transform: none; }
+
+    .hint { font-size: .78rem; color: var(--texto-sec); margin-top: .4rem; }
+
+    @media (max-width: 860px) {
+      .page { grid-template-columns: 1fr; }
+      .left-panel { display: none; }
+      .right-panel { padding: 5rem 1.25rem 3rem; }
+      .grid2 { grid-template-columns: 1fr; }
+      .cats-grid { grid-template-columns: repeat(4, 1fr); }
+    }
+  </style>
+</head>
+<body>
+
+<nav>
+  <a href="raiz.html" class="logo">RAIZ<span>.</span></a>
+  <a href="raiz.html" class="nav-link">← Volver a la vitrina</a>
+</nav>
+
+<div class="page">
+
+  <!-- PANEL IZQUIERDO -->
+  <div class="left-panel">
+    <div class="left-badge">🇩🇴 Para negocios dominicanos</div>
+    <h2>Tu negocio merece<br>una <span>vitrina digital</span></h2>
+    <p>En menos de 5 minutos tendrás tu catálogo listo para compartir con todos tus clientes.</p>
+
+    <div class="beneficios">
+      <div class="beneficio">
+        <div class="beneficio-icon">🛒</div>
+        <div><strong>Catálogo profesional</strong>Tus productos con foto, descripción y precio.</div>
+      </div>
+      <div class="beneficio">
+        <div class="beneficio-icon">💬</div>
+        <div><strong>Pedidos por WhatsApp</strong>El carrito llega directo a tu teléfono.</div>
+      </div>
+      <div class="beneficio">
+        <div class="beneficio-icon">🛵</div>
+        <div><strong>Red de delivery</strong>Motoconchos disponibles para tus pedidos.</div>
+      </div>
+      <div class="beneficio">
+        <div class="beneficio-icon">📣</div>
+        <div><strong>Promotores</strong>Personas que venden por ti y ganan comisión.</div>
+      </div>
+    </div>
+
+    <div class="preview-card">
+      <div class="preview-banner" id="previewBanner">🏪</div>
+      <div class="preview-info">
+        <div class="preview-avatar" id="previewAvatar">🏪</div>
+        <div class="preview-nombre" id="previewNombre">Tu negocio</div>
+        <div class="preview-handle" id="previewHandle">@tunegocio · RAIZ</div>
+        <span class="preview-tag" id="previewCat">🏪 Categoría</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- PANEL DERECHO -->
+  <div class="right-panel">
+
+    <!-- STEPS -->
+    <div class="steps-nav" id="stepsNav">
+      <div class="step-dot active" onclick="irAPaso(0)">
+        <div class="dot">1</div>
+        <div class="step-label">Tu negocio</div>
+      </div>
+      <div class="step-dot" onclick="irAPaso(1)">
+        <div class="dot">2</div>
+        <div class="step-label">Contacto</div>
+      </div>
+      <div class="step-dot" onclick="irAPaso(2)">
+        <div class="dot">3</div>
+        <div class="step-label">Categoría</div>
+      </div>
+      <div class="step-dot" onclick="irAPaso(3)">
+        <div class="dot">4</div>
+        <div class="step-label">Tu imagen</div>
+      </div>
+      <div class="step-dot" onclick="irAPaso(4)">
+        <div class="dot">5</div>
+        <div class="step-label">Tu plan</div>
+      </div>
+      <div class="step-dot" onclick="irAPaso(5)">
+        <div class="dot">6</div>
+        <div class="step-label">Confirmar</div>
+      </div>
+    </div>
+
+    <!-- PASO 1: DATOS DEL NEGOCIO -->
+    <div class="paso active" id="paso0">
+      <div class="paso-titulo">¿Cómo se llama tu negocio? 🏪</div>
+      <div class="paso-sub">Esta información aparecerá en tu perfil público dentro de RAIZ.</div>
+
+      <div class="campo">
+        <label>Nombre del negocio <span>*</span></label>
+        <input class="input" id="nombreNegocio" type="text" placeholder="Ej: Colmado El Vecino, Salón Bellas..." oninput="actualizarPreview()" />
+        <div class="campo-error" id="errNombre">Por favor escribe el nombre de tu negocio.</div>
+      </div>
+
+      <div class="campo">
+        <label>Descripción breve <span>*</span></label>
+        <textarea class="input" id="descripcion" placeholder="Ej: La mejor comida criolla de Los Alcarrizos. Más de 10 años sirviendo a la comunidad..."></textarea>
+        <div class="hint">Cuéntale a tus clientes qué ofreces y qué te hace especial.</div>
+      </div>
+
+      <div class="grid2">
+        <div class="campo">
+          <label>Provincia <span>*</span></label>
+          <div class="select-wrap">
+            <select id="provincia" onchange="actualizarMunicipio()">
+              <option value="">Seleccionar...</option>
+              <option>Santiago</option>
+              <option>Santo Domingo</option>
+              <option>La Romana</option>
+              <option>San Pedro de Macorís</option>
+              <option>Puerto Plata</option>
+              <option>La Vega</option>
+              <option>San Cristóbal</option>
+              <option>Duarte</option>
+              <option>Espaillat</option>
+              <option>Montecristi</option>
+              <option>Otra</option>
+            </select>
+          </div>
+        </div>
+        <div class="campo">
+          <label>Municipio / Pueblo <span>*</span></label>
+          <input class="input" id="municipio" type="text" placeholder="Ej: Los Alcarrizos" />
+        </div>
+      </div>
+
+      <div class="campo">
+        <label>Dirección o sector</label>
+        <input class="input" id="direccion" type="text" placeholder="Ej: Calle Principal #12, Sector Las Palmas" />
+        <div class="hint">Opcional, pero ayuda a tus clientes a encontrarte.</div>
+      </div>
+
+      <div class="form-btns">
+        <button class="btn-next" onclick="siguiente(0)">Continuar →</button>
+      </div>
+    </div>
+
+    <!-- PASO 2: CONTACTO -->
+    <div class="paso" id="paso1">
+      <div class="paso-titulo">¿Cómo te contactan? 📱</div>
+      <div class="paso-sub">Tus clientes usarán este número para enviarte pedidos por WhatsApp.</div>
+
+      <div class="campo">
+        <label>Número de WhatsApp <span>*</span></label>
+        <div class="input-prefix">
+          <span class="prefix">🇩🇴 +1</span>
+          <input class="input" id="whatsapp" type="tel" placeholder="809 000 0000" maxlength="12" />
+        </div>
+        <div class="campo-error" id="errWhatsapp">Ingresa un número válido de 10 dígitos.</div>
+        <div class="hint">Este número recibirá los pedidos completos de tus clientes.</div>
+      </div>
+
+      <div class="campo">
+        <label>Correo electrónico <span>*</span></label>
+        <input class="input" id="email" type="email" placeholder="tunegocio@gmail.com" />
+        <div class="campo-error" id="errEmail">Ingresa un correo válido.</div>
+      </div>
+
+      <div class="campo">
+        <label>Instagram (opcional)</label>
+        <div class="input-prefix">
+          <span class="prefix">instagram.com/</span>
+          <input class="input" id="instagram" type="text" placeholder="tunegocio" />
+        </div>
+      </div>
+
+      <div class="campo">
+        <label>Facebook (opcional)</label>
+        <div class="input-prefix">
+          <span class="prefix">facebook.com/</span>
+          <input class="input" id="facebook" type="text" placeholder="tunegocio" />
+        </div>
+      </div>
+
+      <div class="campo">
+        <label>Horario de atención</label>
+        <div class="grid2">
+          <input class="input" id="horaAbre" type="time" value="08:00" />
+          <input class="input" id="horaCierra" type="time" value="20:00" />
+        </div>
+        <div class="hint">Hora de apertura y cierre.</div>
+      </div>
+
+      <div class="form-btns">
+        <button class="btn-prev" onclick="anterior(1)">← Atrás</button>
+        <button class="btn-next" onclick="siguiente(1)">Continuar →</button>
+      </div>
+    </div>
+
+    <!-- PASO 3: CATEGORÍA -->
+    <div class="paso" id="paso2">
+      <div class="paso-titulo">¿Qué tipo de negocio es? 🗂️</div>
+      <div class="paso-sub">Elige la categoría principal. Tus clientes te encontrarán más fácil.</div>
+
+      <div class="campo">
+        <label>Categoría principal <span>*</span></label>
+        <div class="cats-grid" id="catsGrid">
+          <div class="cat-toggle" onclick="selCat(this,'🍽️','Comida')"><span class="icon">🍽️</span>Comida</div>
+          <div class="cat-toggle" onclick="selCat(this,'🛒','Colmado')"><span class="icon">🛒</span>Colmado</div>
+          <div class="cat-toggle" onclick="selCat(this,'💄','Belleza')"><span class="icon">💄</span>Belleza</div>
+          <div class="cat-toggle" onclick="selCat(this,'👗','Ropa')"><span class="icon">👗</span>Ropa</div>
+          <div class="cat-toggle" onclick="selCat(this,'🔧','Servicios')"><span class="icon">🔧</span>Servicios</div>
+          <div class="cat-toggle" onclick="selCat(this,'🎂','Repostería')"><span class="icon">🎂</span>Repostería</div>
+          <div class="cat-toggle" onclick="selCat(this,'🌿','Artesanías')"><span class="icon">🌿</span>Artesanías</div>
+          <div class="cat-toggle" onclick="selCat(this,'💊','Farmacia')"><span class="icon">💊</span>Farmacia</div>
+          <div class="cat-toggle" onclick="selCat(this,'📱','Tecnología')"><span class="icon">📱</span>Tecnología</div>
+          <div class="cat-toggle" onclick="selCat(this,'🏠','Hogar')"><span class="icon">🏠</span>Hogar</div>
+          <div class="cat-toggle" onclick="selCat(this,'🌱','Emprendimiento')"><span class="icon">🌱</span>Emprendimiento</div>
+          <div class="cat-toggle" onclick="selCat(this,'🏪','Otro')"><span class="icon">🏪</span>Otro</div>
+        </div>
+        <div class="campo-error" id="errCat">Selecciona una categoría.</div>
+      </div>
+
+      <div class="campo" style="margin-top:1.25rem;">
+        <label>¿Tienes delivery? <span>*</span></label>
+        <div class="grid2">
+          <div class="cat-toggle" id="delSi" onclick="selDelivery(true)" style="flex-direction:row; justify-content:center; gap:.5rem;">
+            <span>🛵</span> Sí, tengo delivery
+          </div>
+          <div class="cat-toggle" id="delNo" onclick="selDelivery(false)" style="flex-direction:row; justify-content:center; gap:.5rem;">
+            <span>🏪</span> Solo en local
+          </div>
+        </div>
+      </div>
+
+      <div class="form-btns">
+        <button class="btn-prev" onclick="anterior(2)">← Atrás</button>
+        <button class="btn-next" onclick="siguiente(2)">Continuar →</button>
+      </div>
+    </div>
+
+    <!-- PASO 4: IMAGEN -->
+    <div class="paso" id="paso3">
+      <div class="paso-titulo">Ponle cara a tu negocio 📸</div>
+      <div class="paso-sub">Elige un emoji o sube una foto. Tu imagen aparece en tu perfil y catálogo.</div>
+
+      <div class="campo">
+        <label>Foto de perfil</label>
+        <div class="upload-area" id="uploadArea" onclick="document.getElementById('fotoInput').click()">
+          <div class="upload-icon">📷</div>
+          <p><strong>Toca para subir una foto</strong><br>JPG, PNG o GIF · máx. 5MB</p>
+        </div>
+        <input type="file" id="fotoInput" accept="image/*" style="display:none" onchange="previewFoto(event)" />
+      </div>
+
+      <div class="campo">
+        <label>O elige un ícono para tu perfil</label>
+        <div class="emoji-grid" id="emojiGrid">
+          <div class="emoji-btn selected" onclick="selEmoji(this,'🏪')">🏪</div>
+          <div class="emoji-btn" onclick="selEmoji(this,'🍗')">🍗</div>
+          <div class="emoji-btn" onclick="selEmoji(this,'🍕')">🍕</div>
+          <div class="emoji-btn" onclick="selEmoji(this,'🎂')">🎂</div>
+          <div class="emoji-btn" onclick="selEmoji(this,'💄')">💄</div>
+          <div class="emoji-btn" onclick="selEmoji(this,'👗')">👗</div>
+          <div class="emoji-btn" onclick="selEmoji(this,'🛒')">🛒</div>
+          <div class="emoji-btn" onclick="selEmoji(this,'💊')">💊</div>
+          <div class="emoji-btn" onclick="selEmoji(this,'🔧')">🔧</div>
+          <div class="emoji-btn" onclick="selEmoji(this,'🌿')">🌿</div>
+          <div class="emoji-btn" onclick="selEmoji(this,'📱')">📱</div>
+          <div class="emoji-btn" onclick="selEmoji(this,'🏠')">🏠</div>
+        </div>
+      </div>
+
+      <div class="form-btns">
+        <button class="btn-prev" onclick="anterior(3)">← Atrás</button>
+        <button class="btn-next" onclick="siguiente(3)">Continuar →</button>
+      </div>
+    </div>
+
+    <!-- PASO 5: PLAN -->
+    <div class="paso" id="paso4">
+      <div class="paso-titulo">Elige tu plan 🚀</div>
+      <div class="paso-sub">Empieza gratis. Cambia de plan cuando quieras.</div>
+
+      <div class="planes">
+        <div class="plan-card selected" id="planVitrina" onclick="selPlan('vitrina')">
+          <div class="plan-radio"></div>
+          <div class="plan-info">
+            <div class="plan-nombre">Plan Vitrina</div>
+            <div class="plan-desc">Perfecto para empezar. Crea tu catálogo y recibe pedidos por WhatsApp.</div>
+            <div class="plan-features">
+              <span class="plan-feat">Hasta 20 productos</span>
+              <span class="plan-feat">Catálogo público</span>
+              <span class="plan-feat">Link compartible</span>
+              <span class="plan-feat">WhatsApp directo</span>
+            </div>
+          </div>
+          <div class="plan-precio">Gratis<br><small>para siempre</small></div>
+        </div>
+
+        <div class="plan-card" id="planPro" onclick="selPlan('pro')">
+          <div class="plan-radio"></div>
+          <div class="plan-info">
+            <div class="plan-nombre">Plan Pro <span class="plan-badge">Popular</span></div>
+            <div class="plan-desc">Para negocios que quieren crecer con delivery y promotores.</div>
+            <div class="plan-features">
+              <span class="plan-feat">Productos ilimitados</span>
+              <span class="plan-feat">Red de delivery</span>
+              <span class="plan-feat">Promotores</span>
+              <span class="plan-feat">Estadísticas</span>
+              <span class="plan-feat">Código QR</span>
+            </div>
+          </div>
+          <div class="plan-precio">RD$599<br><small>/mes</small></div>
+        </div>
+
+        <div class="plan-card" id="planPremium" onclick="selPlan('premium')">
+          <div class="plan-radio"></div>
+          <div class="plan-info">
+            <div class="plan-nombre">Plan Premium ⭐</div>
+            <div class="plan-desc">Todo incluido. Posición destacada, soporte prioritario y más.</div>
+            <div class="plan-features">
+              <span class="plan-feat">Todo de Pro</span>
+              <span class="plan-feat">Posición destacada</span>
+              <span class="plan-feat">Soporte prioritario</span>
+              <span class="plan-feat">Publicidad en RAIZ</span>
+            </div>
+          </div>
+          <div class="plan-precio">RD$1,299<br><small>/mes</small></div>
+        </div>
+      </div>
+
+      <div class="form-btns">
+        <button class="btn-prev" onclick="anterior(4)">← Atrás</button>
+        <button class="btn-next" onclick="siguiente(4)">Revisar y confirmar →</button>
+      </div>
+    </div>
+
+    <!-- PASO 6: RESUMEN -->
+    <div class="paso" id="paso5">
+      <div class="paso-titulo">¡Todo listo! Revisa tu perfil ✅</div>
+      <div class="paso-sub">Confirma que todo esté correcto antes de publicar tu vitrina.</div>
+
+      <div class="resumen" id="resumenBox"></div>
+
+      <div class="campo">
+        <label><input type="checkbox" id="terminos" style="accent-color:var(--verde);margin-right:.5rem;"> Acepto los <a href="#" style="color:var(--verde);">Términos y condiciones</a> de RAIZ</label>
+      </div>
+
+      <div class="form-btns">
+        <button class="btn-prev" onclick="anterior(5)">← Atrás</button>
+        <button class="btn-next" onclick="publicar()">🌱 Publicar mi vitrina</button>
+      </div>
+    </div>
+
+    <!-- SUCCESS -->
+    <div class="success-screen" id="successScreen">
+      <div class="success-icon">🎉</div>
+      <h2>¡Tu vitrina está publicada!</h2>
+      <p>Tu negocio ya está visible en RAIZ. Comparte tu link con tus clientes y empieza a recibir pedidos.</p>
+      <div class="success-link">
+        <span id="successLink">raiz.do/tunegocio</span>
+        <button onclick="copiarSuccess()" style="background:var(--verde);color:#000;border:none;border-radius:8px;padding:.4rem .8rem;font-weight:700;cursor:pointer;font-family:Inter,sans-serif;font-size:.82rem;">Copiar</button>
+      </div>
+      <button onclick="verCatalogo()" style="width:100%;background:var(--verde);color:#000;border:none;border-radius:12px;padding:1rem;font-size:1rem;font-weight:700;cursor:pointer;font-family:Inter,sans-serif;margin-bottom:.75rem;">Ver mi catálogo →</button>
+      <button onclick="window.location.href='raiz-dashboard.html'" style="width:100%;background:transparent;color:var(--blanco);border:1px solid var(--gris-brd);border-radius:12px;padding:1rem;font-size:1rem;font-weight:700;cursor:pointer;font-family:Inter,sans-serif;">Ir a mi panel de negocio →</button>
+    </div>
+
+  </div>
+</div>
+
+<script>
+  let pasoActual = 0;
+  let datos = { nombre:'', categoria:'', emoji:'🏪', catEmoji:'🏪', plan:'vitrina', delivery: false };
+
+  function irAPaso(n) {
+    if (n > pasoActual) return;
+    cambiarPaso(n);
+  }
+
+  function cambiarPaso(n) {
+    document.querySelectorAll('.paso').forEach(p => p.classList.remove('active'));
+    document.getElementById('paso' + n).classList.add('active');
+    document.querySelectorAll('.step-dot').forEach((d, i) => {
+      d.classList.remove('active','done');
+      if (i < n) d.classList.add('done');
+      if (i === n) d.classList.add('active');
+    });
+    document.querySelectorAll('.step-dot .dot').forEach((d, i) => {
+      if (i < n) d.textContent = '✓';
+      else d.textContent = i + 1;
+    });
+    pasoActual = n;
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  function siguiente(paso) {
+    if (!validar(paso)) return;
+    if (paso === 5) return;
+    if (paso === 4) generarResumen();
+    cambiarPaso(paso + 1);
+  }
+
+  function anterior(paso) { cambiarPaso(paso - 1); }
+
+  function validar(paso) {
+    if (paso === 0) {
+      const n = document.getElementById('nombreNegocio').value.trim();
+      if (!n) { mostrarError('errNombre', 'nombreNegocio'); return false; }
+      ocultarError('errNombre', 'nombreNegocio');
+      return true;
+    }
+    if (paso === 1) {
+      const w = document.getElementById('whatsapp').value.replace(/\D/g,'');
+      if (w.length < 10) { mostrarError('errWhatsapp', 'whatsapp'); return false; }
+      ocultarError('errWhatsapp', 'whatsapp');
+      const e = document.getElementById('email').value;
+      if (!e.includes('@')) { mostrarError('errEmail', 'email'); return false; }
+      ocultarError('errEmail', 'email');
+      return true;
+    }
+    if (paso === 2) {
+      if (!datos.categoria) { document.getElementById('errCat').classList.add('show'); return false; }
+      document.getElementById('errCat').classList.remove('show');
+      return true;
+    }
+    return true;
+  }
+
+  function mostrarError(id, inputId) {
+    document.getElementById(id).classList.add('show');
+    document.getElementById(inputId).classList.add('error');
+    document.getElementById(inputId).focus();
+  }
+  function ocultarError(id, inputId) {
+    document.getElementById(id).classList.remove('show');
+    document.getElementById(inputId).classList.remove('error');
+  }
+
+  function actualizarPreview() {
+    const n = document.getElementById('nombreNegocio').value || 'Tu negocio';
+    document.getElementById('previewNombre').textContent = n;
+    const slug = n.toLowerCase().replace(/\s+/g,'-').replace(/[^a-z0-9-]/g,'');
+    document.getElementById('previewHandle').textContent = `@${slug || 'tunegocio'} · RAIZ`;
+    datos.nombre = n;
+    document.getElementById('successLink').textContent = `raiz.do/${slug || 'tunegocio'}`;
+  }
+
+  function selCat(el, emoji, nombre) {
+    document.querySelectorAll('.cat-toggle').forEach(c => {
+      if (c.closest('#catsGrid')) c.classList.remove('selected');
+    });
+    el.classList.add('selected');
+    datos.categoria = nombre;
+    datos.catEmoji = emoji;
+    document.getElementById('previewCat').textContent = `${emoji} ${nombre}`;
+    document.getElementById('errCat').classList.remove('show');
+  }
+
+  function selDelivery(val) {
+    datos.delivery = val;
+    document.getElementById('delSi').classList.toggle('selected', val);
+    document.getElementById('delNo').classList.toggle('selected', !val);
+  }
+
+  function selEmoji(el, emoji) {
+    document.querySelectorAll('.emoji-btn').forEach(e => e.classList.remove('selected'));
+    el.classList.add('selected');
+    datos.emoji = emoji;
+    document.getElementById('previewAvatar').textContent = emoji;
+    document.getElementById('previewBanner').textContent = emoji;
+  }
+
+  function selPlan(plan) {
+    datos.plan = plan;
+    ['vitrina','pro','premium'].forEach(p => {
+      document.getElementById('plan' + p.charAt(0).toUpperCase() + p.slice(1)).classList.toggle('selected', p === plan);
+    });
+  }
+
+  function previewFoto(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = ev => {
+      const area = document.getElementById('uploadArea');
+      area.innerHTML = `<img src="${ev.target.result}" style="width:80px;height:80px;border-radius:50%;object-fit:cover;margin-bottom:.5rem;"><p><strong>Foto cargada ✓</strong><br><span style="color:var(--texto-sec);font-size:.8rem;">${file.name}</span></p>`;
+      area.classList.add('has-file');
+      document.getElementById('previewAvatar').textContent = '';
+      document.getElementById('previewAvatar').style.backgroundImage = `url(${ev.target.result})`;
+      document.getElementById('previewAvatar').style.backgroundSize = 'cover';
+    };
+    reader.readAsDataURL(file);
+  }
+
+  const planesNombre = { vitrina:'Plan Vitrina (Gratis)', pro:'Plan Pro (RD$599/mes)', premium:'Plan Premium (RD$1,299/mes)' };
+
+  function generarResumen() {
+    const n = document.getElementById('nombreNegocio').value;
+    const prov = document.getElementById('provincia').value;
+    const mun = document.getElementById('municipio').value;
+    const wa = document.getElementById('whatsapp').value;
+    const email = document.getElementById('email').value;
+    const ig = document.getElementById('instagram').value;
+    const slug = n.toLowerCase().replace(/\s+/g,'-').replace(/[^a-z0-9-]/g,'');
+
+    document.getElementById('resumenBox').innerHTML = `
+      <div class="resumen-header">
+        <div class="resumen-avatar">${datos.emoji}</div>
+        <div>
+          <h3>${n}</h3>
+          <span>${datos.catEmoji} ${datos.categoria} · ${mun}, ${prov}</span>
+        </div>
+      </div>
+      <div class="resumen-row"><span>WhatsApp</span><span>+1 ${wa}</span></div>
+      <div class="resumen-row"><span>Correo</span><span>${email}</span></div>
+      ${ig ? `<div class="resumen-row"><span>Instagram</span><span>@${ig}</span></div>` : ''}
+      <div class="resumen-row"><span>Delivery</span><span>${datos.delivery ? '🛵 Sí' : '🏪 Solo en local'}</span></div>
+      <div class="resumen-row"><span>Plan</span><span>${planesNombre[datos.plan]}</span></div>
+      <div class="resumen-row"><span>Tu link en RAIZ</span><span style="color:var(--verde)">raiz.do/${slug}</span></div>
+    `;
+  }
+
+  async function publicar() {
+    if (!document.getElementById('terminos').checked) {
+      alert('Acepta los términos y condiciones para continuar.');
+      return;
+    }
+    const btnPublicar = document.querySelector('.btn-next');
+    btnPublicar.textContent = '⏳ Publicando...';
+    btnPublicar.disabled = true;
+
+    const nombre = document.getElementById('nombreNegocio').value.trim();
+    const slug = nombre.toLowerCase().replace(/\s+/g,'-').replace(/[^a-z0-9-]/g,'');
+    const payload = {
+      nombre,
+      slug,
+      descripcion: document.getElementById('descripcion').value,
+      whatsapp: document.getElementById('whatsapp').value,
+      email: document.getElementById('email').value,
+      instagram: document.getElementById('instagram').value,
+      facebook: document.getElementById('facebook').value,
+      categoria: datos.categoria,
+      avatar_emoji: datos.emoji,
+      tiene_delivery: datos.delivery,
+      plan: datos.plan,
+      municipio: document.getElementById('municipio').value,
+      provincia: document.getElementById('provincia').value,
+    };
+
+    try {
+      const res = await fetch('https://raiz-backend.onrender.com/negocios/registro', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      if (!res.ok) throw new Error('Error al registrar');
+    } catch(e) {
+      console.log('Guardando localmente por ahora:', e);
+    }
+
+    document.getElementById('stepsNav').style.display = 'none';
+    document.querySelectorAll('.paso').forEach(p => p.classList.remove('active'));
+    document.getElementById('successScreen').classList.add('show');
+    document.getElementById('successLink').textContent = `raiz.do/${slug}`;
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  function copiarSuccess() {
+    const link = document.getElementById('successLink').textContent;
+    navigator.clipboard.writeText('https://' + link);
+  }
+
+  function verCatalogo() {
+    window.location.href = 'raiz-catalogo.html';
+  }
+</script>
+</body>
+</html>

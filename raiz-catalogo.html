@@ -1,0 +1,780 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>RAIZ — Pollo Frito Doña Carmen</title>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --verde: #1DB954; --negro: #0A0A0A; --gris-osc: #111111;
+      --gris-card: #161616; --gris-brd: #222222; --blanco: #F5F5F5; --texto-sec: #888888;
+    }
+    html { scroll-behavior: smooth; }
+    body { font-family: 'Inter', sans-serif; background: var(--negro); color: var(--blanco); overflow-x: hidden; max-width: 480px; margin: 0 auto; }
+
+    /* NAV */
+    nav {
+      position: fixed; top: 0; left: 50%; transform: translateX(-50%);
+      width: 100%; max-width: 480px; z-index: 100;
+      display: flex; align-items: center; justify-content: space-between;
+      padding: .75rem 1.25rem;
+      background: rgba(10,10,10,.92); backdrop-filter: blur(14px);
+      border-bottom: 1px solid var(--gris-brd);
+    }
+    .nav-back { background: none; border: none; color: var(--blanco); font-size: 1.3rem; cursor: pointer; padding: .2rem; }
+    .nav-title { font-family: 'Syne', sans-serif; font-size: 1rem; font-weight: 800; }
+    .nav-menu { background: none; border: none; color: var(--blanco); font-size: 1.3rem; cursor: pointer; }
+
+    /* PORTADA */
+    .portada {
+      margin-top: 52px;
+      height: 220px;
+      background: linear-gradient(135deg, #0d2b12, #071a0a);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 6rem;
+      position: relative;
+    }
+    .portada-overlay {
+      position: absolute; inset: 0;
+      background: linear-gradient(to bottom, transparent 50%, var(--negro) 100%);
+    }
+
+    /* PERFIL */
+    .perfil {
+      padding: 0 1.25rem;
+      position: relative; margin-top: -40px; z-index: 2;
+    }
+    .perfil-top {
+      display: flex; align-items: flex-end; justify-content: space-between;
+      margin-bottom: 1rem;
+    }
+    .avatar-wrap { position: relative; }
+    .avatar {
+      width: 86px; height: 86px;
+      background: var(--gris-card);
+      border: 3px solid var(--negro);
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 2.8rem;
+    }
+    .avatar-verificado {
+      position: absolute; bottom: 2px; right: 2px;
+      background: var(--verde); border-radius: 50%;
+      width: 22px; height: 22px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: .7rem; border: 2px solid var(--negro);
+    }
+    .perfil-btns { display: flex; gap: .6rem; padding-bottom: .5rem; }
+    .btn-wa-perfil {
+      background: #25D366; color: #000;
+      border: none; border-radius: 8px; cursor: pointer;
+      padding: .5rem 1rem; font-size: .82rem; font-weight: 700;
+      font-family: 'Inter', sans-serif; display: flex; align-items: center; gap: .4rem;
+    }
+    .btn-seguir {
+      background: var(--gris-card); color: var(--blanco);
+      border: 1px solid var(--gris-brd); border-radius: 8px; cursor: pointer;
+      padding: .5rem 1rem; font-size: .82rem; font-weight: 600;
+      font-family: 'Inter', sans-serif;
+    }
+
+    .perfil-nombre {
+      font-family: 'Syne', sans-serif; font-size: 1.2rem; font-weight: 800;
+      margin-bottom: .15rem;
+    }
+    .perfil-handle { font-size: .85rem; color: var(--texto-sec); margin-bottom: .5rem; }
+    .perfil-bio { font-size: .88rem; line-height: 1.55; margin-bottom: .5rem; }
+    .perfil-link {
+      font-size: .85rem; color: var(--verde); text-decoration: none;
+      display: flex; align-items: center; gap: .3rem;
+    }
+
+    /* STATS ESTILO IG */
+    .perfil-redes { display: flex; gap: .6rem; margin-top: .85rem; }
+    .red-btn {
+      display: flex; align-items: center; gap: .45rem;
+      padding: .45rem 1rem; border-radius: 8px;
+      font-size: .8rem; font-weight: 700; text-decoration: none;
+      transition: opacity .2s;
+    }
+    .red-btn:hover { opacity: .85; }
+    .red-btn.ig { background: linear-gradient(135deg, #833ab4, #fd1d1d, #fcb045); color: #fff; }
+    .red-btn.fb { background: #1877F2; color: #fff; }
+
+    .perfil-stats {
+      display: flex; gap: 0;
+      border-top: 1px solid var(--gris-brd);
+      border-bottom: 1px solid var(--gris-brd);
+      margin: 1rem 0 0;
+    }
+    .pstat {
+      flex: 1; text-align: center; padding: .85rem .5rem;
+      border-right: 1px solid var(--gris-brd);
+    }
+    .pstat:last-child { border-right: none; }
+    .pstat strong { display: block; font-family: 'Syne', sans-serif; font-size: 1.1rem; font-weight: 800; }
+    .pstat span { font-size: .72rem; color: var(--texto-sec); }
+
+    /* HIGHLIGHTS (stories) */
+    .highlights {
+      display: flex; gap: 1rem; overflow-x: auto; padding: 1rem 1.25rem;
+      scrollbar-width: none;
+    }
+    .highlights::-webkit-scrollbar { display: none; }
+    .highlight { text-align: center; flex-shrink: 0; cursor: pointer; }
+    .highlight-ring {
+      width: 64px; height: 64px; border-radius: 50%;
+      background: linear-gradient(135deg, var(--verde), #0d5c28);
+      padding: 2px; margin: 0 auto .4rem;
+    }
+    .highlight-inner {
+      width: 100%; height: 100%; border-radius: 50%;
+      background: var(--gris-card); border: 2px solid var(--negro);
+      display: flex; align-items: center; justify-content: center; font-size: 1.6rem;
+    }
+    .highlight span { font-size: .7rem; color: var(--texto-sec); }
+
+    /* TABS */
+    .tabs {
+      display: flex; border-bottom: 1px solid var(--gris-brd);
+    }
+    .tab {
+      flex: 1; text-align: center; padding: .75rem;
+      font-size: .8rem; font-weight: 600; color: var(--texto-sec);
+      cursor: pointer; border-bottom: 2px solid transparent;
+      transition: all .2s;
+    }
+    .tab.active { color: var(--blanco); border-bottom-color: var(--blanco); }
+
+    /* GRID DE PRODUCTOS (estilo IG) */
+    .productos-grid {
+      display: grid; grid-template-columns: repeat(3, 1fr); gap: 2px;
+    }
+    .producto-grid-item {
+      aspect-ratio: 1;
+      background: var(--gris-card);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 2.8rem; position: relative; cursor: pointer;
+      overflow: hidden;
+    }
+    .producto-grid-item:hover .producto-overlay { opacity: 1; }
+    .producto-overlay {
+      position: absolute; inset: 0;
+      background: rgba(0,0,0,.7);
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      opacity: 0; transition: opacity .2s;
+      padding: .5rem;
+    }
+    .producto-overlay strong { font-size: .8rem; font-weight: 700; text-align: center; margin-bottom: .25rem; }
+    .producto-overlay span { font-size: .75rem; color: var(--verde); font-weight: 700; }
+    .producto-badge-grid {
+      position: absolute; top: .4rem; right: .4rem;
+      background: var(--verde); color: var(--negro);
+      font-size: .6rem; font-weight: 800; padding: .15rem .4rem;
+      border-radius: 4px;
+    }
+
+    /* MODAL PRODUCTO */
+    .modal-overlay {
+      position: fixed; inset: 0; z-index: 200;
+      background: rgba(0,0,0,.85); backdrop-filter: blur(4px);
+      display: flex; align-items: flex-end; justify-content: center;
+      opacity: 0; pointer-events: none; transition: opacity .25s;
+    }
+    .modal-overlay.open { opacity: 1; pointer-events: all; }
+    .modal {
+      background: var(--gris-card); border-radius: 24px 24px 0 0;
+      width: 100%; max-width: 480px; padding: 1.5rem 1.25rem 2rem;
+      transform: translateY(30px); transition: transform .25s;
+    }
+    .modal-overlay.open .modal { transform: translateY(0); }
+    .modal-handle { width: 40px; height: 4px; background: var(--gris-brd); border-radius: 2px; margin: 0 auto 1.25rem; }
+    .modal-emoji { font-size: 4rem; text-align: center; margin-bottom: 1rem; }
+    .modal-nombre { font-family: 'Syne', sans-serif; font-size: 1.3rem; font-weight: 800; margin-bottom: .3rem; }
+    .modal-desc { font-size: .9rem; color: var(--texto-sec); line-height: 1.6; margin-bottom: 1rem; }
+    .modal-precio { font-family: 'Syne', sans-serif; font-size: 1.5rem; font-weight: 800; color: var(--verde); margin-bottom: 1.25rem; }
+    .modal-qty {
+      display: flex; align-items: center; justify-content: center; gap: 1.25rem;
+      margin-bottom: 1.25rem;
+    }
+    .qty-btn {
+      width: 40px; height: 40px; border-radius: 50%;
+      border: 1px solid var(--gris-brd); background: var(--negro);
+      color: var(--blanco); font-size: 1.3rem; cursor: pointer;
+      display: flex; align-items: center; justify-content: center; transition: all .2s;
+    }
+    .qty-btn:hover { border-color: var(--verde); color: var(--verde); }
+    .qty-num { font-family: 'Syne', sans-serif; font-size: 1.4rem; font-weight: 800; min-width: 32px; text-align: center; }
+    .btn-agregar-modal {
+      width: 100%; background: var(--verde); color: var(--negro);
+      border: none; border-radius: 14px; cursor: pointer;
+      padding: 1rem; font-size: 1rem; font-weight: 700;
+      font-family: 'Inter', sans-serif; transition: background .2s;
+    }
+    .btn-agregar-modal:hover { background: #25e066; }
+
+    /* CARRITO BOTTOM BAR */
+    .carrito-bar {
+      position: fixed; bottom: 0; left: 50%; transform: translateX(-50%);
+      width: 100%; max-width: 480px; z-index: 150;
+      padding: 1rem 1.25rem 1.5rem;
+      background: linear-gradient(to top, var(--negro) 60%, transparent);
+      pointer-events: none; opacity: 0; transition: opacity .3s;
+    }
+    .carrito-bar.visible { opacity: 1; pointer-events: all; }
+    .carrito-pill {
+      background: var(--verde); color: var(--negro);
+      border: none; border-radius: 16px; cursor: pointer;
+      padding: 1rem 1.25rem;
+      width: 100%; display: flex; align-items: center; justify-content: space-between;
+      font-family: 'Inter', sans-serif; font-weight: 700; font-size: .95rem;
+      box-shadow: 0 8px 32px rgba(29,185,84,.4);
+    }
+    .carrito-pill-left { display: flex; align-items: center; gap: .75rem; }
+    .carrito-pill-count {
+      background: rgba(0,0,0,.25); border-radius: 8px;
+      padding: .25rem .6rem; font-size: .85rem; font-weight: 800;
+    }
+
+    /* CARRITO DRAWER */
+    .drawer-overlay {
+      position: fixed; inset: 0; z-index: 200;
+      background: rgba(0,0,0,.85); backdrop-filter: blur(4px);
+      display: flex; align-items: flex-end; justify-content: center;
+      opacity: 0; pointer-events: none; transition: opacity .25s;
+    }
+    .drawer-overlay.open { opacity: 1; pointer-events: all; }
+    .drawer {
+      background: var(--gris-card); border-radius: 24px 24px 0 0;
+      width: 100%; max-width: 480px; padding: 1.5rem 1.25rem 2rem;
+      max-height: 85vh; overflow-y: auto;
+      transform: translateY(40px); transition: transform .25s;
+    }
+    .drawer-overlay.open .drawer { transform: translateY(0); }
+    .drawer-handle { width: 40px; height: 4px; background: var(--gris-brd); border-radius: 2px; margin: 0 auto 1.25rem; }
+    .drawer-titulo { font-family: 'Syne', sans-serif; font-size: 1.2rem; font-weight: 800; margin-bottom: 1.25rem; }
+    .drawer-item {
+      display: flex; align-items: center; gap: .85rem;
+      padding: .85rem 0; border-bottom: 1px solid var(--gris-brd);
+    }
+    .drawer-item:last-child { border-bottom: none; }
+    .drawer-emoji { font-size: 1.8rem; width: 44px; text-align: center; }
+    .drawer-info { flex: 1; }
+    .drawer-info p { font-weight: 600; font-size: .9rem; margin-bottom: .15rem; }
+    .drawer-info span { font-size: .8rem; color: var(--texto-sec); }
+    .drawer-precio { font-weight: 700; color: var(--verde); font-size: .95rem; }
+    .drawer-remove { background: none; border: none; color: var(--texto-sec); cursor: pointer; font-size: 1.1rem; transition: color .2s; }
+    .drawer-remove:hover { color: #ff4444; }
+    .drawer-totales { margin: 1.25rem 0; }
+    .drawer-linea { display: flex; justify-content: space-between; font-size: .88rem; margin-bottom: .5rem; color: var(--texto-sec); }
+    .drawer-linea.total { color: var(--blanco); font-weight: 700; font-size: 1.05rem; padding-top: .75rem; border-top: 1px solid var(--gris-brd); margin-top: .75rem; }
+    .drawer-linea.total span:last-child { color: var(--verde); }
+    .btn-wa-drawer {
+      width: 100%; background: #25D366; color: #000;
+      border: none; border-radius: 14px; cursor: pointer;
+      padding: 1rem; font-size: 1rem; font-weight: 700;
+      font-family: 'Inter', sans-serif;
+      display: flex; align-items: center; justify-content: center; gap: .6rem;
+      margin-bottom: .75rem;
+    }
+    .btn-wa-drawer:hover { background: #20bd58; }
+    .drawer-nota { text-align: center; font-size: .75rem; color: var(--texto-sec); line-height: 1.5; }
+
+    .btn-compartir {
+      width: 38px; height: 38px;
+      background: var(--gris-card); color: var(--blanco);
+      border: 1px solid var(--gris-brd); border-radius: 8px; cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      transition: border-color .2s;
+    }
+    .btn-compartir:hover { border-color: var(--verde); color: var(--verde); }
+
+    .compartir-overlay {
+      position: fixed; inset: 0; z-index: 300;
+      background: rgba(0,0,0,.85); backdrop-filter: blur(4px);
+      display: flex; align-items: flex-end; justify-content: center;
+      opacity: 0; pointer-events: none; transition: opacity .25s;
+    }
+    .compartir-overlay.open { opacity: 1; pointer-events: all; }
+    .compartir-sheet {
+      background: var(--gris-card); border-radius: 24px 24px 0 0;
+      width: 100%; max-width: 480px; padding: 1.5rem 1.25rem 2.5rem;
+      transform: translateY(40px); transition: transform .25s;
+    }
+    .compartir-overlay.open .compartir-sheet { transform: translateY(0); }
+    .compartir-handle { width: 40px; height: 4px; background: var(--gris-brd); border-radius: 2px; margin: 0 auto 1.25rem; }
+    .compartir-titulo { font-family: 'Syne', sans-serif; font-size: 1.1rem; font-weight: 800; margin-bottom: .3rem; }
+    .compartir-sub { font-size: .85rem; color: var(--texto-sec); margin-bottom: 1.5rem; line-height: 1.55; }
+    .link-box {
+      display: flex; align-items: center; gap: .6rem;
+      background: var(--negro); border: 1px solid var(--gris-brd);
+      border-radius: 12px; padding: .75rem 1rem; margin-bottom: 1.5rem;
+    }
+    .link-box span { flex: 1; font-size: .82rem; color: var(--texto-sec); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .btn-copiar {
+      background: var(--verde); color: var(--negro);
+      border: none; border-radius: 8px; cursor: pointer;
+      padding: .4rem .9rem; font-size: .8rem; font-weight: 700;
+      font-family: 'Inter', sans-serif; flex-shrink: 0; transition: background .2s;
+    }
+    .btn-copiar:hover { background: #25e066; }
+    .compartir-grid {
+      display: grid; grid-template-columns: repeat(4, 1fr); gap: .75rem;
+      margin-bottom: 1.5rem;
+    }
+    .compartir-opcion {
+      display: flex; flex-direction: column; align-items: center; gap: .5rem;
+      cursor: pointer; transition: transform .15s;
+    }
+    .compartir-opcion:hover { transform: scale(1.06); }
+    .compartir-icono {
+      width: 54px; height: 54px; border-radius: 16px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.5rem;
+    }
+    .compartir-opcion span { font-size: .72rem; color: var(--texto-sec); font-weight: 500; text-align: center; }
+    .compartir-qr {
+      background: var(--negro); border: 1px solid var(--gris-brd);
+      border-radius: 14px; padding: 1.25rem;
+      display: flex; align-items: center; gap: 1rem;
+    }
+    .qr-box {
+      width: 72px; height: 72px; background: var(--blanco);
+      border-radius: 8px; flex-shrink: 0;
+      display: grid; grid-template-columns: repeat(7,1fr); gap: 1px;
+      padding: 6px;
+    }
+    .qr-box div { background: #000; border-radius: 1px; }
+    .qr-box div.w { background: transparent; }
+    .compartir-qr-info h4 { font-weight: 700; font-size: .9rem; margin-bottom: .3rem; }
+    .compartir-qr-info p { font-size: .8rem; color: var(--texto-sec); line-height: 1.5; }
+    .btn-qr {
+      display: inline-block; margin-top: .5rem;
+      background: rgba(29,185,84,.12); color: var(--verde);
+      border: 1px solid rgba(29,185,84,.3); border-radius: 999px;
+      padding: .3rem .8rem; font-size: .75rem; font-weight: 700;
+      cursor: pointer; font-family: 'Inter', sans-serif; border: none;
+    }
+
+    /* TOAST */
+    .toast {
+      position: fixed; bottom: 6rem; left: 50%; transform: translateX(-50%) translateY(10px);
+      background: #222; color: var(--blanco); border: 1px solid var(--gris-brd);
+      padding: .6rem 1.25rem; border-radius: 999px;
+      font-size: .85rem; font-weight: 600;
+      opacity: 0; transition: all .25s; z-index: 300; white-space: nowrap;
+    }
+    .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+    /* VACIO */
+    .drawer-vacio { text-align: center; padding: 2.5rem 1rem; color: var(--texto-sec); }
+    .drawer-vacio .icon { font-size: 3rem; margin-bottom: .75rem; }
+  </style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <button class="nav-back" onclick="history.back()">←</button>
+  <div class="nav-title">Pollo Frito Doña Carmen</div>
+  <button class="nav-menu" onclick="abrirCompartir()">⋯</button>
+</nav>
+
+<!-- PORTADA -->
+<div class="portada">
+  🍗
+  <div class="portada-overlay"></div>
+</div>
+
+<!-- PERFIL -->
+<div class="perfil">
+  <div class="perfil-top">
+    <div class="avatar-wrap">
+      <div class="avatar">🍗</div>
+      <div class="avatar-verificado">✓</div>
+    </div>
+    <div class="perfil-btns">
+      <button class="btn-wa-perfil" onclick="abrirDrawer()">💬 Pedir</button>
+      <button class="btn-seguir">Seguir</button>
+      <button class="btn-compartir" onclick="abrirCompartir()" title="Compartir">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
+      </button>
+    </div>
+  </div>
+  <div class="perfil-nombre">Pollo Frito Doña Carmen</div>
+  <div class="perfil-handle">@donacarmensantiago · 🍽️ Comida criolla</div>
+  <div class="perfil-bio">🔥 El mejor pollo frito de Los Alcarrizos<br>🛵 Delivery disponible · ⏱ 20–35 min<br>📍 Santiago, República Dominicana</div>
+  <a class="perfil-link" href="#">🌱 raiz.do/donacarmensantiago</a>
+  <div class="perfil-redes">
+    <a href="https://instagram.com/donacarmensantiago" target="_blank" class="red-btn ig">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/></svg>
+      Instagram
+    </a>
+    <a href="https://facebook.com/donacarmensantiago" target="_blank" class="red-btn fb">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>
+      Facebook
+    </a>
+  </div>
+
+  <div class="perfil-stats">
+    <div class="pstat"><strong>48</strong><span>productos</span></div>
+    <div class="pstat"><strong>340</strong><span>pedidos</span></div>
+    <div class="pstat"><strong>⭐ 4.9</strong><span>valoración</span></div>
+  </div>
+</div>
+
+<!-- HIGHLIGHTS -->
+<div class="highlights">
+  <div class="highlight">
+    <div class="highlight-ring"><div class="highlight-inner">🍗</div></div>
+    <span>Pollos</span>
+  </div>
+  <div class="highlight">
+    <div class="highlight-ring"><div class="highlight-inner">🎁</div></div>
+    <span>Combos</span>
+  </div>
+  <div class="highlight">
+    <div class="highlight-ring"><div class="highlight-inner">🥤</div></div>
+    <span>Bebidas</span>
+  </div>
+  <div class="highlight">
+    <div class="highlight-ring"><div class="highlight-inner">⭐</div></div>
+    <span>Reseñas</span>
+  </div>
+  <div class="highlight">
+    <div class="highlight-ring"><div class="highlight-inner">📍</div></div>
+    <span>Ubicación</span>
+  </div>
+</div>
+
+<!-- TABS -->
+<div class="tabs">
+  <div class="tab active">⊞ Catálogo</div>
+  <div class="tab">☰ Lista</div>
+  <div class="tab">⭐ Reseñas</div>
+</div>
+
+<!-- GRID DE PRODUCTOS -->
+<div class="productos-grid" id="productosGrid">
+  <!-- se genera con JS -->
+</div>
+
+<!-- MODAL PRODUCTO -->
+<div class="modal-overlay" id="modalOverlay" onclick="cerrarModal(event)">
+  <div class="modal" id="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-emoji" id="modalEmoji"></div>
+    <div class="modal-nombre" id="modalNombre"></div>
+    <div class="modal-desc" id="modalDesc"></div>
+    <div class="modal-precio" id="modalPrecio"></div>
+    <div class="modal-qty">
+      <button class="qty-btn" onclick="cambiarQty(-1)">−</button>
+      <span class="qty-num" id="qtyNum">1</span>
+      <button class="qty-btn" onclick="cambiarQty(1)">+</button>
+    </div>
+    <button class="btn-agregar-modal" id="btnAgregarModal" onclick="confirmarAgregar()">
+      Agregar al carrito · RD$ <span id="modalTotal">0</span>
+    </button>
+  </div>
+</div>
+
+<!-- CARRITO BAR -->
+<div class="carrito-bar" id="carritoBar">
+  <button class="carrito-pill" onclick="abrirDrawer()">
+    <div class="carrito-pill-left">
+      <span class="carrito-pill-count" id="pillCount">0</span>
+      <span>Ver mi pedido</span>
+    </div>
+    <span id="pillTotal">RD$ 0</span>
+  </button>
+</div>
+
+<!-- DRAWER CARRITO -->
+<div class="drawer-overlay" id="drawerOverlay" onclick="cerrarDrawer(event)">
+  <div class="drawer" id="drawer">
+    <div class="drawer-handle"></div>
+    <div class="drawer-titulo">🛒 Mi pedido</div>
+    <div id="drawerContenido"></div>
+  </div>
+</div>
+
+<!-- COMPARTIR SHEET -->
+<div class="compartir-overlay" id="compartirOverlay" onclick="cerrarCompartir(event)">
+  <div class="compartir-sheet">
+    <div class="compartir-handle"></div>
+    <div class="compartir-titulo">Compartir catálogo 🌱</div>
+    <div class="compartir-sub">Comparte tu vitrina digital y recibe pedidos desde cualquier lugar.</div>
+
+    <div class="link-box">
+      <span id="linkTexto">raiz.do/donacarmensantiago</span>
+      <button class="btn-copiar" onclick="copiarLink()">Copiar</button>
+    </div>
+
+    <div class="compartir-grid">
+      <div class="compartir-opcion" onclick="compartirEn('whatsapp')">
+        <div class="compartir-icono" style="background:#075e54;">💬</div>
+        <span>WhatsApp</span>
+      </div>
+      <div class="compartir-opcion" onclick="compartirEn('instagram')">
+        <div class="compartir-icono" style="background:linear-gradient(135deg,#833ab4,#fd1d1d,#fcb045);">📸</div>
+        <span>Instagram</span>
+      </div>
+      <div class="compartir-opcion" onclick="compartirEn('facebook')">
+        <div class="compartir-icono" style="background:#1877F2;">👍</div>
+        <span>Facebook</span>
+      </div>
+      <div class="compartir-opcion" onclick="compartirEn('tiktok')">
+        <div class="compartir-icono" style="background:#010101;">🎵</div>
+        <span>TikTok</span>
+      </div>
+      <div class="compartir-opcion" onclick="compartirEn('telegram')">
+        <div class="compartir-icono" style="background:#229ED9;">✈️</div>
+        <span>Telegram</span>
+      </div>
+      <div class="compartir-opcion" onclick="compartirEn('sms')">
+        <div class="compartir-icono" style="background:#1DB954;">💬</div>
+        <span>SMS</span>
+      </div>
+      <div class="compartir-opcion" onclick="compartirEn('email')">
+        <div class="compartir-icono" style="background:#EA4335;">✉️</div>
+        <span>Email</span>
+      </div>
+      <div class="compartir-opcion" onclick="copiarLink()">
+        <div class="compartir-icono" style="background:var(--gris-brd);">🔗</div>
+        <span>Copiar link</span>
+      </div>
+    </div>
+
+    <div class="compartir-qr">
+      <div class="qr-box" id="qrBox"></div>
+      <div class="compartir-qr-info">
+        <h4>Código QR de tu vitrina</h4>
+        <p>Tus clientes lo escanean y entran directo a tu catálogo.</p>
+        <button class="btn-qr" onclick="descargarQR()">⬇ Descargar QR</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<script>
+  const productos = [
+    { emoji:'🍗', nombre:'Presa de pollo frito',   desc:'Pollo criollo marinado y frito al momento. Crocante por fuera, jugoso por dentro.',  precio:120,  tag:'Popular' },
+    { emoji:'🍖', nombre:'Medio pollo frito',       desc:'La mitad de un pollo entero, frito con sazón dominicana. Ideal para compartir.',     precio:380,  tag:'' },
+    { emoji:'🍗', nombre:'Pollo entero frito',      desc:'Un pollo entero frito con yuca, tostones y ensalada. Para toda la familia.',          precio:680,  tag:'' },
+    { emoji:'🎁', nombre:'Combo La Bandera',        desc:'1 presa + arroz + habichuelas + ensalada + jugo natural. El combo perfecto.',         precio:320,  tag:'🔥 Top' },
+    { emoji:'👨‍👩‍👧‍👦', nombre:'Combo Familiar',    desc:'Pollo entero + 2 arroz + 2 habichuelas + tostones + 4 jugos. Para 4 personas.',       precio:1100, tag:'' },
+    { emoji:'🍚', nombre:'Arroz blanco',            desc:'Arroz blanco dominicano cocinado al punto.',                                          precio:80,   tag:'' },
+    { emoji:'🫘', nombre:'Habichuelas guisadas',    desc:'Habichuelas rojas guisadas con sazón casero de Doña Carmen.',                         precio:75,   tag:'' },
+    { emoji:'🌱', nombre:'Tostones',                desc:'Plátano verde frito dos veces. Bien crocante.',                                       precio:60,   tag:'' },
+    { emoji:'🍠', nombre:'Yuca hervida',            desc:'Yuca tierna hervida con mojo de ajo y limón.',                                        precio:65,   tag:'' },
+    { emoji:'🥤', nombre:'Jugo natural',            desc:'Chinola, naranja, limón o tamarindo. Hecho al momento.',                              precio:90,   tag:'' },
+    { emoji:'🧃', nombre:'Refresco lata',           desc:'Pepsi, 7Up, Sprite o Jugo Hit.',                                                      precio:65,   tag:'' },
+    { emoji:'🧄', nombre:'Mojo de ajo extra',       desc:'Salsa de ajo casera para acompañar.',                                                 precio:30,   tag:'' },
+  ];
+
+  let carrito = [];
+  let modalProducto = null;
+  let modalQty = 1;
+
+  // Render grid
+  function renderGrid() {
+    const grid = document.getElementById('productosGrid');
+    grid.innerHTML = productos.map((p, i) => `
+      <div class="producto-grid-item" onclick="abrirModal(${i})"
+           style="background: hsl(${(i * 47) % 360}, 15%, 12%);">
+        ${p.emoji}
+        ${p.tag ? `<div class="producto-badge-grid">${p.tag}</div>` : ''}
+        <div class="producto-overlay">
+          <strong>${p.nombre}</strong>
+          <span>RD$ ${p.precio.toLocaleString()}</span>
+        </div>
+      </div>
+    `).join('');
+  }
+
+  // Modal
+  function abrirModal(i) {
+    modalProducto = productos[i];
+    modalQty = 1;
+    document.getElementById('modalEmoji').textContent = modalProducto.emoji;
+    document.getElementById('modalNombre').textContent = modalProducto.nombre;
+    document.getElementById('modalDesc').textContent = modalProducto.desc;
+    document.getElementById('modalPrecio').textContent = `RD$ ${modalProducto.precio.toLocaleString()}`;
+    document.getElementById('qtyNum').textContent = 1;
+    document.getElementById('modalTotal').textContent = modalProducto.precio.toLocaleString();
+    document.getElementById('modalOverlay').classList.add('open');
+  }
+
+  function cerrarModal(e) {
+    if (e.target === document.getElementById('modalOverlay')) {
+      document.getElementById('modalOverlay').classList.remove('open');
+    }
+  }
+
+  function cambiarQty(delta) {
+    modalQty = Math.max(1, modalQty + delta);
+    document.getElementById('qtyNum').textContent = modalQty;
+    document.getElementById('modalTotal').textContent = (modalProducto.precio * modalQty).toLocaleString();
+  }
+
+  function confirmarAgregar() {
+    const item = carrito.find(i => i.nombre === modalProducto.nombre);
+    if (item) item.qty += modalQty;
+    else carrito.push({ ...modalProducto, qty: modalQty });
+    document.getElementById('modalOverlay').classList.remove('open');
+    mostrarToast(`✓ ${modalProducto.nombre} agregado`);
+    actualizarBar();
+  }
+
+  // Bar
+  function actualizarBar() {
+    const total = carrito.reduce((s, i) => s + i.precio * i.qty, 0);
+    const count = carrito.reduce((s, i) => s + i.qty, 0);
+    const bar = document.getElementById('carritoBar');
+    document.getElementById('pillCount').textContent = count;
+    document.getElementById('pillTotal').textContent = `RD$ ${total.toLocaleString()}`;
+    if (count > 0) bar.classList.add('visible');
+    else bar.classList.remove('visible');
+  }
+
+  // Drawer
+  function abrirDrawer() {
+    renderDrawer();
+    document.getElementById('drawerOverlay').classList.add('open');
+  }
+
+  function cerrarDrawer(e) {
+    if (e.target === document.getElementById('drawerOverlay')) {
+      document.getElementById('drawerOverlay').classList.remove('open');
+    }
+  }
+
+  function renderDrawer() {
+    const cont = document.getElementById('drawerContenido');
+    if (carrito.length === 0) {
+      cont.innerHTML = `<div class="drawer-vacio"><div class="icon">🛒</div><p>Tu carrito está vacío.<br>Elige algo del catálogo.</p></div>`;
+      return;
+    }
+    const subtotal = carrito.reduce((s, i) => s + i.precio * i.qty, 0);
+    cont.innerHTML = `
+      <div>
+        ${carrito.map((item, idx) => `
+          <div class="drawer-item">
+            <div class="drawer-emoji">${item.emoji}</div>
+            <div class="drawer-info">
+              <p>${item.nombre}</p>
+              <span>${item.qty} × RD$ ${item.precio.toLocaleString()}</span>
+            </div>
+            <div class="drawer-precio">RD$ ${(item.precio * item.qty).toLocaleString()}</div>
+            <button class="drawer-remove" onclick="quitarItem(${idx})">✕</button>
+          </div>
+        `).join('')}
+      </div>
+      <div class="drawer-totales">
+        <div class="drawer-linea"><span>Subtotal</span><span>RD$ ${subtotal.toLocaleString()}</span></div>
+        <div class="drawer-linea"><span>Delivery</span><span>RD$ 100</span></div>
+        <div class="drawer-linea total"><span>Total</span><span>RD$ ${(subtotal + 100).toLocaleString()}</span></div>
+      </div>
+      <button class="btn-wa-drawer" onclick="enviarWhatsApp()">💬 Enviar pedido por WhatsApp</button>
+      <p class="drawer-nota">Tu pedido completo se enviará directo al WhatsApp de Doña Carmen 🍗</p>
+    `;
+  }
+
+  function quitarItem(idx) {
+    carrito.splice(idx, 1);
+    renderDrawer();
+    actualizarBar();
+  }
+
+  function enviarWhatsApp() {
+    if (!carrito.length) return;
+    const subtotal = carrito.reduce((s, i) => s + i.precio * i.qty, 0);
+    let msg = '🌱 *Pedido desde RAIZ*\n\n';
+    msg += '*🍗 Pollo Frito Doña Carmen*\n';
+    msg += '━━━━━━━━━━━━━━━━\n';
+    carrito.forEach(i => {
+      msg += `${i.emoji} ${i.nombre} ×${i.qty} — RD$ ${(i.precio * i.qty).toLocaleString()}\n`;
+    });
+    msg += '━━━━━━━━━━━━━━━━\n';
+    msg += `🛵 Delivery: RD$ 100\n`;
+    msg += `💰 *Total: RD$ ${(subtotal + 100).toLocaleString()}*\n\n`;
+    msg += '📍 *Mi dirección:* ';
+    window.open(`https://wa.me/18091234567?text=${encodeURIComponent(msg)}`, '_blank');
+  }
+
+  function mostrarToast(msg) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 2200);
+  }
+
+  renderGrid();
+  generarQR();
+
+  function abrirCompartir() {
+    document.getElementById('compartirOverlay').classList.add('open');
+  }
+  function cerrarCompartir(e) {
+    if (e.target === document.getElementById('compartirOverlay'))
+      document.getElementById('compartirOverlay').classList.remove('open');
+  }
+
+  const LINK = 'https://raiz.do/donacarmensantiago';
+  const TEXTO = '🍗 Mira el catálogo de *Pollo Frito Doña Carmen* en RAIZ — haz tu pedido fácil y rápido 👇';
+
+  function copiarLink() {
+    navigator.clipboard.writeText(LINK).then(() => mostrarToast('✓ Link copiado'));
+  }
+
+  function compartirEn(red) {
+    const msg = encodeURIComponent(TEXTO + '\n' + LINK);
+    const urls = {
+      whatsapp: `https://wa.me/?text=${msg}`,
+      facebook: `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(LINK)}`,
+      telegram: `https://t.me/share/url?url=${encodeURIComponent(LINK)}&text=${encodeURIComponent(TEXTO)}`,
+      sms:      `sms:?body=${msg}`,
+      email:    `mailto:?subject=${encodeURIComponent('Mira este catálogo en RAIZ')}&body=${msg}`,
+      instagram: null,
+      tiktok:    null,
+    };
+    if (red === 'instagram' || red === 'tiktok') {
+      copiarLink();
+      mostrarToast('✓ Link copiado — pégalo en tu bio');
+      return;
+    }
+    if (navigator.share && (red === 'whatsapp' || red === 'sms')) {
+      navigator.share({ title: 'Pollo Frito Doña Carmen en RAIZ', text: TEXTO, url: LINK });
+      return;
+    }
+    window.open(urls[red], '_blank');
+    document.getElementById('compartirOverlay').classList.remove('open');
+  }
+
+  // QR decorativo simple (patrón visual)
+  function generarQR() {
+    const box = document.getElementById('qrBox');
+    const pattern = [
+      1,1,1,0,1,1,1,
+      1,0,1,0,1,0,1,
+      1,1,1,1,0,1,1,
+      0,1,0,0,1,0,0,
+      1,1,1,0,1,1,1,
+      1,0,0,0,1,0,1,
+      1,1,1,1,0,1,1,
+    ];
+    box.innerHTML = pattern.map(b => `<div class="${b ? '' : 'w'}"></div>`).join('');
+  }
+
+  function descargarQR() {
+    mostrarToast('✓ QR listo para descargar');
+  }
+</script>
+</body>
+</html>
