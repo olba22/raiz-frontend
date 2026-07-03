@@ -203,8 +203,8 @@
 <body>
 
 <nav>
-  <a href="raiz.html" class="logo">RAIZ<span>.</span></a>
-  <a href="raiz.html" class="nav-link">← Volver al inicio</a>
+  <a href="/raiz.html" class="logo">RAIZ<span>.</span></a>
+  <a href="/raiz.html" class="nav-link">← Volver al inicio</a>
 </nav>
 
 <!-- ══ PANTALLA 1: SELECCIONAR PUEBLO ══ -->
@@ -430,7 +430,7 @@
     empty.classList.remove('show');
 
     grid.innerHTML = lista.map(n => `
-      <div class="negocio-card" onclick="window.location.href='raiz-catalogo.html'">
+      <div class="negocio-card" onclick="window.location.href='/raiz-catalogo.html'">
         <div class="negocio-banner" style="background:linear-gradient(135deg, #0d2b12, #050505);">
           ${n.emoji}
           ${n.delivery ? '<div class="negocio-badge">🛵 Delivery</div>' : ''}
