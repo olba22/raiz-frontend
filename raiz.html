@@ -135,6 +135,32 @@
   .negocio-info h3 { font-family: 'Syne', sans-serif; font-size: 1.05rem; margin-bottom: .25rem; }
   .negocio-info p { color: var(--texto-sec); font-size: .82rem; }
 
+  /* FEED DE ANUNCIOS (estilo Instagram) */
+  .feed-grid {
+    display: grid; grid-template-columns: repeat(3, 1fr); gap: .35rem;
+    position: relative; filter: blur(1px) brightness(.5);
+    pointer-events: none; user-select: none;
+  }
+  .feed-slot {
+    aspect-ratio: 1; background: linear-gradient(135deg, var(--gris-card), var(--gris-osc));
+    border: 1px solid var(--gris-brd); border-radius: 4px;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .feed-slot-icon { font-size: 1.8rem; opacity: .3; }
+  .feed-empty {
+    position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%);
+    text-align: center; width: 90%; max-width: 380px;
+    background: var(--gris-osc); border: 1px solid var(--gris-brd); border-radius: 18px;
+    padding: 2rem 1.5rem;
+  }
+  .feed-empty h3 { font-family: 'Syne', sans-serif; font-size: 1.1rem; margin-bottom: .4rem; }
+  .feed-empty p { color: var(--texto-sec); font-size: .85rem; margin-bottom: 1.25rem; }
+  .feed-empty a {
+    background: var(--verde); color: #000; font-weight: 700; font-size: .85rem;
+    padding: .75rem 1.4rem; border-radius: 10px; text-decoration: none; display: inline-block;
+  }
+  .section { position: relative; }
+
   /* CTA NEGOCIOS */
   .cta-negocio {
     max-width: 1100px; margin: 2rem auto 5rem; padding: 3rem 2.5rem;
@@ -177,60 +203,39 @@
   </div>
 </nav>
 
-<div class="hero">
-  <div class="hero-badge">🇩🇴 Naciendo en Pedernales, RD</div>
-  <h1>Pedernales tiene negocios increíbles.<br>Ahora tienen <span>vitrina</span>.</h1>
-  <p>Encuentra y apoya los negocios de Pedernales — colmados, comida, servicios y más — o publica el tuyo entre los primeros.</p>
-
-  <form class="search-box" onsubmit="event.preventDefault(); window.location.href='/raiz-busqueda.html';">
-    <input type="text" placeholder="¿Qué estás buscando hoy? Ej: comida, delivery, salón..." />
-    <button type="submit">Buscar</button>
-  </form>
-
-  <div class="hero-links">
-    <a href="/raiz-busqueda.html">📍 Ver negocios por pueblo</a>
-    <a href="/raiz-registro.html">🏪 Soy dueño de un negocio</a>
-    <a href="/raiz-delivery.html">🛵 Quiero repartir con RAIZ</a>
-  </div>
+<div class="hero" style="padding-bottom:2rem;">
+  <div class="hero-badge">📸 Anuncios en vivo</div>
+  <h1>Lo que se vende<br><span>hoy</span> en tu comunidad.</h1>
+  <p>Cada negocio y vendedor independiente publica aquí lo que está ofreciendo. Toca una publicación para ver el catálogo completo.</p>
 </div>
 
-<div class="stats">
-  <div class="stat"><strong>Pedernales</strong><span>Provincia de lanzamiento</span></div>
-  <div class="stat"><strong>🌱</strong><span>Fase inicial — únete temprano</span></div>
-  <div class="stat"><strong>0%</strong><span>Comisión para los primeros negocios</span></div>
-</div>
-
-<div class="section">
-  <div class="section-head">
-    <h2>Categorías populares</h2>
-    <a href="/raiz-busqueda.html">Ver todas →</a>
+<div class="section" style="padding-top:0;">
+  <div class="feed-grid" id="feedGrid">
+    <div class="feed-slot"><div class="feed-slot-icon">📸</div></div>
+    <div class="feed-slot"><div class="feed-slot-icon">📸</div></div>
+    <div class="feed-slot"><div class="feed-slot-icon">📸</div></div>
+    <div class="feed-slot"><div class="feed-slot-icon">📸</div></div>
+    <div class="feed-slot"><div class="feed-slot-icon">📸</div></div>
+    <div class="feed-slot"><div class="feed-slot-icon">📸</div></div>
   </div>
-  <div class="cats-grid">
-    <div class="cat-card" onclick="window.location.href='/raiz-busqueda.html'"><span class="cat-icon">🍗</span><span>Comida</span></div>
-    <div class="cat-card" onclick="window.location.href='/raiz-busqueda.html'"><span class="cat-icon">🛒</span><span>Colmados</span></div>
-    <div class="cat-card" onclick="window.location.href='/raiz-busqueda.html'"><span class="cat-icon">💇</span><span>Belleza</span></div>
-    <div class="cat-card" onclick="window.location.href='/raiz-busqueda.html'"><span class="cat-icon">👕</span><span>Moda</span></div>
-    <div class="cat-card" onclick="window.location.href='/raiz-busqueda.html'"><span class="cat-icon">🔧</span><span>Servicios</span></div>
-    <div class="cat-card" onclick="window.location.href='/raiz-busqueda.html'"><span class="cat-icon">🎁</span><span>Regalos</span></div>
-  </div>
-</div>
-
-<div class="section">
-  <div class="section-head">
-    <h2>Negocios en Pedernales</h2>
-  </div>
-  <div class="empty-negocios" style="background:var(--gris-card);border:1px dashed var(--gris-brd);border-radius:16px;padding:2.5rem 1.5rem;text-align:center;">
+  <div class="feed-empty">
     <div style="font-size:2rem;margin-bottom:.75rem;">🌱</div>
-    <h3 style="font-family:'Syne',sans-serif;font-size:1.15rem;margin-bottom:.5rem;">Todavía no hay negocios registrados</h3>
-    <p style="color:var(--texto-sec);font-size:.9rem;max-width:400px;margin:0 auto 1.25rem;">RAIZ está arrancando en Pedernales. Sé de los primeros negocios en publicar tu vitrina.</p>
-    <a href="/raiz-registro.html" style="background:var(--verde);color:#000;font-weight:700;font-size:.9rem;padding:.8rem 1.5rem;border-radius:12px;text-decoration:none;display:inline-block;">Registrar mi negocio →</a>
+    <h3>Aún no hay publicaciones</h3>
+    <p>Sé el primero en anunciar lo que vendes en RAIZ.</p>
+    <a href="/raiz-registro.html">Publicar mi anuncio →</a>
   </div>
+</div>
+
+<div class="hero-links" style="padding-bottom:3rem;">
+  <a href="/raiz-busqueda.html">📍 Buscar negocios por pueblo</a>
+  <a href="/raiz-registro.html">🏪 Soy dueño de un negocio</a>
+  <a href="/raiz-delivery.html">🛵 Quiero repartir con RAIZ</a>
 </div>
 
 <div class="cta-negocio">
   <div>
-    <h2>¿Tienes un negocio?</h2>
-    <p>Sé de los primeros negocios de Pedernales en RAIZ. Publica tu vitrina digital gratis y empieza a recibir pedidos de tu comunidad.</p>
+    <h2>¿Tienes algo que vender?</h2>
+    <p>Publica tu anuncio gratis en RAIZ y aparece en el feed para que tu comunidad lo vea. Sé de los primeros en unirte.</p>
   </div>
   <a href="/raiz-registro.html">Registrar mi negocio →</a>
 </div>
