@@ -379,13 +379,13 @@
 <!-- NAV -->
 <nav>
   <button class="nav-back" onclick="history.back()">←</button>
-  <div class="nav-title">Pollo Frito Doña Carmen</div>
+  <div class="nav-title" id="navTitle">Pollo Frito Doña Carmen</div>
   <button class="nav-menu" onclick="abrirCompartir()">⋯</button>
 </nav>
 
 <!-- PORTADA -->
 <div class="portada">
-  🍗
+  <span id="portadaEmoji">🍗</span>
   <div class="portada-overlay"></div>
 </div>
 
@@ -393,7 +393,7 @@
 <div class="perfil">
   <div class="perfil-top">
     <div class="avatar-wrap">
-      <div class="avatar">🍗</div>
+      <div class="avatar" id="avatarEmoji">🍗</div>
       <div class="avatar-verificado">✓</div>
     </div>
     <div class="perfil-btns">
@@ -404,16 +404,16 @@
       </button>
     </div>
   </div>
-  <div class="perfil-nombre">Pollo Frito Doña Carmen</div>
-  <div class="perfil-handle">@donacarmensantiago · 🍽️ Comida criolla</div>
-  <div class="perfil-bio">🔥 El mejor pollo frito de Los Alcarrizos<br>🛵 Delivery disponible · ⏱ 20–35 min<br>📍 Santiago, República Dominicana</div>
-  <a class="perfil-link" href="#">🌱 raiz.do/donacarmensantiago</a>
-  <div class="perfil-redes">
-    <a href="https://instagram.com/donacarmensantiago" target="_blank" class="red-btn ig">
+  <div class="perfil-nombre" id="perfilNombre">Pollo Frito Doña Carmen</div>
+  <div class="perfil-handle" id="perfilHandle">@donacarmensantiago · 🍽️ Comida criolla</div>
+  <div class="perfil-bio" id="perfilBio">🔥 El mejor pollo frito de Los Alcarrizos<br>🛵 Delivery disponible · ⏱ 20–35 min<br>📍 Santiago, República Dominicana</div>
+  <a class="perfil-link" href="#" id="perfilLink">🌱 raiz.do/donacarmensantiago</a>
+  <div class="perfil-redes" id="perfilRedes">
+    <a href="https://instagram.com/donacarmensantiago" target="_blank" class="red-btn ig" id="igLink">
       <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/></svg>
       Instagram
     </a>
-    <a href="https://facebook.com/donacarmensantiago" target="_blank" class="red-btn fb">
+    <a href="https://facebook.com/donacarmensantiago" target="_blank" class="red-btn fb" id="fbLink">
       <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>
       Facebook
     </a>
@@ -563,6 +563,49 @@
 <div class="toast" id="toast"></div>
 
 <script>
+  const API = 'https://raiz-backend.onrender.com';
+  let NEGOCIO_WHATSAPP = '18091234567';
+  let NEGOCIO_NOMBRE = 'Pollo Frito Doña Carmen';
+  let NEGOCIO_SLUG = 'donacarmensantiago';
+
+  async function cargarNegocio() {
+    const params = new URLSearchParams(window.location.search);
+    const slug = params.get('slug') || localStorage.getItem('raiz_negocio_slug');
+    if (!slug) return;
+    try {
+      const res = await fetch(`${API}/negocios?slug=${encodeURIComponent(slug)}`);
+      const data = await res.json();
+      const lista = Array.isArray(data) ? data : (data.negocios || []);
+      const negocio = lista.find(n => n.slug === slug) || lista[0];
+      if (!negocio) return;
+
+      const nombre = negocio.nombre || NEGOCIO_NOMBRE;
+      const categoria = negocio.categoria || 'Negocio local';
+      const emoji = negocio.avatar_emoji || negocio.emoji || '🏪';
+      const municipio = negocio.municipio || negocio.pueblo || '';
+      const whatsapp = negocio.whatsapp || negocio.telefono || null;
+
+      NEGOCIO_NOMBRE = nombre;
+      NEGOCIO_SLUG = slug;
+      if (whatsapp) NEGOCIO_WHATSAPP = whatsapp.replace(/\D/g, '');
+
+      document.getElementById('navTitle').textContent = nombre;
+      document.getElementById('perfilNombre').textContent = nombre;
+      document.getElementById('perfilHandle').textContent = `@${slug} · 🍽️ ${categoria}`;
+      document.getElementById('perfilBio').innerHTML = `📍 ${municipio || 'República Dominicana'}`;
+      document.getElementById('perfilLink').textContent = `🌱 raiz.do/${slug}`;
+      document.getElementById('avatarEmoji').textContent = emoji;
+      document.getElementById('portadaEmoji').textContent = emoji;
+
+      // Sin redes reales guardadas todavía: ocultamos los botones para no mostrar links falsos
+      const redes = document.getElementById('perfilRedes');
+      if (redes && !negocio.instagram && !negocio.facebook) redes.style.display = 'none';
+    } catch (e) {
+      console.log('No se pudo cargar el negocio real, se mantiene el contenido de ejemplo.', e);
+    }
+  }
+  cargarNegocio();
+
   const productos = [
     { emoji:'🍗', nombre:'Presa de pollo frito',   desc:'Pollo criollo marinado y frito al momento. Crocante por fuera, jugoso por dentro.',  precio:120,  tag:'Popular' },
     { emoji:'🍖', nombre:'Medio pollo frito',       desc:'La mitad de un pollo entero, frito con sazón dominicana. Ideal para compartir.',     precio:380,  tag:'' },
@@ -682,7 +725,7 @@
         <div class="drawer-linea total"><span>Total</span><span>RD$ ${(subtotal + 100).toLocaleString()}</span></div>
       </div>
       <button class="btn-wa-drawer" onclick="enviarWhatsApp()">💬 Enviar pedido por WhatsApp</button>
-      <p class="drawer-nota">Tu pedido completo se enviará directo al WhatsApp de Doña Carmen 🍗</p>
+      <p class="drawer-nota">Tu pedido completo se enviará directo al WhatsApp de ${NEGOCIO_NOMBRE} 🍗</p>
     `;
   }
 
@@ -696,7 +739,7 @@
     if (!carrito.length) return;
     const subtotal = carrito.reduce((s, i) => s + i.precio * i.qty, 0);
     let msg = '🌱 *Pedido desde RAIZ*\n\n';
-    msg += '*🍗 Pollo Frito Doña Carmen*\n';
+    msg += `*🍗 ${NEGOCIO_NOMBRE}*\n`;
     msg += '━━━━━━━━━━━━━━━━\n';
     carrito.forEach(i => {
       msg += `${i.emoji} ${i.nombre} ×${i.qty} — RD$ ${(i.precio * i.qty).toLocaleString()}\n`;
@@ -705,7 +748,7 @@
     msg += `🛵 Delivery: RD$ 100\n`;
     msg += `💰 *Total: RD$ ${(subtotal + 100).toLocaleString()}*\n\n`;
     msg += '📍 *Mi dirección:* ';
-    window.open(`https://wa.me/18091234567?text=${encodeURIComponent(msg)}`, '_blank');
+    window.open(`https://wa.me/${NEGOCIO_WHATSAPP}?text=${encodeURIComponent(msg)}`, '_blank');
   }
 
   function mostrarToast(msg) {
@@ -726,14 +769,20 @@
       document.getElementById('compartirOverlay').classList.remove('open');
   }
 
-  const LINK = 'https://raiz.do/donacarmensantiago';
-  const TEXTO = '🍗 Mira el catálogo de *Pollo Frito Doña Carmen* en RAIZ — haz tu pedido fácil y rápido 👇';
+  function getLink() {
+    return `https://raiz.do/${NEGOCIO_SLUG}`;
+  }
+  function getTexto() {
+    return `🍗 Mira el catálogo de *${NEGOCIO_NOMBRE}* en RAIZ — haz tu pedido fácil y rápido 👇`;
+  }
 
   function copiarLink() {
-    navigator.clipboard.writeText(LINK).then(() => mostrarToast('✓ Link copiado'));
+    navigator.clipboard.writeText(getLink()).then(() => mostrarToast('✓ Link copiado'));
   }
 
   function compartirEn(red) {
+    const LINK = getLink();
+    const TEXTO = getTexto();
     const msg = encodeURIComponent(TEXTO + '\n' + LINK);
     const urls = {
       whatsapp: `https://wa.me/?text=${msg}`,
@@ -750,7 +799,7 @@
       return;
     }
     if (navigator.share && (red === 'whatsapp' || red === 'sms')) {
-      navigator.share({ title: 'Pollo Frito Doña Carmen en RAIZ', text: TEXTO, url: LINK });
+      navigator.share({ title: `${NEGOCIO_NOMBRE} en RAIZ`, text: TEXTO, url: LINK });
       return;
     }
     window.open(urls[red], '_blank');
