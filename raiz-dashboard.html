@@ -1,0 +1,814 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>RAIZ — Dashboard del Negocio</title>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --verde: #1DB954; --negro: #0A0A0A; --gris-osc: #111111;
+      --gris-card: #161616; --gris-brd: #222222; --blanco: #F5F5F5;
+      --texto-sec: #888888; --naranja: #FF6B00; --rojo: #ff4444; --azul: #3b82f6;
+    }
+    html { scroll-behavior: smooth; }
+    body { font-family: 'Inter', sans-serif; background: var(--negro); color: var(--blanco); display: flex; min-height: 100vh; }
+
+    /* ── SIDEBAR ── */
+    .sidebar {
+      width: 240px; flex-shrink: 0;
+      background: var(--gris-osc); border-right: 1px solid var(--gris-brd);
+      display: flex; flex-direction: column;
+      position: fixed; top: 0; left: 0; bottom: 0; z-index: 50;
+    }
+    .sb-logo {
+      padding: 1.5rem 1.5rem 1rem;
+      font-family: 'Syne', sans-serif; font-size: 1.5rem; font-weight: 800;
+      color: var(--verde); letter-spacing: -1px; border-bottom: 1px solid var(--gris-brd);
+    }
+    .sb-logo span { color: var(--blanco); }
+    .sb-negocio {
+      padding: 1rem 1.5rem; border-bottom: 1px solid var(--gris-brd);
+      display: flex; align-items: center; gap: .75rem;
+    }
+    .sb-avatar {
+      width: 40px; height: 40px; background: var(--negro);
+      border-radius: 10px; display: flex; align-items: center;
+      justify-content: center; font-size: 1.3rem; flex-shrink: 0;
+    }
+    .sb-negocio-info strong { display: block; font-size: .85rem; font-weight: 700; }
+    .sb-negocio-info span { font-size: .72rem; color: var(--verde); }
+    .sb-nav { flex: 1; padding: 1rem 0; overflow-y: auto; }
+    .sb-label { font-size: .65rem; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: var(--texto-sec); padding: .5rem 1.5rem .25rem; }
+    .sb-item {
+      display: flex; align-items: center; gap: .75rem;
+      padding: .65rem 1.5rem; font-size: .88rem; color: var(--texto-sec);
+      cursor: pointer; transition: all .15s; border-left: 3px solid transparent;
+    }
+    .sb-item:hover { color: var(--blanco); background: rgba(255,255,255,.04); }
+    .sb-item.active { color: var(--blanco); border-left-color: var(--verde); background: rgba(29,185,84,.07); }
+    .sb-item .sb-icon { font-size: 1rem; width: 20px; text-align: center; }
+    .sb-badge {
+      margin-left: auto; background: var(--verde); color: var(--negro);
+      border-radius: 999px; padding: .1rem .5rem; font-size: .65rem; font-weight: 800;
+    }
+    .sb-badge.naranja { background: var(--naranja); }
+    .sb-footer {
+      padding: 1rem 1.5rem; border-top: 1px solid var(--gris-brd);
+      display: flex; align-items: center; gap: .75rem; cursor: pointer;
+    }
+    .sb-footer span { font-size: .82rem; color: var(--texto-sec); }
+
+    /* ── MAIN ── */
+    .main { margin-left: 240px; flex: 1; display: flex; flex-direction: column; min-height: 100vh; }
+
+    /* TOP BAR */
+    .topbar {
+      position: sticky; top: 0; z-index: 40;
+      background: rgba(10,10,10,.92); backdrop-filter: blur(14px);
+      border-bottom: 1px solid var(--gris-brd);
+      padding: .9rem 2rem; display: flex; align-items: center; justify-content: space-between;
+    }
+    .topbar h1 { font-family: 'Syne', sans-serif; font-size: 1.2rem; font-weight: 800; }
+    .topbar-right { display: flex; align-items: center; gap: .75rem; }
+    .btn-primary {
+      background: var(--verde); color: var(--negro);
+      border: none; border-radius: 10px; cursor: pointer;
+      padding: .55rem 1.1rem; font-size: .85rem; font-weight: 700;
+      font-family: 'Inter', sans-serif; display: flex; align-items: center; gap: .4rem;
+      transition: background .2s;
+    }
+    .btn-primary:hover { background: #25e066; }
+    .notif-btn {
+      width: 36px; height: 36px; background: var(--gris-card);
+      border: 1px solid var(--gris-brd); border-radius: 9px;
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer; font-size: 1rem; position: relative;
+    }
+    .notif-dot { position: absolute; top: 5px; right: 5px; width: 7px; height: 7px; background: var(--naranja); border-radius: 50%; border: 2px solid var(--negro); }
+
+    /* CONTENT */
+    .content { padding: 2rem; flex: 1; }
+
+    /* SCREENS */
+    .screen { display: none; }
+    .screen.active { display: block; }
+
+    /* ── RESUMEN (HOME) ── */
+    .kpi-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; margin-bottom: 2rem; }
+    .kpi-card {
+      background: var(--gris-card); border: 1px solid var(--gris-brd);
+      border-radius: 14px; padding: 1.25rem;
+    }
+    .kpi-label { font-size: .78rem; color: var(--texto-sec); margin-bottom: .5rem; display: flex; align-items: center; justify-content: space-between; }
+    .kpi-val { font-family: 'Syne', sans-serif; font-size: 1.7rem; font-weight: 800; margin-bottom: .25rem; }
+    .kpi-delta { font-size: .75rem; }
+    .kpi-delta.up { color: var(--verde); }
+    .kpi-delta.down { color: var(--rojo); }
+
+    .dash-grid { display: grid; grid-template-columns: 1fr 340px; gap: 1.5rem; }
+
+    /* PEDIDOS RECIENTES */
+    .card { background: var(--gris-card); border: 1px solid var(--gris-brd); border-radius: 16px; overflow: hidden; }
+    .card-header { padding: 1.1rem 1.25rem; border-bottom: 1px solid var(--gris-brd); display: flex; align-items: center; justify-content: space-between; }
+    .card-header h3 { font-family: 'Syne', sans-serif; font-size: 1rem; font-weight: 800; }
+    .card-header a { font-size: .78rem; color: var(--verde); cursor: pointer; text-decoration: none; }
+    .pedido-row {
+      padding: .85rem 1.25rem; border-bottom: 1px solid var(--gris-brd);
+      display: flex; align-items: center; gap: 1rem;
+    }
+    .pedido-row:last-child { border-bottom: none; }
+    .pedido-num { font-family: 'Syne', sans-serif; font-size: .82rem; font-weight: 700; color: var(--texto-sec); min-width: 70px; }
+    .pedido-info { flex: 1; }
+    .pedido-info strong { display: block; font-size: .88rem; font-weight: 600; margin-bottom: .15rem; }
+    .pedido-info span { font-size: .75rem; color: var(--texto-sec); }
+    .pedido-monto { font-weight: 700; font-size: .9rem; white-space: nowrap; }
+    .estado-pill {
+      font-size: .7rem; font-weight: 700; padding: .2rem .65rem;
+      border-radius: 999px; white-space: nowrap;
+    }
+    .estado-pill.nuevo { background: rgba(59,130,246,.15); color: var(--azul); }
+    .estado-pill.en-camino { background: rgba(255,107,0,.15); color: var(--naranja); }
+    .estado-pill.entregado { background: rgba(29,185,84,.15); color: var(--verde); }
+    .estado-pill.cancelado { background: rgba(255,68,68,.15); color: var(--rojo); }
+
+    /* PRODUCTOS TOP */
+    .prod-item { padding: .85rem 1.25rem; border-bottom: 1px solid var(--gris-brd); display: flex; align-items: center; gap: .85rem; }
+    .prod-item:last-child { border-bottom: none; }
+    .prod-emoji { width: 38px; height: 38px; background: var(--negro); border-radius: 9px; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; flex-shrink: 0; }
+    .prod-info { flex: 1; }
+    .prod-info strong { display: block; font-size: .85rem; font-weight: 600; }
+    .prod-info span { font-size: .75rem; color: var(--texto-sec); }
+    .prod-bar-wrap { width: 80px; }
+    .prod-bar { height: 4px; background: var(--gris-brd); border-radius: 2px; overflow: hidden; }
+    .prod-bar-fill { height: 100%; background: var(--verde); border-radius: 2px; }
+
+    /* ── PRODUCTOS SCREEN ── */
+    .productos-toolbar {
+      display: flex; align-items: center; gap: .75rem; margin-bottom: 1.5rem; flex-wrap: wrap;
+    }
+    .search-input {
+      flex: 1; min-width: 200px;
+      background: var(--gris-card); border: 1px solid var(--gris-brd);
+      border-radius: 10px; padding: .6rem 1rem;
+      color: var(--blanco); font-family: 'Inter', sans-serif; font-size: .88rem; outline: none;
+    }
+    .search-input:focus { border-color: var(--verde); }
+    .search-input::placeholder { color: var(--texto-sec); }
+    .filter-btn {
+      background: var(--gris-card); border: 1px solid var(--gris-brd);
+      border-radius: 10px; padding: .6rem 1rem; font-size: .82rem;
+      color: var(--texto-sec); cursor: pointer; font-family: 'Inter', sans-serif;
+      transition: border-color .2s;
+    }
+    .filter-btn:hover, .filter-btn.active { border-color: var(--verde); color: var(--verde); }
+
+    .productos-table { width: 100%; border-collapse: collapse; }
+    .productos-table th {
+      text-align: left; font-size: .72rem; font-weight: 700;
+      letter-spacing: .06em; text-transform: uppercase;
+      color: var(--texto-sec); padding: .75rem 1rem;
+      border-bottom: 1px solid var(--gris-brd); background: var(--gris-osc);
+    }
+    .productos-table td {
+      padding: .9rem 1rem; border-bottom: 1px solid var(--gris-brd);
+      font-size: .88rem; vertical-align: middle;
+    }
+    .productos-table tr:last-child td { border-bottom: none; }
+    .productos-table tr:hover td { background: rgba(255,255,255,.02); }
+    .prod-td-name { display: flex; align-items: center; gap: .75rem; }
+    .prod-td-emoji { width: 40px; height: 40px; background: var(--negro); border-radius: 9px; display: flex; align-items: center; justify-content: center; font-size: 1.3rem; flex-shrink: 0; }
+    .prod-td-name strong { display: block; font-weight: 600; margin-bottom: .1rem; }
+    .prod-td-name span { font-size: .75rem; color: var(--texto-sec); }
+    .precio-td { font-family: 'Syne', sans-serif; font-weight: 700; color: var(--verde); }
+    .disponible-toggle-sm {
+      width: 38px; height: 20px; background: var(--gris-brd);
+      border-radius: 999px; cursor: pointer; position: relative; transition: background .25s;
+    }
+    .disponible-toggle-sm.on { background: var(--verde); }
+    .disponible-toggle-sm::after {
+      content: ''; position: absolute; top: 2px; left: 2px;
+      width: 16px; height: 16px; background: var(--blanco); border-radius: 50%; transition: transform .25s;
+    }
+    .disponible-toggle-sm.on::after { transform: translateX(18px); }
+    .row-actions { display: flex; gap: .5rem; }
+    .action-btn {
+      width: 30px; height: 30px; border-radius: 7px; cursor: pointer;
+      border: 1px solid var(--gris-brd); background: transparent;
+      display: flex; align-items: center; justify-content: center; font-size: .85rem;
+      transition: all .2s;
+    }
+    .action-btn:hover { border-color: var(--verde); }
+    .action-btn.del:hover { border-color: var(--rojo); }
+
+    /* ── MODAL AGREGAR PRODUCTO ── */
+    .modal-overlay {
+      position: fixed; inset: 0; z-index: 200;
+      background: rgba(0,0,0,.85); backdrop-filter: blur(4px);
+      display: flex; align-items: center; justify-content: center;
+      opacity: 0; pointer-events: none; transition: opacity .25s;
+      padding: 1rem;
+    }
+    .modal-overlay.open { opacity: 1; pointer-events: all; }
+    .modal {
+      background: var(--gris-card); border: 1px solid var(--gris-brd);
+      border-radius: 20px; width: 100%; max-width: 560px;
+      max-height: 90vh; overflow-y: auto;
+      transform: scale(.96) translateY(10px); transition: transform .25s;
+    }
+    .modal-overlay.open .modal { transform: scale(1) translateY(0); }
+    .modal-header {
+      padding: 1.25rem 1.5rem; border-bottom: 1px solid var(--gris-brd);
+      display: flex; align-items: center; justify-content: space-between;
+      position: sticky; top: 0; background: var(--gris-card); z-index: 1;
+    }
+    .modal-header h3 { font-family: 'Syne', sans-serif; font-size: 1.1rem; font-weight: 800; }
+    .modal-close {
+      width: 32px; height: 32px; background: var(--gris-osc);
+      border: none; border-radius: 8px; cursor: pointer; color: var(--texto-sec);
+      font-size: 1rem; display: flex; align-items: center; justify-content: center; transition: color .2s;
+    }
+    .modal-close:hover { color: var(--blanco); }
+    .modal-body { padding: 1.5rem; }
+    .campo { margin-bottom: 1.1rem; }
+    .campo label { display: block; font-size: .8rem; font-weight: 600; margin-bottom: .4rem; }
+    .campo label span { color: var(--verde); }
+    .input {
+      width: 100%; background: var(--negro); border: 1px solid var(--gris-brd);
+      border-radius: 10px; padding: .75rem .9rem; font-size: .9rem;
+      color: var(--blanco); font-family: 'Inter', sans-serif; outline: none; transition: border-color .2s;
+    }
+    .input:focus { border-color: var(--verde); }
+    .input::placeholder { color: var(--texto-sec); }
+    textarea.input { resize: vertical; min-height: 80px; }
+    .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+    .select-wrap { position: relative; }
+    .select-wrap select {
+      width: 100%; appearance: none; background: var(--negro);
+      border: 1px solid var(--gris-brd); border-radius: 10px;
+      padding: .75rem 2rem .75rem .9rem; font-size: .9rem;
+      color: var(--blanco); font-family: 'Inter', sans-serif; outline: none; cursor: pointer; transition: border-color .2s;
+    }
+    .select-wrap select:focus { border-color: var(--verde); }
+    .select-wrap::after { content: '▾'; position: absolute; right: .85rem; top: 50%; transform: translateY(-50%); color: var(--texto-sec); pointer-events: none; }
+    .emoji-row { display: flex; gap: .5rem; flex-wrap: wrap; margin-top: .4rem; }
+    .emoji-opt {
+      width: 40px; height: 40px; background: var(--negro);
+      border: 1px solid var(--gris-brd); border-radius: 9px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.2rem; cursor: pointer; transition: all .15s;
+    }
+    .emoji-opt:hover, .emoji-opt.sel { border-color: var(--verde); background: rgba(29,185,84,.1); }
+    .upload-zone {
+      border: 2px dashed var(--gris-brd); border-radius: 12px;
+      padding: 1.5rem; text-align: center; cursor: pointer;
+      transition: border-color .2s;
+    }
+    .upload-zone:hover { border-color: var(--verde); }
+    .upload-zone p { font-size: .82rem; color: var(--texto-sec); line-height: 1.6; }
+    .upload-zone strong { color: var(--verde); }
+    .modal-footer {
+      padding: 1.1rem 1.5rem; border-top: 1px solid var(--gris-brd);
+      display: flex; gap: .75rem; position: sticky; bottom: 0;
+      background: var(--gris-card);
+    }
+    .btn-cancel {
+      background: transparent; color: var(--texto-sec);
+      border: 1px solid var(--gris-brd); border-radius: 10px; cursor: pointer;
+      padding: .65rem 1.25rem; font-size: .88rem; font-weight: 600;
+      font-family: 'Inter', sans-serif; transition: border-color .2s;
+    }
+    .btn-cancel:hover { border-color: var(--blanco); color: var(--blanco); }
+    .btn-guardar {
+      flex: 1; background: var(--verde); color: var(--negro);
+      border: none; border-radius: 10px; cursor: pointer;
+      padding: .65rem; font-size: .92rem; font-weight: 700;
+      font-family: 'Inter', sans-serif; transition: background .2s;
+    }
+    .btn-guardar:hover { background: #25e066; }
+
+    /* TOAST */
+    .toast {
+      position: fixed; top: 1.25rem; right: 1.25rem; z-index: 500;
+      background: var(--gris-card); border: 1px solid var(--gris-brd);
+      border-radius: 12px; padding: .85rem 1.25rem;
+      font-size: .88rem; font-weight: 600;
+      display: flex; align-items: center; gap: .6rem;
+      opacity: 0; transform: translateY(-8px); transition: all .3s;
+      max-width: 320px;
+    }
+    .toast.show { opacity: 1; transform: translateY(0); }
+    .toast.success { border-color: var(--verde); }
+    .toast.error { border-color: var(--rojo); }
+
+    /* PEDIDOS SCREEN */
+    .pedidos-kanban { display: grid; grid-template-columns: repeat(4,1fr); gap: 1rem; }
+    .kanban-col { background: var(--gris-osc); border-radius: 14px; padding: 1rem; }
+    .kanban-title { font-size: .78rem; font-weight: 700; text-transform: uppercase; letter-spacing: .08em; margin-bottom: .85rem; display: flex; align-items: center; justify-content: space-between; }
+    .kanban-count { background: var(--gris-brd); border-radius: 999px; padding: .1rem .5rem; font-size: .68rem; }
+    .kanban-card {
+      background: var(--gris-card); border: 1px solid var(--gris-brd);
+      border-radius: 11px; padding: .85rem; margin-bottom: .65rem; cursor: pointer;
+      transition: border-color .2s;
+    }
+    .kanban-card:hover { border-color: rgba(29,185,84,.4); }
+    .kanban-card-id { font-size: .7rem; color: var(--texto-sec); margin-bottom: .35rem; }
+    .kanban-card-cliente { font-weight: 600; font-size: .85rem; margin-bottom: .2rem; }
+    .kanban-card-items { font-size: .78rem; color: var(--texto-sec); margin-bottom: .65rem; }
+    .kanban-card-footer { display: flex; justify-content: space-between; align-items: center; }
+    .kanban-monto { font-family: 'Syne', sans-serif; font-weight: 700; font-size: .9rem; color: var(--verde); }
+    .kanban-time { font-size: .7rem; color: var(--texto-sec); }
+
+    /* RESPONSIVE */
+    @media (max-width: 1100px) {
+      .kpi-grid { grid-template-columns: repeat(2,1fr); }
+      .dash-grid { grid-template-columns: 1fr; }
+      .pedidos-kanban { grid-template-columns: repeat(2,1fr); }
+    }
+    @media (max-width: 768px) {
+      .sidebar { display: none; }
+      .main { margin-left: 0; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- SIDEBAR -->
+<div class="sidebar">
+  <div class="sb-logo" onclick="window.location.href='raiz.html'" style="cursor:pointer;">RAIZ<span>.</span></div>
+  <div class="sb-negocio">
+    <div class="sb-avatar">🍗</div>
+    <div class="sb-negocio-info">
+      <strong>Doña Carmen</strong>
+      <span>Plan Pro · Activo</span>
+    </div>
+  </div>
+  <nav class="sb-nav">
+    <div class="sb-label">Principal</div>
+    <div class="sb-item active" onclick="irA('resumen',this)"><span class="sb-icon">📊</span> Resumen</div>
+    <div class="sb-item" onclick="irA('pedidos',this)"><span class="sb-icon">🛒</span> Pedidos <span class="sb-badge naranja">4</span></div>
+    <div class="sb-item" onclick="irA('productos',this)"><span class="sb-icon">📦</span> Productos</div>
+    <div class="sb-label">Negocio</div>
+    <div class="sb-item" onclick="irA('promotores',this)"><span class="sb-icon">📣</span> Promotores <span class="sb-badge">2</span></div>
+    <div class="sb-item" onclick="toast('🚀 Próximamente','success')"><span class="sb-icon">📈</span> Estadísticas</div>
+    <div class="sb-item" onclick="toast('🚀 Próximamente','success')"><span class="sb-icon">⚙️</span> Configuración</div>
+    <div class="sb-label">Mi vitrina</div>
+    <div class="sb-item" onclick="window.open('raiz-catalogo.html')"><span class="sb-icon">🌱</span> Ver mi catálogo</div>
+    <div class="sb-item" onclick="toast('🔗 Link copiado','success')"><span class="sb-icon">🔗</span> Compartir vitrina</div>
+  </nav>
+  <div class="sb-footer">
+    <div class="sb-avatar">🍗</div>
+    <span>Cerrar sesión</span>
+  </div>
+</div>
+
+<!-- MAIN -->
+<div class="main">
+  <div class="topbar">
+    <h1 id="topbarTitle">Resumen del negocio</h1>
+    <div class="topbar-right">
+      <button class="notif-btn" onclick="toast('🔔 Tienes 3 pedidos nuevos','')">
+        🔔<div class="notif-dot"></div>
+      </button>
+      <button class="btn-primary" onclick="abrirModal()" id="btnTopbar">+ Agregar producto</button>
+    </div>
+  </div>
+
+  <div class="content">
+
+    <!-- ══ RESUMEN ══ -->
+    <div class="screen active" id="screenResumen">
+      <div class="kpi-grid">
+        <div class="kpi-card">
+          <div class="kpi-label">Ventas hoy <span>💰</span></div>
+          <div class="kpi-val">RD$8,240</div>
+          <div class="kpi-delta up">↑ 18% vs ayer</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">Pedidos hoy <span>🛒</span></div>
+          <div class="kpi-val">24</div>
+          <div class="kpi-delta up">↑ 6 más que ayer</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">Productos activos <span>📦</span></div>
+          <div class="kpi-val">12</div>
+          <div class="kpi-delta" style="color:var(--texto-sec);">de 20 disponibles</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">Valoración <span>⭐</span></div>
+          <div class="kpi-val">4.9</div>
+          <div class="kpi-delta up">238 reseñas</div>
+        </div>
+      </div>
+
+      <div class="dash-grid">
+        <div class="card">
+          <div class="card-header">
+            <h3>Pedidos recientes</h3>
+            <a onclick="irA('pedidos', document.querySelector('.sb-item:nth-child(3)'))">Ver todos →</a>
+          </div>
+          <div class="pedido-row">
+            <span class="pedido-num">#RAZ-2851</span>
+            <div class="pedido-info"><strong>María González</strong><span>🍗 ×2 · 🎁 ×1 · hace 5 min</span></div>
+            <span class="pedido-monto">RD$760</span>
+            <span class="estado-pill nuevo">🔵 Nuevo</span>
+          </div>
+          <div class="pedido-row">
+            <span class="pedido-num">#RAZ-2850</span>
+            <div class="pedido-info"><strong>Carlos Díaz</strong><span>🫘 ×1 · 🥤 ×2 · hace 18 min</span></div>
+            <span class="pedido-monto">RD$340</span>
+            <span class="estado-pill en-camino">🛵 En camino</span>
+          </div>
+          <div class="pedido-row">
+            <span class="pedido-num">#RAZ-2849</span>
+            <div class="pedido-info"><strong>Ana Martínez</strong><span>🎁 ×1 · 🍚 ×1 · hace 34 min</span></div>
+            <span class="pedido-monto">RD$400</span>
+            <span class="estado-pill entregado">✅ Entregado</span>
+          </div>
+          <div class="pedido-row">
+            <span class="pedido-num">#RAZ-2848</span>
+            <div class="pedido-info"><strong>Luis Peña</strong><span>🍗 ×3 · hace 1h</span></div>
+            <span class="pedido-monto">RD$360</span>
+            <span class="estado-pill cancelado">✕ Cancelado</span>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header"><h3>Productos más vendidos</h3></div>
+          <div class="prod-item">
+            <div class="prod-emoji">🍗</div>
+            <div class="prod-info"><strong>Presa de pollo</strong><span>87 vendidos hoy</span></div>
+            <div class="prod-bar-wrap"><div class="prod-bar"><div class="prod-bar-fill" style="width:100%"></div></div></div>
+          </div>
+          <div class="prod-item">
+            <div class="prod-emoji">🎁</div>
+            <div class="prod-info"><strong>Combo La Bandera</strong><span>64 vendidos hoy</span></div>
+            <div class="prod-bar-wrap"><div class="prod-bar"><div class="prod-bar-fill" style="width:73%"></div></div></div>
+          </div>
+          <div class="prod-item">
+            <div class="prod-emoji">🍚</div>
+            <div class="prod-info"><strong>Arroz blanco</strong><span>51 vendidos hoy</span></div>
+            <div class="prod-bar-wrap"><div class="prod-bar"><div class="prod-bar-fill" style="width:58%"></div></div></div>
+          </div>
+          <div class="prod-item">
+            <div class="prod-emoji">🥤</div>
+            <div class="prod-info"><strong>Jugo natural</strong><span>43 vendidos hoy</span></div>
+            <div class="prod-bar-wrap"><div class="prod-bar"><div class="prod-bar-fill" style="width:49%"></div></div></div>
+          </div>
+          <div class="prod-item">
+            <div class="prod-emoji">🫘</div>
+            <div class="prod-info"><strong>Habichuelas</strong><span>39 vendidos hoy</span></div>
+            <div class="prod-bar-wrap"><div class="prod-bar"><div class="prod-bar-fill" style="width:44%"></div></div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ PRODUCTOS ══ -->
+    <div class="screen" id="screenProductos">
+      <div class="productos-toolbar">
+        <input class="search-input" placeholder="🔍 Buscar producto..." oninput="filtrarProductos(this.value)" />
+        <button class="filter-btn active" onclick="filtrarCat('todos',this)">Todos</button>
+        <button class="filter-btn" onclick="filtrarCat('platos',this)">🍽️ Platos</button>
+        <button class="filter-btn" onclick="filtrarCat('acomp',this)">🌽 Acomp.</button>
+        <button class="filter-btn" onclick="filtrarCat('combos',this)">🎁 Combos</button>
+        <button class="filter-btn" onclick="filtrarCat('bebidas',this)">🥤 Bebidas</button>
+      </div>
+
+      <div class="card">
+        <table class="productos-table" id="tablaProductos">
+          <thead>
+            <tr>
+              <th>Producto</th>
+              <th>Categoría</th>
+              <th>Precio</th>
+              <th>Vendidos</th>
+              <th>Disponible</th>
+              <th>Acciones</th>
+            </tr>
+          </thead>
+          <tbody id="tbodyProductos"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ══ PEDIDOS KANBAN ══ -->
+    <div class="screen" id="screenPedidos">
+      <div class="pedidos-kanban">
+        <div class="kanban-col">
+          <div class="kanban-title" style="color:var(--azul);">🔵 Nuevos <span class="kanban-count">4</span></div>
+          <div class="kanban-card" onclick="toast('📋 Pedido #RAZ-2851 abierto','')">
+            <div class="kanban-card-id">#RAZ-2851 · hace 5 min</div>
+            <div class="kanban-card-cliente">María González</div>
+            <div class="kanban-card-items">🍗 ×2 · 🎁 ×1 · 🥤 ×1</div>
+            <div class="kanban-card-footer"><span class="kanban-monto">RD$850</span><span class="kanban-time">📍 2.1 km</span></div>
+          </div>
+          <div class="kanban-card" onclick="toast('📋 Pedido #RAZ-2852 abierto','')">
+            <div class="kanban-card-id">#RAZ-2852 · hace 8 min</div>
+            <div class="kanban-card-cliente">Roberto Sánchez</div>
+            <div class="kanban-card-items">🍖 ×1 · 🫘 ×2</div>
+            <div class="kanban-card-footer"><span class="kanban-monto">RD$530</span><span class="kanban-time">📍 1.4 km</span></div>
+          </div>
+          <div class="kanban-card">
+            <div class="kanban-card-id">#RAZ-2853 · hace 12 min</div>
+            <div class="kanban-card-cliente">Carmen Reyes</div>
+            <div class="kanban-card-items">👨‍👩‍👧‍👦 ×1</div>
+            <div class="kanban-card-footer"><span class="kanban-monto">RD$1,100</span><span class="kanban-time">📍 3.2 km</span></div>
+          </div>
+          <div class="kanban-card">
+            <div class="kanban-card-id">#RAZ-2854 · hace 15 min</div>
+            <div class="kanban-card-cliente">Pedro Marte</div>
+            <div class="kanban-card-items">🍗 ×4 · 🥤 ×2</div>
+            <div class="kanban-card-footer"><span class="kanban-monto">RD$660</span><span class="kanban-time">📍 0.8 km</span></div>
+          </div>
+        </div>
+        <div class="kanban-col">
+          <div class="kanban-title" style="color:var(--naranja);">🛵 En preparación <span class="kanban-count">2</span></div>
+          <div class="kanban-card">
+            <div class="kanban-card-id">#RAZ-2849 · hace 20 min</div>
+            <div class="kanban-card-cliente">Ana Martínez</div>
+            <div class="kanban-card-items">🎁 ×1 · 🍚 ×1 · 🧃 ×1</div>
+            <div class="kanban-card-footer"><span class="kanban-monto">RD$465</span><span class="kanban-time">⏱ ~8 min</span></div>
+          </div>
+          <div class="kanban-card">
+            <div class="kanban-card-id">#RAZ-2848 · hace 25 min</div>
+            <div class="kanban-card-cliente">José Féliz</div>
+            <div class="kanban-card-items">🍗 ×3 · 🌱 ×2</div>
+            <div class="kanban-card-footer"><span class="kanban-monto">RD$480</span><span class="kanban-time">⏱ ~5 min</span></div>
+          </div>
+        </div>
+        <div class="kanban-col">
+          <div class="kanban-title" style="color:var(--naranja);">🚀 En camino <span class="kanban-count">1</span></div>
+          <div class="kanban-card">
+            <div class="kanban-card-id">#RAZ-2847 · hace 18 min</div>
+            <div class="kanban-card-cliente">Carlos Díaz</div>
+            <div class="kanban-card-items">🫘 ×1 · 🥤 ×2 · 🍠 ×1</div>
+            <div class="kanban-card-footer"><span class="kanban-monto">RD$340</span><span class="kanban-time">🛵 Juan P.</span></div>
+          </div>
+        </div>
+        <div class="kanban-col">
+          <div class="kanban-title" style="color:var(--verde);">✅ Entregados hoy <span class="kanban-count">17</span></div>
+          <div class="kanban-card" style="opacity:.7;">
+            <div class="kanban-card-id">#RAZ-2846 · hace 42 min</div>
+            <div class="kanban-card-cliente">Lucía Herrera</div>
+            <div class="kanban-card-items">🎁 ×2 · 🥤 ×2</div>
+            <div class="kanban-card-footer"><span class="kanban-monto">RD$820</span><span class="kanban-time">✅ 9:02 AM</span></div>
+          </div>
+          <div class="kanban-card" style="opacity:.7;">
+            <div class="kanban-card-id">#RAZ-2845 · hace 1h</div>
+            <div class="kanban-card-cliente">Miguel Torres</div>
+            <div class="kanban-card-items">🍗 ×1 · 🍚 ×1</div>
+            <div class="kanban-card-footer"><span class="kanban-monto">RD$200</span><span class="kanban-time">✅ 8:48 AM</span></div>
+          </div>
+          <div style="text-align:center;padding:.75rem;font-size:.78rem;color:var(--texto-sec);">+15 más entregados</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ PROMOTORES ══ -->
+    <div class="screen" id="screenPromotores">
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:1rem;">
+        <div class="card" style="padding:1.5rem;">
+          <div style="display:flex;align-items:center;gap:.85rem;margin-bottom:1rem;">
+            <div style="width:48px;height:48px;background:var(--verde);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:1.5rem;">👩</div>
+            <div><strong style="display:block;">María Rodríguez</strong><span style="font-size:.78rem;color:var(--verde);">Promotora verificada ✓</span></div>
+          </div>
+          <div style="display:flex;justify-content:space-between;font-size:.82rem;padding:.6rem 0;border-top:1px solid var(--gris-brd);"><span style="color:var(--texto-sec);">Ventas generadas</span><strong>47</strong></div>
+          <div style="display:flex;justify-content:space-between;font-size:.82rem;padding:.6rem 0;border-top:1px solid var(--gris-brd);"><span style="color:var(--texto-sec);">Comisiones pagadas</span><strong style="color:var(--verde);">RD$2,350</strong></div>
+          <div style="display:flex;justify-content:space-between;font-size:.82rem;padding:.6rem 0;border-top:1px solid var(--gris-brd);"><span style="color:var(--texto-sec);">Clientes traídos</span><strong>23</strong></div>
+          <button class="btn-primary" style="width:100%;margin-top:1rem;justify-content:center;" onclick="toast('💬 Abriendo chat con María...','success')">💬 Contactar</button>
+        </div>
+        <div class="card" style="padding:1.5rem;">
+          <div style="display:flex;align-items:center;gap:.85rem;margin-bottom:1rem;">
+            <div style="width:48px;height:48px;background:var(--azul);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:1.5rem;">👨</div>
+            <div><strong style="display:block;">Diego Núñez</strong><span style="font-size:.78rem;color:var(--verde);">Promotor verificado ✓</span></div>
+          </div>
+          <div style="display:flex;justify-content:space-between;font-size:.82rem;padding:.6rem 0;border-top:1px solid var(--gris-brd);"><span style="color:var(--texto-sec);">Ventas generadas</span><strong>31</strong></div>
+          <div style="display:flex;justify-content:space-between;font-size:.82rem;padding:.6rem 0;border-top:1px solid var(--gris-brd);"><span style="color:var(--texto-sec);">Comisiones pagadas</span><strong style="color:var(--verde);">RD$1,550</strong></div>
+          <div style="display:flex;justify-content:space-between;font-size:.82rem;padding:.6rem 0;border-top:1px solid var(--gris-brd);"><span style="color:var(--texto-sec);">Clientes traídos</span><strong>14</strong></div>
+          <button class="btn-primary" style="width:100%;margin-top:1rem;justify-content:center;" onclick="toast('💬 Abriendo chat con Diego...','success')">💬 Contactar</button>
+        </div>
+        <div class="card" style="padding:1.5rem;border-style:dashed;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:220px;gap:.75rem;" onclick="toast('🚀 Próximamente: invitar promotores','')">
+          <div style="font-size:2.5rem;">📣</div>
+          <strong>Invitar promotor</strong>
+          <span style="font-size:.82rem;color:var(--texto-sec);text-align:center;">Comparte el link de afiliado y empieza a recibir más ventas</span>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- MODAL AGREGAR PRODUCTO -->
+<div class="modal-overlay" id="modalOverlay" onclick="cerrarModal(event)">
+  <div class="modal">
+    <div class="modal-header">
+      <h3 id="modalTitulo">➕ Agregar producto</h3>
+      <button class="modal-close" onclick="cerrarModalBtn()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="campo">
+        <label>Ícono del producto <span>*</span></label>
+        <div class="emoji-row" id="emojiRow">
+          <div class="emoji-opt sel" onclick="selEmoji(this,'🍗')">🍗</div>
+          <div class="emoji-opt" onclick="selEmoji(this,'🍖')">🍖</div>
+          <div class="emoji-opt" onclick="selEmoji(this,'🍕')">🍕</div>
+          <div class="emoji-opt" onclick="selEmoji(this,'🎂')">🎂</div>
+          <div class="emoji-opt" onclick="selEmoji(this,'🥤')">🥤</div>
+          <div class="emoji-opt" onclick="selEmoji(this,'🧃')">🧃</div>
+          <div class="emoji-opt" onclick="selEmoji(this,'🍚')">🍚</div>
+          <div class="emoji-opt" onclick="selEmoji(this,'🫘')">🫘</div>
+          <div class="emoji-opt" onclick="selEmoji(this,'🌱')">🌱</div>
+          <div class="emoji-opt" onclick="selEmoji(this,'🍠')">🍠</div>
+          <div class="emoji-opt" onclick="selEmoji(this,'🧄')">🧄</div>
+          <div class="emoji-opt" onclick="selEmoji(this,'🥗')">🥗</div>
+        </div>
+      </div>
+      <div class="campo">
+        <label>Nombre del producto <span>*</span></label>
+        <input class="input" id="prodNombre" type="text" placeholder="Ej: Presa de pollo frito" />
+      </div>
+      <div class="campo">
+        <label>Descripción</label>
+        <textarea class="input" id="prodDesc" placeholder="Describe el producto brevemente..."></textarea>
+      </div>
+      <div class="grid2">
+        <div class="campo">
+          <label>Precio (RD$) <span>*</span></label>
+          <input class="input" id="prodPrecio" type="number" placeholder="120" />
+        </div>
+        <div class="campo">
+          <label>Categoría <span>*</span></label>
+          <div class="select-wrap">
+            <select id="prodCat">
+              <option value="platos">🍽️ Platos principales</option>
+              <option value="acomp">🌽 Acompañantes</option>
+              <option value="combos">🎁 Combos</option>
+              <option value="bebidas">🥤 Bebidas</option>
+              <option value="extras">✨ Extras</option>
+            </select>
+          </div>
+        </div>
+      </div>
+      <div class="campo">
+        <label>Foto del producto</label>
+        <div class="upload-zone" onclick="toast('📸 Seleccionar foto...','')">
+          <div style="font-size:2rem;margin-bottom:.5rem;">📷</div>
+          <p><strong>Sube una foto</strong><br>JPG, PNG · máx 5MB</p>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-cancel" onclick="cerrarModalBtn()">Cancelar</button>
+      <button class="btn-guardar" onclick="guardarProducto()">✓ Guardar producto</button>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<script>
+  let productoSelEmoji = '🍗';
+  let productos = [
+    { emoji:'🍗', nombre:'Presa de pollo frito',  desc:'Pollo criollo frito al momento',         precio:120,  cat:'platos',  vendidos:87, activo:true },
+    { emoji:'🍖', nombre:'Medio pollo frito',      desc:'Media unidad con sazón dominicana',      precio:380,  cat:'platos',  vendidos:34, activo:true },
+    { emoji:'🍗', nombre:'Pollo entero frito',     desc:'Pollo completo con todos los lados',     precio:680,  cat:'platos',  vendidos:18, activo:true },
+    { emoji:'🎁', nombre:'Combo La Bandera',       desc:'Presa + arroz + habichuelas + jugo',     precio:320,  cat:'combos',  vendidos:64, activo:true },
+    { emoji:'👨‍👩‍👧‍👦', nombre:'Combo Familiar',   desc:'Para 4 personas · todo incluido',        precio:1100, cat:'combos',  vendidos:22, activo:true },
+    { emoji:'🍚', nombre:'Arroz blanco',           desc:'Arroz blanco dominicano',                precio:80,   cat:'acomp',   vendidos:51, activo:true },
+    { emoji:'🫘', nombre:'Habichuelas guisadas',   desc:'Con sazón casero',                       precio:75,   cat:'acomp',   vendidos:39, activo:true },
+    { emoji:'🌱', nombre:'Tostones',               desc:'Plátano verde frito dos veces',          precio:60,   cat:'acomp',   vendidos:44, activo:false },
+    { emoji:'🍠', nombre:'Yuca hervida',           desc:'Con mojo de ajo y limón',                precio:65,   cat:'acomp',   vendidos:28, activo:true },
+    { emoji:'🥤', nombre:'Jugo natural',           desc:'Chinola, naranja o limón',               precio:90,   cat:'bebidas', vendidos:43, activo:true },
+    { emoji:'🧃', nombre:'Refresco lata',          desc:'Pepsi, 7Up, Sprite o Hit',               precio:65,   cat:'bebidas', vendidos:31, activo:true },
+    { emoji:'🧄', nombre:'Mojo de ajo extra',      desc:'Salsa de ajo casera',                    precio:30,   cat:'extras',  vendidos:19, activo:true },
+  ];
+
+  let catFiltro = 'todos';
+
+  const catLabels = { platos:'🍽️ Platos', acomp:'🌽 Acomp.', combos:'🎁 Combos', bebidas:'🥤 Bebidas', extras:'✨ Extras' };
+
+  function renderTabla(lista) {
+    const tbody = document.getElementById('tbodyProductos');
+    if (!lista) lista = productos;
+    tbody.innerHTML = lista.map((p, i) => `
+      <tr>
+        <td><div class="prod-td-name"><div class="prod-td-emoji">${p.emoji}</div><div><strong>${p.nombre}</strong><span>${p.desc}</span></div></div></td>
+        <td>${catLabels[p.cat] || p.cat}</td>
+        <td class="precio-td">RD$ ${p.precio.toLocaleString()}</td>
+        <td>${p.vendidos}</td>
+        <td><div class="disponible-toggle-sm ${p.activo?'on':''}" onclick="toggleActivo(${i})"></div></td>
+        <td>
+          <div class="row-actions">
+            <button class="action-btn" onclick="editarProducto(${i})" title="Editar">✏️</button>
+            <button class="action-btn del" onclick="eliminarProducto(${i})" title="Eliminar">🗑️</button>
+          </div>
+        </td>
+      </tr>
+    `).join('');
+  }
+
+  function filtrarProductos(q) {
+    const lista = productos.filter(p => p.nombre.toLowerCase().includes(q.toLowerCase()) && (catFiltro === 'todos' || p.cat === catFiltro));
+    renderTabla(lista);
+  }
+
+  function filtrarCat(cat, btn) {
+    catFiltro = cat;
+    document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    filtrarProductos(document.querySelector('.search-input').value);
+  }
+
+  function toggleActivo(i) {
+    productos[i].activo = !productos[i].activo;
+    renderTabla();
+    toast(productos[i].activo ? `✅ ${productos[i].nombre} activado` : `⏸ ${productos[i].nombre} desactivado`, productos[i].activo ? 'success' : '');
+  }
+
+  function editarProducto(i) {
+    const p = productos[i];
+    document.getElementById('modalTitulo').textContent = '✏️ Editar producto';
+    document.getElementById('prodNombre').value = p.nombre;
+    document.getElementById('prodDesc').value = p.desc;
+    document.getElementById('prodPrecio').value = p.precio;
+    document.getElementById('prodCat').value = p.cat;
+    productoSelEmoji = p.emoji;
+    document.querySelectorAll('.emoji-opt').forEach(e => e.classList.remove('sel'));
+    document.querySelector('.modal-overlay').classList.add('open');
+  }
+
+  function eliminarProducto(i) {
+    if (confirm(`¿Eliminar "${productos[i].nombre}"?`)) {
+      productos.splice(i, 1);
+      renderTabla();
+      toast('🗑️ Producto eliminado', '');
+    }
+  }
+
+  function abrirModal() {
+    document.getElementById('modalTitulo').textContent = '➕ Agregar producto';
+    document.getElementById('prodNombre').value = '';
+    document.getElementById('prodDesc').value = '';
+    document.getElementById('prodPrecio').value = '';
+    productoSelEmoji = '🍗';
+    document.querySelectorAll('.emoji-opt').forEach((e,i) => e.classList.toggle('sel', i===0));
+    document.querySelector('.modal-overlay').classList.add('open');
+  }
+
+  function cerrarModal(e) {
+    if (e.target === document.getElementById('modalOverlay')) cerrarModalBtn();
+  }
+  function cerrarModalBtn() {
+    document.querySelector('.modal-overlay').classList.remove('open');
+  }
+
+  function selEmoji(el, emoji) {
+    document.querySelectorAll('.emoji-opt').forEach(e => e.classList.remove('sel'));
+    el.classList.add('sel');
+    productoSelEmoji = emoji;
+  }
+
+  function guardarProducto() {
+    const nombre = document.getElementById('prodNombre').value.trim();
+    const precio = parseInt(document.getElementById('prodPrecio').value);
+    if (!nombre || !precio) { toast('⚠️ Completa nombre y precio', 'error'); return; }
+    const nuevo = {
+      emoji: productoSelEmoji,
+      nombre, precio,
+      desc: document.getElementById('prodDesc').value,
+      cat: document.getElementById('prodCat').value,
+      vendidos: 0, activo: true
+    };
+    productos.unshift(nuevo);
+    renderTabla();
+    cerrarModalBtn();
+    toast(`✅ "${nombre}" agregado al catálogo`, 'success');
+  }
+
+  function irA(screen, el) {
+    document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+    document.getElementById('screen' + screen.charAt(0).toUpperCase() + screen.slice(1)).classList.add('active');
+    document.querySelectorAll('.sb-item').forEach(i => i.classList.remove('active'));
+    if (el) el.classList.add('active');
+    const titulos = { resumen:'Resumen del negocio', pedidos:'Gestión de pedidos', productos:'Mis productos', promotores:'Mis promotores' };
+    document.getElementById('topbarTitle').textContent = titulos[screen] || screen;
+    const btnTopbar = document.getElementById('btnTopbar');
+    btnTopbar.style.display = screen === 'productos' ? 'flex' : 'flex';
+    btnTopbar.textContent = screen === 'promotores' ? '+ Invitar promotor' : '+ Agregar producto';
+    if (screen === 'productos') renderTabla();
+  }
+
+  function toast(msg, tipo) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.className = 'toast show ' + (tipo||'');
+    setTimeout(() => t.classList.remove('show'), 3000);
+  }
+
+  renderTabla();
+</script>
+</body>
+</html>

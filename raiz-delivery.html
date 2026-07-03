@@ -1,0 +1,733 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>RAIZ Delivery — Panel del Motoconcho</title>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --naranja: #FF6B00; --naranja-dim: #cc5500;
+      --negro: #0A0A0A; --gris-osc: #111111;
+      --gris-card: #161616; --gris-brd: #222222;
+      --blanco: #F5F5F5; --texto-sec: #888888;
+      --verde: #1DB954; --rojo: #ff4444; --azul: #3b82f6;
+    }
+    html { scroll-behavior: smooth; }
+    body { font-family: 'Inter', sans-serif; background: var(--negro); color: var(--blanco); max-width: 480px; margin: 0 auto; min-height: 100vh; position: relative; }
+
+    /* STATUS BAR */
+    .status-bar {
+      background: var(--gris-osc); padding: .4rem 1.25rem;
+      display: flex; justify-content: space-between; align-items: center;
+      font-size: .72rem; color: var(--texto-sec); border-bottom: 1px solid var(--gris-brd);
+    }
+
+    /* TOP NAV */
+    .top-nav {
+      padding: 1rem 1.25rem .75rem;
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .nav-logo { font-family: 'Syne', sans-serif; font-size: 1.3rem; font-weight: 800; color: var(--naranja); letter-spacing: -1px; }
+    .nav-logo span { color: var(--blanco); }
+    .notif-btn {
+      width: 38px; height: 38px; background: var(--gris-card);
+      border: 1px solid var(--gris-brd); border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer; position: relative; font-size: 1rem;
+    }
+    .notif-dot {
+      position: absolute; top: 6px; right: 6px;
+      width: 8px; height: 8px; background: var(--naranja);
+      border-radius: 50%; border: 2px solid var(--negro);
+    }
+
+    /* PERFIL STRIP */
+    .perfil-strip {
+      padding: 0 1.25rem 1.25rem;
+      display: flex; align-items: center; gap: 1rem;
+    }
+    .moto-avatar {
+      width: 56px; height: 56px; background: var(--naranja);
+      border-radius: 50%; display: flex; align-items: center;
+      justify-content: center; font-size: 1.8rem; flex-shrink: 0;
+    }
+    .perfil-info h2 { font-family: 'Syne', sans-serif; font-size: 1.1rem; font-weight: 800; }
+    .perfil-info span { font-size: .8rem; color: var(--texto-sec); }
+
+    /* TOGGLE DISPONIBLE */
+    .disponible-toggle {
+      margin: 0 1.25rem 1.25rem;
+      background: var(--gris-card); border: 1px solid var(--gris-brd);
+      border-radius: 16px; padding: 1rem 1.25rem;
+      display: flex; align-items: center; justify-content: space-between;
+      cursor: pointer; transition: border-color .2s;
+    }
+    .disponible-toggle.on { border-color: var(--verde); background: rgba(29,185,84,.06); }
+    .toggle-info { display: flex; align-items: center; gap: .85rem; }
+    .toggle-icon { font-size: 1.5rem; }
+    .toggle-label strong { display: block; font-weight: 700; font-size: .95rem; }
+    .toggle-label span { font-size: .8rem; color: var(--texto-sec); }
+    .switch {
+      width: 52px; height: 28px; background: var(--gris-brd);
+      border-radius: 999px; position: relative; transition: background .3s; flex-shrink: 0;
+    }
+    .switch.on { background: var(--verde); }
+    .switch::after {
+      content: ''; position: absolute; top: 3px; left: 3px;
+      width: 22px; height: 22px; background: var(--blanco);
+      border-radius: 50%; transition: transform .3s;
+    }
+    .switch.on::after { transform: translateX(24px); }
+
+    /* STATS ROW */
+    .stats-row {
+      display: grid; grid-template-columns: repeat(3, 1fr);
+      gap: .75rem; padding: 0 1.25rem 1.5rem;
+    }
+    .stat-card {
+      background: var(--gris-card); border: 1px solid var(--gris-brd);
+      border-radius: 14px; padding: .85rem .75rem; text-align: center;
+    }
+    .stat-val { font-family: 'Syne', sans-serif; font-size: 1.3rem; font-weight: 800; color: var(--naranja); }
+    .stat-lbl { font-size: .7rem; color: var(--texto-sec); margin-top: .15rem; }
+
+    /* SECCIÓN */
+    .seccion { padding: 0 1.25rem 1.5rem; }
+    .seccion-titulo {
+      font-family: 'Syne', sans-serif; font-size: 1rem; font-weight: 800;
+      margin-bottom: 1rem; display: flex; align-items: center; justify-content: space-between;
+    }
+    .seccion-titulo span { font-size: .78rem; color: var(--texto-sec); font-family: 'Inter', sans-serif; font-weight: 500; }
+
+    /* PEDIDO ENTRANTE — ALERTA */
+    .pedido-alerta {
+      margin: 0 1.25rem 1.25rem;
+      background: linear-gradient(135deg, rgba(255,107,0,.15), rgba(255,107,0,.05));
+      border: 1.5px solid var(--naranja);
+      border-radius: 18px; padding: 1.25rem;
+      position: relative; overflow: hidden;
+      animation: pulseCard 1.5s ease-in-out infinite;
+    }
+    @keyframes pulseCard {
+      0%, 100% { box-shadow: 0 0 0 0 rgba(255,107,0,.3); }
+      50% { box-shadow: 0 0 0 10px rgba(255,107,0,0); }
+    }
+    .alerta-header {
+      display: flex; align-items: center; justify-content: space-between;
+      margin-bottom: 1rem;
+    }
+    .alerta-badge {
+      background: var(--naranja); color: var(--negro);
+      border-radius: 999px; padding: .25rem .8rem;
+      font-size: .72rem; font-weight: 800; text-transform: uppercase;
+      letter-spacing: .06em; display: flex; align-items: center; gap: .3rem;
+    }
+    .alerta-timer { font-family: 'Syne', sans-serif; font-size: 1.4rem; font-weight: 800; color: var(--naranja); }
+    .alerta-negocio {
+      display: flex; align-items: center; gap: .75rem; margin-bottom: 1rem;
+    }
+    .alerta-negocio-icon { font-size: 2rem; }
+    .alerta-negocio-info strong { display: block; font-weight: 700; font-size: .95rem; }
+    .alerta-negocio-info span { font-size: .8rem; color: var(--texto-sec); }
+    .alerta-items {
+      background: rgba(0,0,0,.3); border-radius: 10px;
+      padding: .75rem; margin-bottom: 1rem; font-size: .82rem;
+      color: var(--texto-sec); line-height: 1.8;
+    }
+    .alerta-items strong { color: var(--blanco); }
+    .alerta-ruta {
+      display: flex; align-items: center; gap: .5rem;
+      font-size: .82rem; color: var(--texto-sec); margin-bottom: 1.25rem;
+    }
+    .alerta-ruta .punto { color: var(--naranja); font-weight: 700; }
+    .alerta-btns { display: flex; gap: .75rem; }
+    .btn-rechazar {
+      flex: 1; background: transparent; color: var(--rojo);
+      border: 1px solid var(--rojo); border-radius: 12px; cursor: pointer;
+      padding: .85rem; font-size: .9rem; font-weight: 700;
+      font-family: 'Inter', sans-serif; transition: background .2s;
+    }
+    .btn-rechazar:hover { background: rgba(255,68,68,.1); }
+    .btn-aceptar {
+      flex: 2; background: var(--naranja); color: var(--negro);
+      border: none; border-radius: 12px; cursor: pointer;
+      padding: .85rem; font-size: .9rem; font-weight: 700;
+      font-family: 'Inter', sans-serif; transition: background .2s;
+    }
+    .btn-aceptar:hover { background: #ff8533; }
+
+    /* PEDIDO EN CURSO */
+    .pedido-curso {
+      margin: 0 1.25rem 1.25rem;
+      background: var(--gris-card); border: 1px solid var(--gris-brd);
+      border-radius: 18px; padding: 1.25rem;
+      display: none;
+    }
+    .pedido-curso.show { display: block; }
+    .curso-header {
+      display: flex; align-items: center; justify-content: space-between;
+      margin-bottom: 1.25rem;
+    }
+    .curso-badge {
+      background: rgba(29,185,84,.12); color: var(--verde);
+      border: 1px solid rgba(29,185,84,.3);
+      border-radius: 999px; padding: .25rem .8rem;
+      font-size: .72rem; font-weight: 800;
+    }
+    .curso-id { font-size: .78rem; color: var(--texto-sec); }
+
+    /* TIMELINE */
+    .timeline { margin-bottom: 1.25rem; }
+    .tl-step {
+      display: flex; gap: .85rem; padding-bottom: 1rem; position: relative;
+    }
+    .tl-step:not(:last-child)::after {
+      content: ''; position: absolute; left: 14px; top: 28px;
+      width: 2px; height: calc(100% - 10px);
+      background: var(--gris-brd);
+    }
+    .tl-step.done:not(:last-child)::after { background: var(--naranja); }
+    .tl-dot {
+      width: 28px; height: 28px; border-radius: 50%; flex-shrink: 0;
+      background: var(--gris-brd); color: var(--texto-sec);
+      display: flex; align-items: center; justify-content: center;
+      font-size: .75rem; font-weight: 700; z-index: 1;
+      transition: all .3s;
+    }
+    .tl-step.done .tl-dot { background: var(--naranja); color: var(--negro); }
+    .tl-step.active .tl-dot { background: var(--naranja); color: var(--negro); box-shadow: 0 0 0 4px rgba(255,107,0,.2); }
+    .tl-info strong { display: block; font-size: .88rem; font-weight: 600; }
+    .tl-info span { font-size: .78rem; color: var(--texto-sec); }
+
+    .curso-cliente {
+      background: var(--negro); border-radius: 12px;
+      padding: .85rem; margin-bottom: 1.25rem;
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .curso-cliente-info strong { display: block; font-size: .88rem; font-weight: 600; margin-bottom: .15rem; }
+    .curso-cliente-info span { font-size: .78rem; color: var(--texto-sec); }
+    .btn-llamar {
+      background: var(--verde); color: var(--negro);
+      border: none; border-radius: 999px; cursor: pointer;
+      padding: .5rem 1rem; font-size: .82rem; font-weight: 700;
+      font-family: 'Inter', sans-serif;
+    }
+
+    .btn-siguiente-estado {
+      width: 100%; background: var(--naranja); color: var(--negro);
+      border: none; border-radius: 12px; cursor: pointer;
+      padding: .9rem; font-size: .95rem; font-weight: 700;
+      font-family: 'Inter', sans-serif; transition: background .2s;
+    }
+    .btn-siguiente-estado:hover { background: #ff8533; }
+
+    /* MAPA SIMULADO */
+    .mapa-sim {
+      border-radius: 14px; overflow: hidden;
+      height: 160px; background: #0d1a0d;
+      margin-bottom: 1rem; position: relative;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .mapa-grid {
+      position: absolute; inset: 0;
+      background-image:
+        linear-gradient(rgba(29,185,84,.08) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(29,185,84,.08) 1px, transparent 1px);
+      background-size: 30px 30px;
+    }
+    .mapa-ruta {
+      position: absolute; left: 20%; top: 30%; width: 60%; height: 3px;
+      background: linear-gradient(90deg, var(--verde), var(--naranja));
+      border-radius: 2px;
+    }
+    .mapa-pin {
+      position: absolute; font-size: 1.5rem;
+      filter: drop-shadow(0 2px 4px rgba(0,0,0,.5));
+    }
+    .pin-origen { left: 18%; top: 18%; }
+    .pin-moto { left: 48%; top: 24%; animation: moveMoto 3s ease-in-out infinite; }
+    .pin-destino { right: 18%; top: 18%; }
+    @keyframes moveMoto { 0%,100%{transform:translateX(0)} 50%{transform:translateX(8px)} }
+    .mapa-label {
+      position: absolute; bottom: .6rem; right: .75rem;
+      background: rgba(0,0,0,.7); backdrop-filter:blur(4px);
+      border-radius: 999px; padding: .25rem .7rem;
+      font-size: .72rem; color: var(--naranja); font-weight: 700;
+    }
+
+    /* HISTORIAL */
+    .historial-item {
+      background: var(--gris-card); border: 1px solid var(--gris-brd);
+      border-radius: 14px; padding: 1rem; margin-bottom: .75rem;
+      display: flex; align-items: center; gap: .85rem;
+    }
+    .hist-icon { font-size: 1.5rem; width: 40px; text-align: center; flex-shrink: 0; }
+    .hist-info { flex: 1; }
+    .hist-info strong { display: block; font-size: .9rem; font-weight: 600; margin-bottom: .15rem; }
+    .hist-info span { font-size: .78rem; color: var(--texto-sec); }
+    .hist-ganancia { font-family: 'Syne', sans-serif; font-weight: 800; color: var(--verde); font-size: .95rem; }
+    .hist-estado {
+      font-size: .7rem; font-weight: 700; padding: .2rem .55rem;
+      border-radius: 999px; display: block; margin-top: .25rem; text-align: right;
+    }
+    .hist-estado.entregado { background: rgba(29,185,84,.12); color: var(--verde); }
+    .hist-estado.cancelado { background: rgba(255,68,68,.12); color: var(--rojo); }
+
+    /* GANANCIAS CARD */
+    .ganancias-card {
+      background: linear-gradient(135deg, rgba(255,107,0,.15), rgba(255,107,0,.05));
+      border: 1px solid rgba(255,107,0,.3);
+      border-radius: 18px; padding: 1.25rem; margin-bottom: 1.5rem;
+    }
+    .gan-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1rem; }
+    .gan-header span { font-size: .82rem; color: var(--texto-sec); }
+    .gan-total { font-family: 'Syne', sans-serif; font-size: 2rem; font-weight: 800; color: var(--naranja); }
+    .gan-sub { font-size: .78rem; color: var(--texto-sec); margin-top: .15rem; }
+    .gan-row { display: flex; justify-content: space-between; font-size: .82rem; color: var(--texto-sec); margin-top: .65rem; }
+    .gan-row span:last-child { color: var(--blanco); font-weight: 600; }
+
+    /* BOTTOM NAV */
+    .bottom-nav {
+      position: fixed; bottom: 0; left: 50%; transform: translateX(-50%);
+      width: 100%; max-width: 480px;
+      background: rgba(10,10,10,.95); backdrop-filter: blur(14px);
+      border-top: 1px solid var(--gris-brd);
+      display: flex; padding: .75rem 0 1.25rem; z-index: 100;
+    }
+    .nav-item {
+      flex: 1; display: flex; flex-direction: column;
+      align-items: center; gap: .2rem; cursor: pointer;
+      transition: color .2s;
+    }
+    .nav-item .icon { font-size: 1.3rem; }
+    .nav-item .label { font-size: .65rem; color: var(--texto-sec); }
+    .nav-item.active .label { color: var(--naranja); }
+    .nav-item.active .icon { filter: none; }
+
+    /* SCREENS */
+    .screen { display: none; padding-bottom: 80px; }
+    .screen.active { display: block; }
+
+    /* TOAST */
+    .toast {
+      position: fixed; top: 5rem; left: 50%; transform: translateX(-50%) translateY(-10px);
+      background: var(--naranja); color: var(--negro);
+      padding: .65rem 1.25rem; border-radius: 999px;
+      font-size: .85rem; font-weight: 700;
+      opacity: 0; transition: all .3s; z-index: 300; white-space: nowrap;
+    }
+    .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+    /* PERFIL SCREEN */
+    .perfil-screen { padding: 1.25rem 1.25rem 80px; }
+    .perfil-grande {
+      text-align: center; padding: 1.5rem 0 1.25rem;
+      border-bottom: 1px solid var(--gris-brd); margin-bottom: 1.25rem;
+    }
+    .perfil-grande .avatar-big {
+      width: 90px; height: 90px; background: var(--naranja);
+      border-radius: 50%; margin: 0 auto .85rem;
+      display: flex; align-items: center; justify-content: center; font-size: 3rem;
+    }
+    .perfil-grande h2 { font-family: 'Syne', sans-serif; font-size: 1.3rem; font-weight: 800; margin-bottom: .2rem; }
+    .perfil-grande span { font-size: .85rem; color: var(--texto-sec); }
+    .rating-strip { display: flex; justify-content: center; gap: 2rem; margin-top: 1rem; }
+    .r-item { text-align: center; }
+    .r-item strong { display: block; font-family: 'Syne', sans-serif; font-size: 1.1rem; font-weight: 800; color: var(--naranja); }
+    .r-item span { font-size: .72rem; color: var(--texto-sec); }
+    .perfil-menu-item {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: .9rem 0; border-bottom: 1px solid var(--gris-brd);
+      cursor: pointer; font-size: .9rem;
+    }
+    .perfil-menu-item:last-child { border-bottom: none; }
+    .perfil-menu-item span:first-child { display: flex; align-items: center; gap: .75rem; }
+    .perfil-menu-item span:last-child { color: var(--texto-sec); }
+  </style>
+</head>
+<body>
+
+<!-- STATUS BAR -->
+<div class="status-bar">
+  <span>9:41 AM</span>
+  <span>🔋 87% · 📶 4G</span>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<!-- ══════════ SCREEN: INICIO ══════════ -->
+<div class="screen active" id="screenInicio">
+
+  <div class="top-nav">
+    <div class="nav-logo" onclick="window.location.href='raiz.html'" style="cursor:pointer;">RAIZ<span> Delivery</span></div>
+    <button class="notif-btn" onclick="toast('🔔 3 notificaciones nuevas')">
+      🔔<div class="notif-dot"></div>
+    </button>
+  </div>
+
+  <div class="perfil-strip">
+    <div class="moto-avatar">🛵</div>
+    <div class="perfil-info">
+      <h2>Hola, Juan Pérez 👋</h2>
+      <span>Santiago · ⭐ 4.8 · 127 entregas</span>
+    </div>
+  </div>
+
+  <!-- TOGGLE DISPONIBLE -->
+  <div class="disponible-toggle" id="toggleDisp" onclick="toggleDisponible()">
+    <div class="toggle-info">
+      <div class="toggle-icon" id="toggleIcon">😴</div>
+      <div class="toggle-label">
+        <strong id="toggleLabel">No disponible</strong>
+        <span id="toggleSub">Actívate para recibir pedidos</span>
+      </div>
+    </div>
+    <div class="switch" id="switchEl"></div>
+  </div>
+
+  <!-- STATS -->
+  <div class="stats-row">
+    <div class="stat-card">
+      <div class="stat-val">12</div>
+      <div class="stat-lbl">Entregas hoy</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-val">RD$1,840</div>
+      <div class="stat-lbl">Ganado hoy</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-val">⭐ 4.8</div>
+      <div class="stat-lbl">Valoración</div>
+    </div>
+  </div>
+
+  <!-- PEDIDO ENTRANTE -->
+  <div class="pedido-alerta" id="pedidoAlerta" style="display:none;">
+    <div class="alerta-header">
+      <div class="alerta-badge">🔔 Pedido nuevo</div>
+      <div class="alerta-timer" id="countdown">15s</div>
+    </div>
+    <div class="alerta-negocio">
+      <div class="alerta-negocio-icon">🍗</div>
+      <div class="alerta-negocio-info">
+        <strong>Pollo Frito Doña Carmen</strong>
+        <span>📍 Los Alcarrizos · 1.2 km de ti</span>
+      </div>
+    </div>
+    <div class="alerta-items">
+      <strong>3 productos · RD$ 760</strong><br>
+      🍗 Presa de pollo ×2 · 🎁 Combo La Bandera ×1
+    </div>
+    <div class="alerta-ruta">
+      <span class="punto">📦</span> Los Alcarrizos
+      <span style="flex:1;border-top:1px dashed var(--gris-brd);margin:0 .5rem;"></span>
+      <span class="punto">📍</span> Ensanche Bermúdez · 2.3 km
+    </div>
+    <div class="alerta-btns">
+      <button class="btn-rechazar" onclick="rechazarPedido()">✕ Rechazar</button>
+      <button class="btn-aceptar" onclick="aceptarPedido()">✓ Aceptar · RD$ 150</button>
+    </div>
+  </div>
+
+  <!-- PEDIDO EN CURSO -->
+  <div class="pedido-curso" id="pedidoCurso">
+    <div class="curso-header">
+      <span class="curso-badge">🛵 En curso</span>
+      <span class="curso-id">#RAZ-2847</span>
+    </div>
+
+    <div class="mapa-sim">
+      <div class="mapa-grid"></div>
+      <div class="mapa-ruta"></div>
+      <div class="mapa-pin pin-origen">🍗</div>
+      <div class="mapa-pin pin-moto">🛵</div>
+      <div class="mapa-pin pin-destino">📍</div>
+      <div class="mapa-label">2.3 km · ~12 min</div>
+    </div>
+
+    <div class="timeline" id="timeline">
+      <div class="tl-step done">
+        <div class="tl-dot">✓</div>
+        <div class="tl-info"><strong>Pedido aceptado</strong><span>9:18 AM</span></div>
+      </div>
+      <div class="tl-step active" id="tl1">
+        <div class="tl-dot">🛵</div>
+        <div class="tl-info"><strong>Recogiendo en el negocio</strong><span>En camino...</span></div>
+      </div>
+      <div class="tl-step" id="tl2">
+        <div class="tl-dot">3</div>
+        <div class="tl-info"><strong>En camino al cliente</strong><span>Pendiente</span></div>
+      </div>
+      <div class="tl-step" id="tl3">
+        <div class="tl-dot">4</div>
+        <div class="tl-info"><strong>Entregado ✓</strong><span>Pendiente</span></div>
+      </div>
+    </div>
+
+    <div class="curso-cliente">
+      <div class="curso-cliente-info">
+        <strong>María González</strong>
+        <span>📍 Calle 5, Ensanche Bermúdez</span>
+      </div>
+      <button class="btn-llamar" onclick="toast('📞 Llamando a María...')">📞 Llamar</button>
+    </div>
+
+    <button class="btn-siguiente-estado" id="btnEstado" onclick="avanzarEstado()">
+      ✓ Ya recogí el pedido
+    </button>
+  </div>
+
+  <!-- GANANCIAS DEL DÍA -->
+  <div class="seccion">
+    <div class="seccion-titulo">Mis ganancias hoy</div>
+    <div class="ganancias-card">
+      <div class="gan-header">
+        <span>Lunes, 29 Jun 2026</span>
+      </div>
+      <div class="gan-total">RD$ 1,840</div>
+      <div class="gan-sub">12 entregas completadas</div>
+      <div class="gan-row"><span>Ganancia por entregas</span><span>RD$ 1,800</span></div>
+      <div class="gan-row"><span>Propinas recibidas</span><span>RD$ 40</span></div>
+      <div class="gan-row"><span>Km recorridos</span><span>28 km</span></div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ══════════ SCREEN: HISTORIAL ══════════ -->
+<div class="screen" id="screenHistorial">
+  <div style="padding:1.25rem 1.25rem 0;">
+    <div style="font-family:'Syne',sans-serif;font-size:1.2rem;font-weight:800;margin-bottom:1.25rem;">Historial de entregas</div>
+    <div class="ganancias-card">
+      <div class="gan-header"><span>Esta semana</span></div>
+      <div class="gan-total">RD$ 8,240</div>
+      <div class="gan-sub">47 entregas · Lun — Dom</div>
+      <div class="gan-row"><span>Lunes</span><span>RD$ 1,840</span></div>
+      <div class="gan-row"><span>Martes</span><span>RD$ 1,200</span></div>
+      <div class="gan-row"><span>Miércoles</span><span>RD$ 980</span></div>
+      <div class="gan-row"><span>Jueves</span><span>RD$ 1,560</span></div>
+      <div class="gan-row"><span>Viernes</span><span>RD$ 2,660</span></div>
+    </div>
+  </div>
+  <div class="seccion">
+    <div class="seccion-titulo">Entregas recientes</div>
+    <div class="historial-item">
+      <div class="hist-icon">🍗</div>
+      <div class="hist-info">
+        <strong>Pollo Frito Doña Carmen</strong>
+        <span>Los Alcarrizos → Ensanche Bermúdez · hace 45 min</span>
+      </div>
+      <div style="text-align:right;">
+        <div class="hist-ganancia">RD$150</div>
+        <span class="hist-estado entregado">Entregado</span>
+      </div>
+    </div>
+    <div class="historial-item">
+      <div class="hist-icon">🎂</div>
+      <div class="hist-info">
+        <strong>Dulces de María</strong>
+        <span>La Romana → Centro · hace 1h 20min</span>
+      </div>
+      <div style="text-align:right;">
+        <div class="hist-ganancia">RD$120</div>
+        <span class="hist-estado entregado">Entregado</span>
+      </div>
+    </div>
+    <div class="historial-item">
+      <div class="hist-icon">🛒</div>
+      <div class="hist-info">
+        <strong>Colmado El Vecino</strong>
+        <span>Santiago → Villa González · hace 2h</span>
+      </div>
+      <div style="text-align:right;">
+        <div class="hist-ganancia">RD$180</div>
+        <span class="hist-estado entregado">Entregado</span>
+      </div>
+    </div>
+    <div class="historial-item">
+      <div class="hist-icon">💄</div>
+      <div class="hist-info">
+        <strong>Salón Bellas Raíces</strong>
+        <span>Santo Domingo → Los Minas · hace 3h</span>
+      </div>
+      <div style="text-align:right;">
+        <div class="hist-ganancia">—</div>
+        <span class="hist-estado cancelado">Cancelado</span>
+      </div>
+    </div>
+    <div class="historial-item">
+      <div class="hist-icon">🌿</div>
+      <div class="hist-info">
+        <strong>Artesanías Taíno</strong>
+        <span>Puerto Plata → Sosúa · hace 4h</span>
+      </div>
+      <div style="text-align:right;">
+        <div class="hist-ganancia">RD$200</div>
+        <span class="hist-estado entregado">Entregado</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════ SCREEN: PERFIL ══════════ -->
+<div class="screen" id="screenPerfil">
+  <div class="perfil-screen">
+    <div class="perfil-grande">
+      <div class="avatar-big">🛵</div>
+      <h2>Juan Pérez</h2>
+      <span>Motoconcho verificado · Santiago</span>
+      <div class="rating-strip">
+        <div class="r-item"><strong>⭐ 4.8</strong><span>Valoración</span></div>
+        <div class="r-item"><strong>127</strong><span>Entregas</span></div>
+        <div class="r-item"><strong>98%</strong><span>Aceptación</span></div>
+      </div>
+    </div>
+    <div class="perfil-menu-item" onclick="toast('🪪 Documentos verificados ✓')">
+      <span>🪪 Mis documentos</span><span>›</span>
+    </div>
+    <div class="perfil-menu-item" onclick="toast('🏦 Cuenta bancaria guardada')">
+      <span>🏦 Cuenta de cobro</span><span>›</span>
+    </div>
+    <div class="perfil-menu-item" onclick="toast('🛵 Motocicleta Honda Wave 2022')">
+      <span>🛵 Mi vehículo</span><span>›</span>
+    </div>
+    <div class="perfil-menu-item" onclick="toast('📊 Ver reporte completo')">
+      <span>📊 Estadísticas</span><span>›</span>
+    </div>
+    <div class="perfil-menu-item" onclick="toast('⚙️ Configuración guardada')">
+      <span>⚙️ Configuración</span><span>›</span>
+    </div>
+    <div class="perfil-menu-item" onclick="toast('🚪 Sesión cerrada')">
+      <span style="color:#ff4444;">🚪 Cerrar sesión</span><span>›</span>
+    </div>
+  </div>
+</div>
+
+<!-- BOTTOM NAV -->
+<div class="bottom-nav">
+  <div class="nav-item active" id="nav0" onclick="cambiarScreen('screenInicio', 0)">
+    <div class="icon">🏠</div>
+    <div class="label">Inicio</div>
+  </div>
+  <div class="nav-item" id="nav1" onclick="cambiarScreen('screenHistorial', 1)">
+    <div class="icon">📋</div>
+    <div class="label">Historial</div>
+  </div>
+  <div class="nav-item" id="nav2" onclick="cambiarScreen('screenPerfil', 2)">
+    <div class="icon">👤</div>
+    <div class="label">Perfil</div>
+  </div>
+</div>
+
+<script>
+  let disponible = false;
+  let estadoCurso = 1;
+  let countdownVal = 15;
+  let countdownInterval = null;
+  const estadosBtns = [
+    'Ya recogí el pedido',
+    '🛵 Ya voy en camino al cliente',
+    '✅ Pedido entregado'
+  ];
+
+  function cambiarScreen(id, idx) {
+    document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+    document.getElementById(id).classList.add('active');
+    document.querySelectorAll('.nav-item').forEach((n,i) => n.classList.toggle('active', i === idx));
+  }
+
+  function toggleDisponible() {
+    disponible = !disponible;
+    const sw = document.getElementById('switchEl');
+    const toggle = document.getElementById('toggleDisp');
+    const icon = document.getElementById('toggleIcon');
+    const label = document.getElementById('toggleLabel');
+    const sub = document.getElementById('toggleSub');
+    sw.classList.toggle('on', disponible);
+    toggle.classList.toggle('on', disponible);
+    if (disponible) {
+      icon.textContent = '🟢';
+      label.textContent = 'Disponible';
+      sub.textContent = 'Buscando pedidos cerca de ti...';
+      toast('🟢 Estás disponible — buscando pedidos');
+      setTimeout(simularPedido, 2500);
+    } else {
+      icon.textContent = '😴';
+      label.textContent = 'No disponible';
+      sub.textContent = 'Actívate para recibir pedidos';
+      toast('😴 Ya no recibirás pedidos');
+      document.getElementById('pedidoAlerta').style.display = 'none';
+      clearInterval(countdownInterval);
+    }
+  }
+
+  function simularPedido() {
+    if (!disponible) return;
+    document.getElementById('pedidoAlerta').style.display = 'block';
+    countdownVal = 15;
+    document.getElementById('countdown').textContent = countdownVal + 's';
+    clearInterval(countdownInterval);
+    countdownInterval = setInterval(() => {
+      countdownVal--;
+      document.getElementById('countdown').textContent = countdownVal + 's';
+      if (countdownVal <= 0) {
+        clearInterval(countdownInterval);
+        document.getElementById('pedidoAlerta').style.display = 'none';
+        toast('⏱ Tiempo agotado — pedido asignado a otro delivery');
+      }
+    }, 1000);
+  }
+
+  function aceptarPedido() {
+    clearInterval(countdownInterval);
+    document.getElementById('pedidoAlerta').style.display = 'none';
+    document.getElementById('pedidoCurso').classList.add('show');
+    estadoCurso = 1;
+    document.getElementById('btnEstado').textContent = estadosBtns[0];
+    toast('✅ Pedido aceptado — dirígete al negocio');
+  }
+
+  function rechazarPedido() {
+    clearInterval(countdownInterval);
+    document.getElementById('pedidoAlerta').style.display = 'none';
+    toast('✕ Pedido rechazado');
+  }
+
+  function avanzarEstado() {
+    const tls = ['tl1','tl2','tl3'];
+    if (estadoCurso <= 3) {
+      const tl = document.getElementById(tls[estadoCurso - 1]);
+      tl.classList.remove('active');
+      tl.classList.add('done');
+      tl.querySelector('.tl-dot').textContent = '✓';
+      if (estadoCurso < 3) {
+        document.getElementById(tls[estadoCurso]).classList.add('active');
+        document.getElementById('btnEstado').textContent = estadosBtns[estadoCurso];
+        const msgs = ['🍗 Recogiste el pedido — ve al cliente', '📍 Llegaste — entrega el pedido'];
+        toast(msgs[estadoCurso - 1]);
+      } else {
+        document.getElementById('btnEstado').textContent = '🎉 ¡Entrega completada!';
+        document.getElementById('btnEstado').style.background = 'var(--verde)';
+        toast('🎉 ¡Entrega completada! Ganaste RD$150');
+        setTimeout(() => {
+          document.getElementById('pedidoCurso').classList.remove('show');
+          document.getElementById('btnEstado').style.background = '';
+          estadoCurso = 1;
+        }, 2500);
+      }
+      estadoCurso++;
+    }
+  }
+
+  function toast(msg) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 2800);
+  }
+</script>
+</body>
+</html>
