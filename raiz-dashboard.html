@@ -338,23 +338,23 @@
 <div class="sidebar">
   <div class="sb-logo" onclick="window.location.href='/raiz.html'" style="cursor:pointer;">RAIZ<span>.</span></div>
   <div class="sb-negocio">
-    <div class="sb-avatar">🍗</div>
+    <div class="sb-avatar" id="sbAvatar">🏪</div>
     <div class="sb-negocio-info">
-      <strong>Doña Carmen</strong>
-      <span>Plan Pro · Activo</span>
+      <strong id="sbNombre">Mi negocio</strong>
+      <span id="sbPlan">Plan Vitrina · Activo</span>
     </div>
   </div>
   <nav class="sb-nav">
     <div class="sb-label">Principal</div>
     <div class="sb-item active" onclick="irA('resumen',this)"><span class="sb-icon">📊</span> Resumen</div>
-    <div class="sb-item" onclick="irA('pedidos',this)"><span class="sb-icon">🛒</span> Pedidos <span class="sb-badge naranja">4</span></div>
+    <div class="sb-item" onclick="irA('pedidos',this)"><span class="sb-icon">🛒</span> Pedidos</div>
     <div class="sb-item" onclick="irA('productos',this)"><span class="sb-icon">📦</span> Productos</div>
     <div class="sb-label">Negocio</div>
-    <div class="sb-item" onclick="irA('promotores',this)"><span class="sb-icon">📣</span> Promotores <span class="sb-badge">2</span></div>
+    <div class="sb-item" onclick="irA('promotores',this)"><span class="sb-icon">📣</span> Promotores</div>
     <div class="sb-item" onclick="toast('🚀 Próximamente','success')"><span class="sb-icon">📈</span> Estadísticas</div>
     <div class="sb-item" onclick="toast('🚀 Próximamente','success')"><span class="sb-icon">⚙️</span> Configuración</div>
     <div class="sb-label">Mi vitrina</div>
-    <div class="sb-item" onclick="window.open('/raiz-catalogo.html')"><span class="sb-icon">🌱</span> Ver mi catálogo</div>
+    <div class="sb-item" onclick="window.open('/raiz-catalogo.html?slug=' + (new URLSearchParams(window.location.search).get('slug') || localStorage.getItem('raiz_negocio_slug') || ''))"><span class="sb-icon">🌱</span> Ver mi catálogo</div>
     <div class="sb-item" onclick="toast('🔗 Link copiado','success')"><span class="sb-icon">🔗</span> Compartir vitrina</div>
   </nav>
   <div class="sb-footer">
@@ -368,8 +368,8 @@
   <div class="topbar">
     <h1 id="topbarTitle">Resumen del negocio</h1>
     <div class="topbar-right">
-      <button class="notif-btn" onclick="toast('🔔 Tienes 3 pedidos nuevos','')">
-        🔔<div class="notif-dot"></div>
+      <button class="notif-btn" onclick="toast('🔔 Sin notificaciones nuevas','')">
+        🔔
       </button>
       <button class="btn-primary" onclick="abrirModal()" id="btnTopbar">+ Agregar producto</button>
     </div>
@@ -382,23 +382,23 @@
       <div class="kpi-grid">
         <div class="kpi-card">
           <div class="kpi-label">Ventas hoy <span>💰</span></div>
-          <div class="kpi-val">RD$8,240</div>
-          <div class="kpi-delta up">↑ 18% vs ayer</div>
+          <div class="kpi-val">RD$0</div>
+          <div class="kpi-delta" style="color:var(--texto-sec);">Aún sin ventas</div>
         </div>
         <div class="kpi-card">
           <div class="kpi-label">Pedidos hoy <span>🛒</span></div>
-          <div class="kpi-val">24</div>
-          <div class="kpi-delta up">↑ 6 más que ayer</div>
+          <div class="kpi-val">0</div>
+          <div class="kpi-delta" style="color:var(--texto-sec);">Aún sin pedidos</div>
         </div>
         <div class="kpi-card">
           <div class="kpi-label">Productos activos <span>📦</span></div>
-          <div class="kpi-val">12</div>
-          <div class="kpi-delta" style="color:var(--texto-sec);">de 20 disponibles</div>
+          <div class="kpi-val" id="kpiProductos">0</div>
+          <div class="kpi-delta" style="color:var(--texto-sec);">Agrega tu primer producto</div>
         </div>
         <div class="kpi-card">
           <div class="kpi-label">Valoración <span>⭐</span></div>
-          <div class="kpi-val">4.9</div>
-          <div class="kpi-delta up">238 reseñas</div>
+          <div class="kpi-val">—</div>
+          <div class="kpi-delta" style="color:var(--texto-sec);">Sin reseñas aún</div>
         </div>
       </div>
 
@@ -406,60 +406,18 @@
         <div class="card">
           <div class="card-header">
             <h3>Pedidos recientes</h3>
-            <a onclick="irA('pedidos', document.querySelector('.sb-item:nth-child(3)'))">Ver todos →</a>
           </div>
-          <div class="pedido-row">
-            <span class="pedido-num">#RAZ-2851</span>
-            <div class="pedido-info"><strong>María González</strong><span>🍗 ×2 · 🎁 ×1 · hace 5 min</span></div>
-            <span class="pedido-monto">RD$760</span>
-            <span class="estado-pill nuevo">🔵 Nuevo</span>
-          </div>
-          <div class="pedido-row">
-            <span class="pedido-num">#RAZ-2850</span>
-            <div class="pedido-info"><strong>Carlos Díaz</strong><span>🫘 ×1 · 🥤 ×2 · hace 18 min</span></div>
-            <span class="pedido-monto">RD$340</span>
-            <span class="estado-pill en-camino">🛵 En camino</span>
-          </div>
-          <div class="pedido-row">
-            <span class="pedido-num">#RAZ-2849</span>
-            <div class="pedido-info"><strong>Ana Martínez</strong><span>🎁 ×1 · 🍚 ×1 · hace 34 min</span></div>
-            <span class="pedido-monto">RD$400</span>
-            <span class="estado-pill entregado">✅ Entregado</span>
-          </div>
-          <div class="pedido-row">
-            <span class="pedido-num">#RAZ-2848</span>
-            <div class="pedido-info"><strong>Luis Peña</strong><span>🍗 ×3 · hace 1h</span></div>
-            <span class="pedido-monto">RD$360</span>
-            <span class="estado-pill cancelado">✕ Cancelado</span>
+          <div style="text-align:center;padding:2rem 1rem;color:var(--texto-sec);">
+            <div style="font-size:1.8rem;margin-bottom:.5rem;">🛒</div>
+            <p style="font-size:.85rem;">Aún no tienes pedidos.<br>Comparte tu vitrina para empezar a recibir.</p>
           </div>
         </div>
 
         <div class="card">
           <div class="card-header"><h3>Productos más vendidos</h3></div>
-          <div class="prod-item">
-            <div class="prod-emoji">🍗</div>
-            <div class="prod-info"><strong>Presa de pollo</strong><span>87 vendidos hoy</span></div>
-            <div class="prod-bar-wrap"><div class="prod-bar"><div class="prod-bar-fill" style="width:100%"></div></div></div>
-          </div>
-          <div class="prod-item">
-            <div class="prod-emoji">🎁</div>
-            <div class="prod-info"><strong>Combo La Bandera</strong><span>64 vendidos hoy</span></div>
-            <div class="prod-bar-wrap"><div class="prod-bar"><div class="prod-bar-fill" style="width:73%"></div></div></div>
-          </div>
-          <div class="prod-item">
-            <div class="prod-emoji">🍚</div>
-            <div class="prod-info"><strong>Arroz blanco</strong><span>51 vendidos hoy</span></div>
-            <div class="prod-bar-wrap"><div class="prod-bar"><div class="prod-bar-fill" style="width:58%"></div></div></div>
-          </div>
-          <div class="prod-item">
-            <div class="prod-emoji">🥤</div>
-            <div class="prod-info"><strong>Jugo natural</strong><span>43 vendidos hoy</span></div>
-            <div class="prod-bar-wrap"><div class="prod-bar"><div class="prod-bar-fill" style="width:49%"></div></div></div>
-          </div>
-          <div class="prod-item">
-            <div class="prod-emoji">🫘</div>
-            <div class="prod-info"><strong>Habichuelas</strong><span>39 vendidos hoy</span></div>
-            <div class="prod-bar-wrap"><div class="prod-bar"><div class="prod-bar-fill" style="width:44%"></div></div></div>
+          <div style="text-align:center;padding:2rem 1rem;color:var(--texto-sec);">
+            <div style="font-size:1.8rem;margin-bottom:.5rem;">📦</div>
+            <p style="font-size:.85rem;">Agrega productos para empezar<br>a ver tus más vendidos aquí.</p>
           </div>
         </div>
       </div>
@@ -569,29 +527,9 @@
     <!-- ══ PROMOTORES ══ -->
     <div class="screen" id="screenPromotores">
       <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:1rem;">
-        <div class="card" style="padding:1.5rem;">
-          <div style="display:flex;align-items:center;gap:.85rem;margin-bottom:1rem;">
-            <div style="width:48px;height:48px;background:var(--verde);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:1.5rem;">👩</div>
-            <div><strong style="display:block;">María Rodríguez</strong><span style="font-size:.78rem;color:var(--verde);">Promotora verificada ✓</span></div>
-          </div>
-          <div style="display:flex;justify-content:space-between;font-size:.82rem;padding:.6rem 0;border-top:1px solid var(--gris-brd);"><span style="color:var(--texto-sec);">Ventas generadas</span><strong>47</strong></div>
-          <div style="display:flex;justify-content:space-between;font-size:.82rem;padding:.6rem 0;border-top:1px solid var(--gris-brd);"><span style="color:var(--texto-sec);">Comisiones pagadas</span><strong style="color:var(--verde);">RD$2,350</strong></div>
-          <div style="display:flex;justify-content:space-between;font-size:.82rem;padding:.6rem 0;border-top:1px solid var(--gris-brd);"><span style="color:var(--texto-sec);">Clientes traídos</span><strong>23</strong></div>
-          <button class="btn-primary" style="width:100%;margin-top:1rem;justify-content:center;" onclick="toast('💬 Abriendo chat con María...','success')">💬 Contactar</button>
-        </div>
-        <div class="card" style="padding:1.5rem;">
-          <div style="display:flex;align-items:center;gap:.85rem;margin-bottom:1rem;">
-            <div style="width:48px;height:48px;background:var(--azul);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:1.5rem;">👨</div>
-            <div><strong style="display:block;">Diego Núñez</strong><span style="font-size:.78rem;color:var(--verde);">Promotor verificado ✓</span></div>
-          </div>
-          <div style="display:flex;justify-content:space-between;font-size:.82rem;padding:.6rem 0;border-top:1px solid var(--gris-brd);"><span style="color:var(--texto-sec);">Ventas generadas</span><strong>31</strong></div>
-          <div style="display:flex;justify-content:space-between;font-size:.82rem;padding:.6rem 0;border-top:1px solid var(--gris-brd);"><span style="color:var(--texto-sec);">Comisiones pagadas</span><strong style="color:var(--verde);">RD$1,550</strong></div>
-          <div style="display:flex;justify-content:space-between;font-size:.82rem;padding:.6rem 0;border-top:1px solid var(--gris-brd);"><span style="color:var(--texto-sec);">Clientes traídos</span><strong>14</strong></div>
-          <button class="btn-primary" style="width:100%;margin-top:1rem;justify-content:center;" onclick="toast('💬 Abriendo chat con Diego...','success')">💬 Contactar</button>
-        </div>
         <div class="card" style="padding:1.5rem;border-style:dashed;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:220px;gap:.75rem;" onclick="toast('🚀 Próximamente: invitar promotores','')">
           <div style="font-size:2.5rem;">📣</div>
-          <strong>Invitar promotor</strong>
+          <strong>Aún no tienes promotores</strong>
           <span style="font-size:.82rem;color:var(--texto-sec);text-align:center;">Comparte el link de afiliado y empieza a recibir más ventas</span>
         </div>
       </div>
@@ -670,21 +608,37 @@
 <div class="toast" id="toast"></div>
 
 <script>
+  const API = 'https://raiz-backend.onrender.com';
+
+  async function cargarNegocio() {
+    const params = new URLSearchParams(window.location.search);
+    const slug = params.get('slug') || localStorage.getItem('raiz_negocio_slug');
+    if (!slug) return;
+    try {
+      let negocio = null;
+      const res = await fetch(`${API}/negocios?slug=${encodeURIComponent(slug)}`);
+      const data = await res.json();
+      const lista = Array.isArray(data) ? data : (data.negocios || []);
+      negocio = lista.find(n => n.slug === slug) || lista[0];
+      if (!negocio) return;
+      const nombre = negocio.nombre || 'Mi negocio';
+      const emoji = negocio.avatar_emoji || negocio.emoji || '🏪';
+      const plan = negocio.plan ? `Plan ${negocio.plan[0].toUpperCase()}${negocio.plan.slice(1)} · Activo` : 'Plan Vitrina · Activo';
+      const sbNombre = document.getElementById('sbNombre');
+      const sbAvatar = document.getElementById('sbAvatar');
+      const sbPlan = document.getElementById('sbPlan');
+      if (sbNombre) sbNombre.textContent = nombre;
+      if (sbAvatar) sbAvatar.textContent = emoji;
+      if (sbPlan) sbPlan.textContent = plan;
+      localStorage.setItem('raiz_negocio_slug', slug);
+    } catch (e) {
+      console.log('No se pudo cargar el negocio real, se mantiene el estado por defecto.', e);
+    }
+  }
+  cargarNegocio();
+
   let productoSelEmoji = '🍗';
-  let productos = [
-    { emoji:'🍗', nombre:'Presa de pollo frito',  desc:'Pollo criollo frito al momento',         precio:120,  cat:'platos',  vendidos:87, activo:true },
-    { emoji:'🍖', nombre:'Medio pollo frito',      desc:'Media unidad con sazón dominicana',      precio:380,  cat:'platos',  vendidos:34, activo:true },
-    { emoji:'🍗', nombre:'Pollo entero frito',     desc:'Pollo completo con todos los lados',     precio:680,  cat:'platos',  vendidos:18, activo:true },
-    { emoji:'🎁', nombre:'Combo La Bandera',       desc:'Presa + arroz + habichuelas + jugo',     precio:320,  cat:'combos',  vendidos:64, activo:true },
-    { emoji:'👨‍👩‍👧‍👦', nombre:'Combo Familiar',   desc:'Para 4 personas · todo incluido',        precio:1100, cat:'combos',  vendidos:22, activo:true },
-    { emoji:'🍚', nombre:'Arroz blanco',           desc:'Arroz blanco dominicano',                precio:80,   cat:'acomp',   vendidos:51, activo:true },
-    { emoji:'🫘', nombre:'Habichuelas guisadas',   desc:'Con sazón casero',                       precio:75,   cat:'acomp',   vendidos:39, activo:true },
-    { emoji:'🌱', nombre:'Tostones',               desc:'Plátano verde frito dos veces',          precio:60,   cat:'acomp',   vendidos:44, activo:false },
-    { emoji:'🍠', nombre:'Yuca hervida',           desc:'Con mojo de ajo y limón',                precio:65,   cat:'acomp',   vendidos:28, activo:true },
-    { emoji:'🥤', nombre:'Jugo natural',           desc:'Chinola, naranja o limón',               precio:90,   cat:'bebidas', vendidos:43, activo:true },
-    { emoji:'🧃', nombre:'Refresco lata',          desc:'Pepsi, 7Up, Sprite o Hit',               precio:65,   cat:'bebidas', vendidos:31, activo:true },
-    { emoji:'🧄', nombre:'Mojo de ajo extra',      desc:'Salsa de ajo casera',                    precio:30,   cat:'extras',  vendidos:19, activo:true },
-  ];
+  let productos = [];
 
   let catFiltro = 'todos';
 
@@ -693,6 +647,10 @@
   function renderTabla(lista) {
     const tbody = document.getElementById('tbodyProductos');
     if (!lista) lista = productos;
+    if (!lista.length) {
+      tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;padding:2.5rem 1rem;color:var(--texto-sec);">📦 Aún no has agregado productos.<br>Toca "+ Agregar producto" para empezar.</td></tr>`;
+      return;
+    }
     tbody.innerHTML = lista.map((p, i) => `
       <tr>
         <td><div class="prod-td-name"><div class="prod-td-emoji">${p.emoji}</div><div><strong>${p.nombre}</strong><span>${p.desc}</span></div></div></td>
@@ -708,6 +666,8 @@
         </td>
       </tr>
     `).join('');
+    const kpiProd = document.getElementById('kpiProductos');
+    if (kpiProd) kpiProd.textContent = productos.filter(p => p.activo).length;
   }
 
   function filtrarProductos(q) {
