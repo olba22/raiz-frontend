@@ -690,7 +690,7 @@
         <button onclick="copiarSuccess()" style="background:var(--verde);color:#000;border:none;border-radius:8px;padding:.4rem .8rem;font-weight:700;cursor:pointer;font-family:Inter,sans-serif;font-size:.82rem;">Copiar</button>
       </div>
       <button onclick="verCatalogo()" style="width:100%;background:var(--verde);color:#000;border:none;border-radius:12px;padding:1rem;font-size:1rem;font-weight:700;cursor:pointer;font-family:Inter,sans-serif;margin-bottom:.75rem;">Ver mi catálogo →</button>
-      <button onclick="window.location.href='/raiz-dashboard.html'" style="width:100%;background:transparent;color:var(--blanco);border:1px solid var(--gris-brd);border-radius:12px;padding:1rem;font-size:1rem;font-weight:700;cursor:pointer;font-family:Inter,sans-serif;">Ir a mi panel de negocio →</button>
+      <button onclick="irAlPanel()" style="width:100%;background:transparent;color:var(--blanco);border:1px solid var(--gris-brd);border-radius:12px;padding:1rem;font-size:1rem;font-weight:700;cursor:pointer;font-family:Inter,sans-serif;">Ir a mi panel de negocio →</button>
     </div>
 
   </div>
@@ -890,6 +890,7 @@
     document.querySelectorAll('.paso').forEach(p => p.classList.remove('active'));
     document.getElementById('successScreen').classList.add('show');
     document.getElementById('successLink').textContent = `raiz.do/${slug}`;
+    localStorage.setItem('raiz_negocio_slug', slug);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
@@ -899,7 +900,13 @@
   }
 
   function verCatalogo() {
-    window.location.href = '/raiz-catalogo.html';
+    const slug = localStorage.getItem('raiz_negocio_slug') || '';
+    window.location.href = '/raiz-catalogo.html?slug=' + slug;
+  }
+
+  function irAlPanel() {
+    const slug = localStorage.getItem('raiz_negocio_slug') || '';
+    window.location.href = '/raiz-dashboard.html?slug=' + slug;
   }
 </script>
 </body>
