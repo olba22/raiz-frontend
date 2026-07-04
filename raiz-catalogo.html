@@ -597,8 +597,29 @@
       document.getElementById('avatarEmoji').textContent = emoji;
       document.getElementById('portadaEmoji').textContent = emoji;
 
-      // Sin redes reales guardadas todavía: ocultamos los botones para no mostrar links falsos
+      // Actualizar (o esconder) los botones de redes sociales con los datos reales
+      const igLink = document.getElementById('igLink');
+      const fbLink = document.getElementById('fbLink');
       const redes = document.getElementById('perfilRedes');
+
+      if (negocio.instagram) {
+        igLink.href = negocio.instagram.startsWith('http')
+          ? negocio.instagram
+          : `https://instagram.com/${negocio.instagram.replace('@', '')}`;
+        igLink.style.display = '';
+      } else if (igLink) {
+        igLink.style.display = 'none';
+      }
+
+      if (negocio.facebook) {
+        fbLink.href = negocio.facebook.startsWith('http')
+          ? negocio.facebook
+          : `https://facebook.com/${negocio.facebook.replace('@', '')}`;
+        fbLink.style.display = '';
+      } else if (fbLink) {
+        fbLink.style.display = 'none';
+      }
+
       if (redes && !negocio.instagram && !negocio.facebook) redes.style.display = 'none';
     } catch (e) {
       console.log('No se pudo cargar el negocio real, se mantiene el contenido de ejemplo.', e);
