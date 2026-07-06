@@ -429,16 +429,12 @@
 <!-- HIGHLIGHTS -->
 <div class="highlights">
   <div class="highlight">
-    <div class="highlight-ring"><div class="highlight-inner">🍗</div></div>
-    <span>Pollos</span>
+    <div class="highlight-ring"><div class="highlight-inner">📦</div></div>
+    <span>Catálogo</span>
   </div>
   <div class="highlight">
-    <div class="highlight-ring"><div class="highlight-inner">🎁</div></div>
-    <span>Combos</span>
-  </div>
-  <div class="highlight">
-    <div class="highlight-ring"><div class="highlight-inner">🥤</div></div>
-    <span>Bebidas</span>
+    <div class="highlight-ring"><div class="highlight-inner">🏷️</div></div>
+    <span>Ofertas</span>
   </div>
   <div class="highlight">
     <div class="highlight-ring"><div class="highlight-inner">⭐</div></div>
@@ -573,10 +569,10 @@
     const slug = params.get('slug') || localStorage.getItem('raiz_negocio_slug');
     if (!slug) return;
     try {
-      const res = await fetch(`${API}/negocios?slug=${encodeURIComponent(slug)}`);
+      const res = await fetch(`${API}/negocios/${encodeURIComponent(slug)}`);
+      if (!res.ok) return;
       const data = await res.json();
-      const lista = Array.isArray(data) ? data : (data.negocios || []);
-      const negocio = lista.find(n => n.slug === slug) || lista[0];
+      const negocio = data.negocio;
       if (!negocio) return;
 
       const nombre = negocio.nombre || NEGOCIO_NOMBRE;
@@ -621,13 +617,38 @@
       }
 
       if (redes && !negocio.instagram && !negocio.facebook) redes.style.display = 'none';
+
+      // Cargar los productos reales de este negocio (reemplaza el menú de ejemplo)
+      if (Array.isArray(data.productos)) {
+        if (data.productos.length > 0) {
+          productos = data.productos.map(p => ({
+            emoji: p.emoji || '📦',
+            nombre: p.nombre,
+            desc: p.descripcion || '',
+            precio: Number(p.precio),
+            tag: ''
+          }));
+        } else {
+          productos = [];
+        }
+        renderGrid();
+      }
     } catch (e) {
       console.log('No se pudo cargar el negocio real, se mantiene el contenido de ejemplo.', e);
     }
   }
   cargarNegocio();
 
-  const productos = [
+  // ── Atribución de distribuidor: ?vendedor=CODIGO ──
+  (function detectarDistribuidor() {
+    const params = new URLSearchParams(window.location.search);
+    const vendedor = params.get('vendedor');
+    if (vendedor) {
+      localStorage.setItem('raiz_distribuidor_activo', vendedor.toUpperCase());
+    }
+  })();
+
+  let productos = [
     { emoji:'🍗', nombre:'Presa de pollo frito',   desc:'Pollo criollo marinado y frito al momento. Crocante por fuera, jugoso por dentro.',  precio:120,  tag:'Popular' },
     { emoji:'🍖', nombre:'Medio pollo frito',       desc:'La mitad de un pollo entero, frito con sazón dominicana. Ideal para compartir.',     precio:380,  tag:'' },
     { emoji:'🍗', nombre:'Pollo entero frito',      desc:'Un pollo entero frito con yuca, tostones y ensalada. Para toda la familia.',          precio:680,  tag:'' },
@@ -649,6 +670,14 @@
   // Render grid
   function renderGrid() {
     const grid = document.getElementById('productosGrid');
+    if (!productos.length) {
+      grid.innerHTML = `
+        <div style="grid-column:1/-1;text-align:center;padding:2.5rem 1rem;color:var(--texto-sec);">
+          <div style="font-size:2rem;margin-bottom:.5rem;">📦</div>
+          <p>Este negocio todavía no ha agregado productos a su catálogo.</p>
+        </div>`;
+      return;
+    }
     grid.innerHTML = productos.map((p, i) => `
       <div class="producto-grid-item" onclick="abrirModal(${i})"
            style="background: hsl(${(i * 47) % 360}, 15%, 12%);">
@@ -768,6 +797,10 @@
     msg += '━━━━━━━━━━━━━━━━\n';
     msg += `🛵 Delivery: RD$ 100\n`;
     msg += `💰 *Total: RD$ ${(subtotal + 100).toLocaleString()}*\n\n`;
+    const distribuidor = localStorage.getItem('raiz_distribuidor_activo');
+    if (distribuidor) {
+      msg += `📣 Código de distribuidor: *${distribuidor}*\n\n`;
+    }
     msg += '📍 *Mi dirección:* ';
     window.open(`https://wa.me/${NEGOCIO_WHATSAPP}?text=${encodeURIComponent(msg)}`, '_blank');
   }
