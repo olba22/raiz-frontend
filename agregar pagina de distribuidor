@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>RAIZ — Conviértete en Distribuidor Digital</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --verde: #1DB954; --negro: #0A0A0A; --gris-osc: #111111;
+    --gris-card: #161616; --gris-brd: #222222; --blanco: #F5F5F5; --texto-sec: #888888;
+  }
+  body { font-family: 'Inter', sans-serif; background: var(--negro); color: var(--blanco); min-height: 100vh; }
+
+  nav {
+    position: sticky; top: 0; z-index: 100;
+    display: flex; align-items: center; justify-content: space-between;
+    padding: .85rem 2rem;
+    background: rgba(10,10,10,.92); backdrop-filter: blur(14px);
+    border-bottom: 1px solid var(--gris-brd);
+  }
+  .logo { font-family: 'Syne', sans-serif; font-size: 1.5rem; font-weight: 800; color: var(--verde); text-decoration: none; }
+  .logo span { color: var(--blanco); }
+  .nav-back { color: var(--texto-sec); text-decoration: none; font-size: .85rem; }
+
+  .wrap { max-width: 520px; margin: 0 auto; padding: 2.5rem 1.5rem 4rem; }
+
+  .badge {
+    display: inline-flex; align-items: center; gap: .4rem;
+    background: rgba(29,185,84,.1); border: 1px solid rgba(29,185,84,.25);
+    color: var(--verde); font-size: .75rem; font-weight: 700;
+    padding: .3rem .9rem; border-radius: 999px; margin-bottom: 1.25rem;
+  }
+  h1 {
+    font-family: 'Syne', sans-serif; font-size: clamp(1.7rem, 5vw, 2.3rem);
+    font-weight: 800; letter-spacing: -1px; line-height: 1.15; margin-bottom: .75rem;
+  }
+  h1 span { color: var(--verde); }
+  .wrap > p.intro { color: var(--texto-sec); font-size: .95rem; line-height: 1.6; margin-bottom: 2rem; }
+
+  .campo { margin-bottom: 1.1rem; }
+  .campo label { display: block; font-size: .82rem; font-weight: 600; margin-bottom: .4rem; color: var(--blanco); }
+  .campo input, .campo select {
+    width: 100%; background: var(--gris-card); border: 1.5px solid var(--gris-brd);
+    border-radius: 12px; padding: .85rem 1rem; font-size: .95rem; color: var(--blanco);
+    font-family: 'Inter', sans-serif; outline: none; transition: border-color .2s;
+  }
+  .campo input:focus, .campo select:focus { border-color: var(--verde); }
+  .campo input::placeholder { color: #555; }
+  .fila-2 { display: grid; grid-template-columns: 1fr 1fr; gap: .8rem; }
+
+  .btn-enviar {
+    width: 100%; background: var(--verde); color: #000; border: none;
+    border-radius: 12px; padding: 1rem; font-size: 1rem; font-weight: 700;
+    cursor: pointer; font-family: 'Inter', sans-serif; margin-top: .5rem;
+    transition: background .2s;
+  }
+  .btn-enviar:hover { background: #25e066; }
+  .btn-enviar:disabled { opacity: .5; cursor: not-allowed; }
+
+  .info-box {
+    background: var(--gris-card); border: 1px solid var(--gris-brd); border-radius: 14px;
+    padding: 1.1rem 1.25rem; margin-bottom: 2rem; font-size: .85rem; color: var(--texto-sec); line-height: 1.6;
+  }
+  .info-box strong { color: var(--blanco); }
+
+  /* ═══ PANTALLA DE ÉXITO ═══ */
+  .success-screen { display: none; text-align: center; }
+  .success-screen.show { display: block; }
+  .success-emoji { font-size: 3rem; margin-bottom: 1rem; }
+  .success-screen h2 { font-family: 'Syne', sans-serif; font-size: 1.6rem; font-weight: 800; margin-bottom: .6rem; }
+  .success-screen > p { color: var(--texto-sec); font-size: .9rem; margin-bottom: 2rem; }
+
+  .codigo-box {
+    background: var(--gris-card); border: 1.5px dashed var(--verde); border-radius: 16px;
+    padding: 1.5rem; margin-bottom: 1.5rem;
+  }
+  .codigo-label { font-size: .75rem; color: var(--texto-sec); text-transform: uppercase; letter-spacing: .06em; margin-bottom: .5rem; }
+  .codigo-valor {
+    font-family: 'Syne', sans-serif; font-size: 2rem; font-weight: 800; color: var(--verde);
+    letter-spacing: 3px; margin-bottom: .75rem;
+  }
+  .btn-copiar {
+    background: transparent; border: 1px solid var(--gris-brd); color: var(--blanco);
+    padding: .5rem 1rem; border-radius: 8px; font-size: .8rem; cursor: pointer;
+    font-family: 'Inter', sans-serif;
+  }
+
+  .como-usar { text-align: left; background: var(--gris-card); border: 1px solid var(--gris-brd); border-radius: 14px; padding: 1.25rem; margin-bottom: 1.5rem; }
+  .como-usar h3 { font-family: 'Syne', sans-serif; font-size: .95rem; margin-bottom: .6rem; }
+  .como-usar ol { padding-left: 1.2rem; color: var(--texto-sec); font-size: .85rem; line-height: 1.8; }
+  .como-usar code { background: var(--negro); color: var(--verde); padding: .1rem .4rem; border-radius: 4px; font-size: .78rem; }
+
+  .btn-ir { display: inline-block; color: var(--verde); font-weight: 700; text-decoration: none; font-size: .9rem; }
+</style>
+</head>
+<body>
+
+<nav>
+  <a href="/raiz.html" class="logo">RAIZ<span>.</span></a>
+  <a href="/raiz.html" class="nav-back">← Volver al inicio</a>
+</nav>
+
+<div class="wrap">
+
+  <!-- ══ FORMULARIO ══ -->
+  <div id="formScreen">
+    <div class="badge">📣 Red de Distribuidores</div>
+    <h1>Gana dinero <span>compartiendo</span> negocios de tu comunidad.</h1>
+    <p class="intro">Regístrate como distribuidor digital de RAIZ. Vas a recibir un código único — compártelo en tus redes, y cada vez que alguien compre a través de tu link, generas comisión.</p>
+
+    <div class="info-box">
+      🌱 <strong>Es gratis registrarte.</strong> No necesitas tener tu propio negocio — puedes promocionar cualquier negocio ya publicado en RAIZ.
+    </div>
+
+    <form onsubmit="event.preventDefault(); registrarDistribuidor();">
+      <div class="campo">
+        <label>Nombre completo</label>
+        <input type="text" id="nombre" placeholder="Ej: Juana Pérez" required />
+      </div>
+      <div class="campo">
+        <label>WhatsApp</label>
+        <input type="tel" id="whatsapp" placeholder="Ej: 8091234567" required />
+      </div>
+      <div class="fila-2">
+        <div class="campo">
+          <label>Provincia</label>
+          <select id="provincia" required>
+            <option value="">Selecciona...</option>
+            <option>Pedernales</option>
+            <option>Santo Domingo</option>
+            <option>Distrito Nacional</option>
+            <option>Santiago</option>
+            <option>La Vega</option>
+            <option>San Cristóbal</option>
+            <option>Puerto Plata</option>
+            <option>La Romana</option>
+            <option>San Pedro de Macorís</option>
+            <option>Otra</option>
+          </select>
+        </div>
+        <div class="campo">
+          <label>Municipio</label>
+          <input type="text" id="municipio" placeholder="Ej: Pedernales" required />
+        </div>
+      </div>
+      <button type="submit" class="btn-enviar" id="btnEnviar">Registrarme como distribuidor →</button>
+    </form>
+  </div>
+
+  <!-- ══ ÉXITO ══ -->
+  <div class="success-screen" id="successScreen">
+    <div class="success-emoji">🌱</div>
+    <h2>¡Ya eres distribuidor RAIZ!</h2>
+    <p>Guarda tu código — lo vas a necesitar para compartir negocios.</p>
+
+    <div class="codigo-box">
+      <div class="codigo-label">Tu código</div>
+      <div class="codigo-valor" id="codigoValor">------</div>
+      <button class="btn-copiar" onclick="copiarCodigo()">📋 Copiar código</button>
+    </div>
+
+    <div class="como-usar">
+      <h3>¿Cómo funciona?</h3>
+      <ol>
+        <li>Entra al catálogo de cualquier negocio en RAIZ</li>
+        <li>Copia su link y agrégale al final: <code>?vendedor=TU_CODIGO</code></li>
+        <li>Comparte ese link en tus redes o WhatsApp</li>
+        <li>Cuando alguien compre a través de tu link, se registra a tu nombre</li>
+      </ol>
+    </div>
+
+    <a href="/raiz-busqueda.html" class="btn-ir">Buscar negocios para promocionar →</a>
+  </div>
+
+</div>
+
+<script>
+  const API = 'https://raiz-backend.onrender.com';
+  let MI_CODIGO = '';
+
+  async function registrarDistribuidor() {
+    const nombre = document.getElementById('nombre').value.trim();
+    const whatsapp = document.getElementById('whatsapp').value.trim();
+    const provincia = document.getElementById('provincia').value;
+    const municipio = document.getElementById('municipio').value.trim();
+
+    if (!nombre || !whatsapp || !provincia || !municipio) return;
+
+    const btn = document.getElementById('btnEnviar');
+    btn.disabled = true;
+    btn.textContent = 'Registrando...';
+
+    try {
+      const res = await fetch(`${API}/promotores`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ nombre, whatsapp, provincia, municipio })
+      });
+      const data = await res.json();
+
+      if (!res.ok || !data.codigo) {
+        throw new Error(data.detail || 'No se pudo completar el registro');
+      }
+
+      MI_CODIGO = data.codigo;
+      localStorage.setItem('raiz_distribuidor_codigo', MI_CODIGO);
+      document.getElementById('codigoValor').textContent = MI_CODIGO;
+      document.getElementById('formScreen').style.display = 'none';
+      document.getElementById('successScreen').classList.add('show');
+    } catch (e) {
+      alert('Hubo un problema al registrarte. Intenta de nuevo en unos segundos.');
+      btn.disabled = false;
+      btn.textContent = 'Registrarme como distribuidor →';
+    }
+  }
+
+  function copiarCodigo() {
+    navigator.clipboard.writeText(MI_CODIGO);
+  }
+</script>
+
+</body>
+</html>
