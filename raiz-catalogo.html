@@ -400,9 +400,9 @@
       <div class="avatar" id="avatarEmoji">🍗</div>
       <div class="avatar-verificado">✓</div>
     </div>
-    <div class="perfil-btns">
-      <button class="btn-wa-perfil" onclick="abrirDrawer()">💬 Pedir</button>
-      <button class="btn-seguir">Seguir</button>
+    <div class="perfil-btns" id="perfilBtns">
+      <button class="btn-wa-perfil" id="btnPedir" onclick="abrirDrawer()">💬 Pedir</button>
+      <button class="btn-seguir" id="btnSeguir">Seguir</button>
       <button class="btn-compartir" onclick="abrirCompartir()" title="Compartir">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
       </button>
@@ -594,6 +594,15 @@
         if (btnPanel) {
           btnPanel.style.display = 'flex';
           btnPanel.href = `/raiz-dashboard.html?slug=${slug}`;
+        }
+        // Vista de dueño: ocultar "Pedir" y mostrar seguidores en vez de "Seguir"
+        const btnPedir = document.getElementById('btnPedir');
+        const btnSeguir = document.getElementById('btnSeguir');
+        if (btnPedir) btnPedir.style.display = 'none';
+        if (btnSeguir) {
+          btnSeguir.textContent = '👥 0 seguidores';
+          btnSeguir.style.cursor = 'default';
+          btnSeguir.onclick = null;
         }
       }
       if (whatsapp) NEGOCIO_WHATSAPP = whatsapp.replace(/\D/g, '');
