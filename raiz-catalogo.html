@@ -376,6 +376,10 @@
 </head>
 <body>
 
+<a href="#" id="btnMiPanel" style="display:none;position:fixed;bottom:1.25rem;right:1.25rem;z-index:200;background:#1DB954;color:#000;font-weight:700;font-size:.85rem;padding:.8rem 1.3rem;border-radius:999px;text-decoration:none;box-shadow:0 6px 20px rgba(0,0,0,.4);align-items:center;gap:.4rem;">
+  ⚙️ Ir a mi panel
+</a>
+
 <!-- NAV -->
 <nav>
   <button class="nav-back" onclick="history.back()">←</button>
@@ -583,6 +587,15 @@
 
       NEGOCIO_NOMBRE = nombre;
       NEGOCIO_SLUG = slug;
+
+      // Mostrar botón "Ir a mi panel" solo si este navegador es el que registró el negocio
+      if (localStorage.getItem('raiz_negocio_slug') === slug) {
+        const btnPanel = document.getElementById('btnMiPanel');
+        if (btnPanel) {
+          btnPanel.style.display = 'flex';
+          btnPanel.href = `/raiz-dashboard.html?slug=${slug}`;
+        }
+      }
       if (whatsapp) NEGOCIO_WHATSAPP = whatsapp.replace(/\D/g, '');
 
       document.getElementById('navTitle').textContent = nombre;
