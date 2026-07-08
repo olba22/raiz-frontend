@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>RAIZ — Iniciar sesión</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --verde: #1DB954; --negro: #0A0A0A; --gris-osc: #111111;
+    --gris-card: #161616; --gris-brd: #222222; --blanco: #F5F5F5; --texto-sec: #888888;
+  }
+  body { font-family: 'Inter', sans-serif; background: var(--negro); color: var(--blanco); min-height: 100vh; }
+
+  nav {
+    position: sticky; top: 0; z-index: 100;
+    display: flex; align-items: center; justify-content: space-between;
+    padding: .85rem 2rem;
+    background: rgba(10,10,10,.92); backdrop-filter: blur(14px);
+    border-bottom: 1px solid var(--gris-brd);
+  }
+  .logo { font-family: 'Syne', sans-serif; font-size: 1.5rem; font-weight: 800; color: var(--verde); text-decoration: none; }
+  .logo span { color: var(--blanco); }
+  .nav-back { color: var(--texto-sec); text-decoration: none; font-size: .85rem; }
+
+  .wrap {
+    max-width: 420px; margin: 0 auto; padding: 3.5rem 1.5rem 4rem;
+    min-height: calc(100vh - 60px); display: flex; flex-direction: column; justify-content: center;
+  }
+
+  .badge {
+    display: inline-flex; align-items: center; gap: .4rem; align-self: flex-start;
+    background: rgba(29,185,84,.1); border: 1px solid rgba(29,185,84,.25);
+    color: var(--verde); font-size: .75rem; font-weight: 700;
+    padding: .3rem .9rem; border-radius: 999px; margin-bottom: 1.25rem;
+  }
+  h1 {
+    font-family: 'Syne', sans-serif; font-size: clamp(1.7rem, 6vw, 2.2rem);
+    font-weight: 800; letter-spacing: -1px; line-height: 1.15; margin-bottom: .5rem;
+  }
+  h1 span { color: var(--verde); }
+  .wrap > p.intro { color: var(--texto-sec); font-size: .9rem; margin-bottom: 2rem; }
+
+  .campo { margin-bottom: 1.1rem; }
+  .campo label { display: block; font-size: .82rem; font-weight: 600; margin-bottom: .4rem; color: var(--blanco); }
+  .campo input {
+    width: 100%; background: var(--gris-card); border: 1.5px solid var(--gris-brd);
+    border-radius: 12px; padding: .85rem 1rem; font-size: .95rem; color: var(--blanco);
+    font-family: 'Inter', sans-serif; outline: none; transition: border-color .2s;
+  }
+  .campo input:focus { border-color: var(--verde); }
+  .campo input::placeholder { color: #555; }
+
+  .error-box {
+    display: none; background: rgba(220,60,60,.1); border: 1px solid rgba(220,60,60,.3);
+    color: #ff6b6b; border-radius: 10px; padding: .75rem 1rem; font-size: .85rem; margin-bottom: 1rem;
+  }
+  .error-box.show { display: block; }
+
+  .btn-entrar {
+    width: 100%; background: var(--verde); color: #000; border: none;
+    border-radius: 12px; padding: 1rem; font-size: 1rem; font-weight: 700;
+    cursor: pointer; font-family: 'Inter', sans-serif; margin-top: .5rem;
+    transition: background .2s;
+  }
+  .btn-entrar:hover { background: #25e066; }
+  .btn-entrar:disabled { opacity: .5; cursor: not-allowed; }
+
+  .link-registro { text-align: center; margin-top: 1.5rem; font-size: .85rem; color: var(--texto-sec); }
+  .link-registro a { color: var(--verde); text-decoration: none; font-weight: 600; }
+</style>
+</head>
+<body>
+
+<nav>
+  <a href="/raiz.html" class="logo">RAIZ<span>.</span></a>
+  <a href="/raiz.html" class="nav-back">← Volver al inicio</a>
+</nav>
+
+<div class="wrap">
+  <div class="badge">🔐 Acceso de negocios</div>
+  <h1>Inicia <span>sesión</span> en tu panel.</h1>
+  <p class="intro">Entra con el correo y la contraseña que usaste al registrar tu negocio.</p>
+
+  <div class="error-box" id="errorBox"></div>
+
+  <form onsubmit="event.preventDefault(); iniciarSesion();">
+    <div class="campo">
+      <label>Correo electrónico</label>
+      <input type="email" id="email" placeholder="tunegocio@correo.com" required />
+    </div>
+    <div class="campo">
+      <label>Contraseña</label>
+      <input type="password" id="password" placeholder="Tu contraseña" required />
+    </div>
+    <button type="submit" class="btn-entrar" id="btnEntrar">Iniciar sesión →</button>
+  </form>
+
+  <div class="link-registro">
+    ¿Todavía no tienes un negocio en RAIZ? <a href="/raiz-registro.html">Regístralo aquí</a>
+  </div>
+</div>
+
+<script>
+  const API = 'https://raiz-backend.onrender.com';
+
+  async function iniciarSesion() {
+    const email = document.getElementById('email').value.trim();
+    const password = document.getElementById('password').value;
+    const errorBox = document.getElementById('errorBox');
+    const btn = document.getElementById('btnEntrar');
+
+    errorBox.classList.remove('show');
+    btn.disabled = true;
+    btn.textContent = 'Entrando...';
+
+    try {
+      const res = await fetch(`${API}/auth/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password })
+      });
+      const data = await res.json();
+
+      if (!res.ok) {
+        errorBox.textContent = data.detail || 'Correo o contraseña incorrectos.';
+        errorBox.classList.add('show');
+        btn.disabled = false;
+        btn.textContent = 'Iniciar sesión →';
+        return;
+      }
+
+      localStorage.setItem('raiz_token', data.token);
+      if (data.negocio_slug) {
+        localStorage.setItem('raiz_negocio_slug', data.negocio_slug);
+        window.location.href = `/raiz-dashboard.html?slug=${data.negocio_slug}`;
+      } else {
+        window.location.href = '/raiz.html';
+      }
+    } catch (e) {
+      errorBox.textContent = 'No se pudo conectar con el servidor. Intenta de nuevo.';
+      errorBox.classList.add('show');
+      btn.disabled = false;
+      btn.textContent = 'Iniciar sesión →';
+    }
+  }
+</script>
+
+</body>
+</html>
