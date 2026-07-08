@@ -357,7 +357,7 @@
     <div class="sb-item" onclick="window.open('/raiz-catalogo.html?slug=' + (new URLSearchParams(window.location.search).get('slug') || localStorage.getItem('raiz_negocio_slug') || ''))"><span class="sb-icon">🌱</span> Ver mi catálogo</div>
     <div class="sb-item" onclick="toast('🔗 Link copiado','success')"><span class="sb-icon">🔗</span> Compartir vitrina</div>
   </nav>
-  <div class="sb-footer">
+  <div class="sb-footer" onclick="cerrarSesion()" style="cursor:pointer;">
     <div class="sb-avatar">🍗</div>
     <span>Cerrar sesión</span>
   </div>
@@ -428,10 +428,10 @@
       <div class="productos-toolbar">
         <input class="search-input" placeholder="🔍 Buscar producto..." oninput="filtrarProductos(this.value)" />
         <button class="filter-btn active" onclick="filtrarCat('todos',this)">Todos</button>
-        <button class="filter-btn" onclick="filtrarCat('platos',this)">🍽️ Platos</button>
-        <button class="filter-btn" onclick="filtrarCat('acomp',this)">🌽 Acomp.</button>
-        <button class="filter-btn" onclick="filtrarCat('combos',this)">🎁 Combos</button>
-        <button class="filter-btn" onclick="filtrarCat('bebidas',this)">🥤 Bebidas</button>
+        <button class="filter-btn" onclick="filtrarCat('general',this)">📦 General</button>
+        <button class="filter-btn" onclick="filtrarCat('plato',this)">🍽️ Platos</button>
+        <button class="filter-btn" onclick="filtrarCat('acompanante',this)">🌽 Acomp.</button>
+        <button class="filter-btn" onclick="filtrarCat('bebida',this)">🥤 Bebidas</button>
       </div>
 
       <div class="card">
@@ -580,11 +580,11 @@
           <label>Categoría <span>*</span></label>
           <div class="select-wrap">
             <select id="prodCat">
-              <option value="platos">🍽️ Platos principales</option>
-              <option value="acomp">🌽 Acompañantes</option>
-              <option value="combos">🎁 Combos</option>
-              <option value="bebidas">🥤 Bebidas</option>
-              <option value="extras">✨ Extras</option>
+              <option value="general">📦 General</option>
+              <option value="plato">🍽️ Plato / Producto principal</option>
+              <option value="bebida">🥤 Bebida</option>
+              <option value="acompanante">🌽 Acompañante</option>
+              <option value="extra">✨ Extra</option>
             </select>
           </div>
         </div>
@@ -609,20 +609,25 @@
 
 <script>
   const API = 'https://raiz-backend.onrender.com';
+  let NEGOCIO_ID = null;
+  let NEGOCIO_SLUG = null;
 
   async function cargarNegocio() {
     const params = new URLSearchParams(window.location.search);
     const slug = params.get('slug') || localStorage.getItem('raiz_negocio_slug');
     if (!slug) return;
     try {
-      let negocio = null;
-      const res = await fetch(`${API}/negocios?slug=${encodeURIComponent(slug)}`);
+      const res = await fetch(`${API}/negocios/${encodeURIComponent(slug)}`);
+      if (!res.ok) return;
       const data = await res.json();
-      const lista = Array.isArray(data) ? data : (data.negocios || []);
-      negocio = lista.find(n => n.slug === slug) || lista[0];
+      const negocio = data.negocio;
       if (!negocio) return;
+
+      NEGOCIO_ID = negocio.id;
+      NEGOCIO_SLUG = negocio.slug;
+
       const nombre = negocio.nombre || 'Mi negocio';
-      const emoji = negocio.avatar_emoji || negocio.emoji || '🏪';
+      const emoji = negocio.avatar_emoji || '🏪';
       const plan = negocio.plan ? `Plan ${negocio.plan[0].toUpperCase()}${negocio.plan.slice(1)} · Activo` : 'Plan Vitrina · Activo';
       const sbNombre = document.getElementById('sbNombre');
       const sbAvatar = document.getElementById('sbAvatar');
@@ -631,18 +636,45 @@
       if (sbAvatar) sbAvatar.textContent = emoji;
       if (sbPlan) sbPlan.textContent = plan;
       localStorage.setItem('raiz_negocio_slug', slug);
+
+      // Cargar los productos reales de este negocio
+      if (Array.isArray(data.productos)) {
+        productos = data.productos.map(p => ({
+          id: p.id,
+          emoji: p.emoji || '📦',
+          nombre: p.nombre,
+          desc: p.descripcion || '',
+          precio: Number(p.precio),
+          cat: p.categoria || 'general',
+          vendidos: p.total_vendidos || 0,
+          activo: p.disponible !== false
+        }));
+        renderTabla();
+      }
     } catch (e) {
       console.log('No se pudo cargar el negocio real, se mantiene el estado por defecto.', e);
     }
   }
+  // ── Protección: exigir sesión iniciada ──
+  if (!localStorage.getItem('raiz_token')) {
+    window.location.href = '/raiz-login.html';
+  }
+
+  function cerrarSesion() {
+    localStorage.removeItem('raiz_token');
+    localStorage.removeItem('raiz_negocio_slug');
+    window.location.href = '/raiz-login.html';
+  }
+
   cargarNegocio();
 
   let productoSelEmoji = '🍗';
   let productos = [];
+  let editandoIndex = null;
 
   let catFiltro = 'todos';
 
-  const catLabels = { platos:'🍽️ Platos', acomp:'🌽 Acomp.', combos:'🎁 Combos', bebidas:'🥤 Bebidas', extras:'✨ Extras' };
+  const catLabels = { general:'📦 General', plato:'🍽️ Plato/Producto', bebida:'🥤 Bebida', acompanante:'🌽 Acomp.', extra:'✨ Extra' };
 
   function renderTabla(lista) {
     const tbody = document.getElementById('tbodyProductos');
@@ -682,13 +714,26 @@
     filtrarProductos(document.querySelector('.search-input').value);
   }
 
-  function toggleActivo(i) {
-    productos[i].activo = !productos[i].activo;
+  async function toggleActivo(i) {
+    const p = productos[i];
+    const nuevoEstado = !p.activo;
+    p.activo = nuevoEstado;
     renderTabla();
-    toast(productos[i].activo ? `✅ ${productos[i].nombre} activado` : `⏸ ${productos[i].nombre} desactivado`, productos[i].activo ? 'success' : '');
+    toast(nuevoEstado ? `✅ ${p.nombre} activado` : `⏸ ${p.nombre} desactivado`, nuevoEstado ? 'success' : '');
+    if (!p.id) return;
+    try {
+      await fetch(`${API}/productos/${p.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ disponible: nuevoEstado })
+      });
+    } catch (e) {
+      console.log('No se pudo actualizar en el servidor', e);
+    }
   }
 
   function editarProducto(i) {
+    editandoIndex = i;
     const p = productos[i];
     document.getElementById('modalTitulo').textContent = '✏️ Editar producto';
     document.getElementById('prodNombre').value = p.nombre;
@@ -700,15 +745,22 @@
     document.querySelector('.modal-overlay').classList.add('open');
   }
 
-  function eliminarProducto(i) {
-    if (confirm(`¿Eliminar "${productos[i].nombre}"?`)) {
-      productos.splice(i, 1);
-      renderTabla();
-      toast('🗑️ Producto eliminado', '');
+  async function eliminarProducto(i) {
+    const p = productos[i];
+    if (!confirm(`¿Eliminar "${p.nombre}"?`)) return;
+    productos.splice(i, 1);
+    renderTabla();
+    toast('🗑️ Producto eliminado', '');
+    if (!p.id) return;
+    try {
+      await fetch(`${API}/productos/${p.id}`, { method: 'DELETE' });
+    } catch (e) {
+      console.log('No se pudo eliminar en el servidor', e);
     }
   }
 
   function abrirModal() {
+    editandoIndex = null;
     document.getElementById('modalTitulo').textContent = '➕ Agregar producto';
     document.getElementById('prodNombre').value = '';
     document.getElementById('prodDesc').value = '';
@@ -731,21 +783,60 @@
     productoSelEmoji = emoji;
   }
 
-  function guardarProducto() {
+  async function guardarProducto() {
     const nombre = document.getElementById('prodNombre').value.trim();
     const precio = parseInt(document.getElementById('prodPrecio').value);
     if (!nombre || !precio) { toast('⚠️ Completa nombre y precio', 'error'); return; }
-    const nuevo = {
-      emoji: productoSelEmoji,
-      nombre, precio,
-      desc: document.getElementById('prodDesc').value,
-      cat: document.getElementById('prodCat').value,
-      vendidos: 0, activo: true
-    };
+    const desc = document.getElementById('prodDesc').value;
+    const cat = document.getElementById('prodCat').value;
+    const emoji = productoSelEmoji;
+
+    if (editandoIndex !== null) {
+      // ── Editar producto existente ──
+      const p = productos[editandoIndex];
+      p.nombre = nombre; p.precio = precio; p.desc = desc; p.cat = cat; p.emoji = emoji;
+      renderTabla();
+      cerrarModalBtn();
+      toast(`✅ "${nombre}" actualizado`, 'success');
+      if (p.id) {
+        try {
+          await fetch(`${API}/productos/${p.id}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ nombre, descripcion: desc, precio, categoria: cat, emoji })
+          });
+        } catch (e) {
+          console.log('No se pudo actualizar en el servidor', e);
+        }
+      }
+      return;
+    }
+
+    // ── Crear producto nuevo ──
+    const nuevo = { emoji, nombre, precio, desc, cat, vendidos: 0, activo: true, id: null };
     productos.unshift(nuevo);
     renderTabla();
     cerrarModalBtn();
     toast(`✅ "${nombre}" agregado al catálogo`, 'success');
+
+    if (!NEGOCIO_ID) {
+      toast('⚠️ No se pudo guardar en el servidor (negocio no identificado)', 'error');
+      return;
+    }
+    try {
+      const res = await fetch(`${API}/productos`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          negocio_id: NEGOCIO_ID, nombre, descripcion: desc,
+          precio, categoria: cat, emoji
+        })
+      });
+      const creado = await res.json();
+      if (creado && creado.id) nuevo.id = creado.id;
+    } catch (e) {
+      console.log('No se pudo guardar en el servidor', e);
+    }
   }
 
   function irA(screen, el) {
