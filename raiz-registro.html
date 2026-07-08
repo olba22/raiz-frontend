@@ -670,6 +670,13 @@
 
       <div class="resumen" id="resumenBox"></div>
 
+      <div class="paso-sub" style="margin-top:1.5rem;margin-bottom:.5rem;font-weight:700;color:var(--blanco);">Crea tu contraseña para acceder a tu panel</div>
+      <div class="campo">
+        <label>Contraseña</label>
+        <input class="input" id="password" type="password" placeholder="Mínimo 8 caracteres" minlength="8" required />
+        <div class="hint">Vas a usar el correo de la página anterior + esta contraseña para iniciar sesión.</div>
+      </div>
+
       <div class="campo">
         <label><input type="checkbox" id="terminos" style="accent-color:var(--verde);margin-right:.5rem;"> Acepto los <a href="#" style="color:var(--verde);">Términos y condiciones</a> de RAIZ</label>
       </div>
@@ -853,6 +860,11 @@
       alert('Acepta los términos y condiciones para continuar.');
       return;
     }
+    const password = document.getElementById('password').value;
+    if (!password || password.length < 8) {
+      alert('La contraseña debe tener al menos 8 caracteres.');
+      return;
+    }
     const btnPublicar = document.querySelector('.btn-next');
     btnPublicar.textContent = '⏳ Publicando...';
     btnPublicar.disabled = true;
@@ -865,6 +877,7 @@
       descripcion: document.getElementById('descripcion').value,
       whatsapp: document.getElementById('whatsapp').value,
       email: document.getElementById('email').value,
+      password,
       instagram: document.getElementById('instagram').value,
       facebook: document.getElementById('facebook').value,
       categoria: datos.categoria,
@@ -881,9 +894,21 @@
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
       });
-      if (!res.ok) throw new Error('Error al registrar');
+      const data = await res.json();
+      if (!res.ok) {
+        alert(data.detail || 'Hubo un problema al registrar tu negocio. Intenta de nuevo.');
+        btnPublicar.textContent = '🌱 Publicar mi vitrina';
+        btnPublicar.disabled = false;
+        return;
+      }
+      if (data.token) {
+        localStorage.setItem('raiz_token', data.token);
+      }
     } catch(e) {
-      console.log('Guardando localmente por ahora:', e);
+      alert('No se pudo conectar con el servidor. Revisa tu conexión e intenta de nuevo.');
+      btnPublicar.textContent = '🌱 Publicar mi vitrina';
+      btnPublicar.disabled = false;
+      return;
     }
 
     document.getElementById('stepsNav').style.display = 'none';
