@@ -327,12 +327,32 @@
       .pedidos-kanban { grid-template-columns: repeat(2,1fr); }
     }
     @media (max-width: 768px) {
-      .sidebar { display: none; }
+      .sidebar {
+        transform: translateX(-100%);
+        transition: transform .25s ease;
+        z-index: 200;
+      }
+      .sidebar.open { transform: translateX(0); }
       .main { margin-left: 0; }
+      .mobile-topbar { display: flex; }
+      .mobile-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.5); z-index: 150; }
+      .mobile-overlay.show { display: block; }
     }
+    .mobile-topbar {
+      display: none; align-items: center; gap: .9rem;
+      padding: .9rem 1.25rem; background: var(--gris-osc); border-bottom: 1px solid var(--gris-brd);
+      position: sticky; top: 0; z-index: 60;
+    }
+    .mobile-topbar button {
+      background: transparent; border: 1px solid var(--gris-brd); color: var(--blanco);
+      border-radius: 8px; width: 38px; height: 38px; font-size: 1.1rem; cursor: pointer;
+    }
+    .mobile-topbar .mt-logo { font-family: 'Syne', sans-serif; font-weight: 800; color: var(--verde); }
   </style>
 </head>
 <body>
+
+<div class="mobile-overlay" id="mobileOverlay" onclick="cerrarMenuMovil()"></div>
 
 <!-- SIDEBAR -->
 <div class="sidebar">
@@ -365,6 +385,10 @@
 
 <!-- MAIN -->
 <div class="main">
+  <div class="mobile-topbar">
+    <button onclick="abrirMenuMovil()">☰</button>
+    <span class="mt-logo">RAIZ.</span>
+  </div>
   <div class="topbar">
     <h1 id="topbarTitle">Resumen del negocio</h1>
     <div class="topbar-right">
@@ -666,6 +690,15 @@
     window.location.href = '/raiz-login.html';
   }
 
+  function abrirMenuMovil() {
+    document.querySelector('.sidebar').classList.add('open');
+    document.getElementById('mobileOverlay').classList.add('show');
+  }
+  function cerrarMenuMovil() {
+    document.querySelector('.sidebar').classList.remove('open');
+    document.getElementById('mobileOverlay').classList.remove('show');
+  }
+
   cargarNegocio();
 
   let productoSelEmoji = '🍗';
@@ -844,6 +877,7 @@
     document.getElementById('screen' + screen.charAt(0).toUpperCase() + screen.slice(1)).classList.add('active');
     document.querySelectorAll('.sb-item').forEach(i => i.classList.remove('active'));
     if (el) el.classList.add('active');
+    cerrarMenuMovil();
     const titulos = { resumen:'Resumen del negocio', pedidos:'Gestión de pedidos', productos:'Mis productos', promotores:'Mis promotores' };
     document.getElementById('topbarTitle').textContent = titulos[screen] || screen;
     const btnTopbar = document.getElementById('btnTopbar');
