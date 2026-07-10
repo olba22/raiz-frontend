@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>RAIZ — Recuperar contraseña</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --verde: #1DB954; --negro: #0A0A0A; --gris-osc: #111111;
+    --gris-card: #161616; --gris-brd: #222222; --blanco: #F5F5F5; --texto-sec: #888888;
+  }
+  body { font-family: 'Inter', sans-serif; background: var(--negro); color: var(--blanco); min-height: 100vh; }
+
+  nav {
+    position: sticky; top: 0; z-index: 100;
+    display: flex; align-items: center; justify-content: space-between;
+    padding: .85rem 2rem;
+    background: rgba(10,10,10,.92); backdrop-filter: blur(14px);
+    border-bottom: 1px solid var(--gris-brd);
+  }
+  .logo { font-family: 'Syne', sans-serif; font-size: 1.5rem; font-weight: 800; color: var(--verde); text-decoration: none; }
+  .logo span { color: var(--blanco); }
+  .nav-back { color: var(--texto-sec); text-decoration: none; font-size: .85rem; }
+
+  .wrap {
+    max-width: 420px; margin: 0 auto; padding: 3.5rem 1.5rem 4rem;
+    min-height: calc(100vh - 60px); display: flex; flex-direction: column; justify-content: center;
+  }
+
+  .badge {
+    display: inline-flex; align-items: center; gap: .4rem; align-self: flex-start;
+    background: rgba(29,185,84,.1); border: 1px solid rgba(29,185,84,.25);
+    color: var(--verde); font-size: .75rem; font-weight: 700;
+    padding: .3rem .9rem; border-radius: 999px; margin-bottom: 1.25rem;
+  }
+  h1 {
+    font-family: 'Syne', sans-serif; font-size: clamp(1.6rem, 6vw, 2.1rem);
+    font-weight: 800; letter-spacing: -1px; line-height: 1.15; margin-bottom: .5rem;
+  }
+  h1 span { color: var(--verde); }
+  .wrap > p.intro { color: var(--texto-sec); font-size: .9rem; margin-bottom: 2rem; line-height: 1.5; }
+
+  .campo { margin-bottom: 1.1rem; }
+  .campo label { display: block; font-size: .82rem; font-weight: 600; margin-bottom: .4rem; color: var(--blanco); }
+  .campo input {
+    width: 100%; background: var(--gris-card); border: 1.5px solid var(--gris-brd);
+    border-radius: 12px; padding: .85rem 1rem; font-size: .95rem; color: var(--blanco);
+    font-family: 'Inter', sans-serif; outline: none; transition: border-color .2s;
+  }
+  .campo input:focus { border-color: var(--verde); }
+  .campo input::placeholder { color: #555; }
+  .campo .hint { font-size: .75rem; color: var(--texto-sec); margin-top: .35rem; }
+
+  .msg-box {
+    display: none; border-radius: 10px; padding: .75rem 1rem; font-size: .85rem; margin-bottom: 1rem;
+  }
+  .msg-box.show { display: block; }
+  .msg-box.error { background: rgba(220,60,60,.1); border: 1px solid rgba(220,60,60,.3); color: #ff6b6b; }
+  .msg-box.success { background: rgba(29,185,84,.1); border: 1px solid rgba(29,185,84,.3); color: var(--verde); }
+
+  .btn-enviar {
+    width: 100%; background: var(--verde); color: #000; border: none;
+    border-radius: 12px; padding: 1rem; font-size: 1rem; font-weight: 700;
+    cursor: pointer; font-family: 'Inter', sans-serif; margin-top: .5rem;
+    transition: background .2s;
+  }
+  .btn-enviar:hover { background: #25e066; }
+  .btn-enviar:disabled { opacity: .5; cursor: not-allowed; }
+
+  .link-login { text-align: center; margin-top: 1.5rem; font-size: .85rem; color: var(--texto-sec); }
+  .link-login a { color: var(--verde); text-decoration: none; font-weight: 600; }
+</style>
+</head>
+<body>
+
+<nav>
+  <a href="/raiz.html" class="logo">RAIZ<span>.</span></a>
+  <a href="/raiz-login.html" class="nav-back">← Volver a iniciar sesión</a>
+</nav>
+
+<div class="wrap">
+  <div class="badge">🔑 Recuperar acceso</div>
+  <h1>Restablece tu <span>contraseña</span>.</h1>
+  <p class="intro">Confirma tu correo y el WhatsApp que usaste al registrar tu negocio, y elige una contraseña nueva.</p>
+
+  <div class="msg-box" id="msgBox"></div>
+
+  <form onsubmit="event.preventDefault(); recuperar();">
+    <div class="campo">
+      <label>Correo electrónico</label>
+      <input type="email" id="email" placeholder="tunegocio@correo.com" required />
+    </div>
+    <div class="campo">
+      <label>WhatsApp registrado</label>
+      <input type="tel" id="whatsapp" placeholder="Ej: 8091234567" required />
+      <div class="hint">El mismo número que pusiste al registrar tu negocio.</div>
+    </div>
+    <div class="campo">
+      <label>Nueva contraseña</label>
+      <input type="password" id="passwordNueva" placeholder="Mínimo 8 caracteres" minlength="8" required />
+    </div>
+    <button type="submit" class="btn-enviar" id="btnEnviar">Actualizar contraseña →</button>
+  </form>
+
+  <div class="link-login">
+    ¿Ya la recordaste? <a href="/raiz-login.html">Inicia sesión aquí</a>
+  </div>
+</div>
+
+<script>
+  const API = 'https://raiz-backend.onrender.com';
+
+  async function recuperar() {
+    const email = document.getElementById('email').value.trim();
+    const whatsapp = document.getElementById('whatsapp').value.trim();
+    const password_nueva = document.getElementById('passwordNueva').value;
+    const msgBox = document.getElementById('msgBox');
+    const btn = document.getElementById('btnEnviar');
+
+    msgBox.classList.remove('show', 'error', 'success');
+    btn.disabled = true;
+    btn.textContent = 'Actualizando...';
+
+    try {
+      const res = await fetch(`${API}/auth/recuperar`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, whatsapp, password_nueva })
+      });
+      const data = await res.json();
+
+      if (!res.ok) {
+        msgBox.textContent = data.detail || 'No se pudo actualizar la contraseña.';
+        msgBox.classList.add('show', 'error');
+        btn.disabled = false;
+        btn.textContent = 'Actualizar contraseña →';
+        return;
+      }
+
+      msgBox.textContent = '✅ Contraseña actualizada. Ya puedes iniciar sesión con ella.';
+      msgBox.classList.add('show', 'success');
+      btn.textContent = '¡Listo!';
+      setTimeout(() => { window.location.href = '/raiz-login.html'; }, 1800);
+    } catch (e) {
+      msgBox.textContent = 'No se pudo conectar con el servidor. Intenta de nuevo.';
+      msgBox.classList.add('show', 'error');
+      btn.disabled = false;
+      btn.textContent = 'Actualizar contraseña →';
+    }
+  }
+</script>
+
+</body>
+</html>
