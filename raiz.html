@@ -77,9 +77,24 @@
     cursor: pointer; font-family: 'Inter', sans-serif; white-space: nowrap;
   }
 
-  .hero-links { display: flex; justify-content: center; gap: 1.6rem; flex-wrap: wrap; }
-  .hero-links a { color: var(--texto-sec); font-size: .85rem; text-decoration: none; }
-  .hero-links a:hover { color: var(--verde); }
+  .rutas-rapidas {
+    display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem;
+    max-width: 900px; margin: 0 auto 3rem; padding: 0 1.5rem;
+  }
+  @media (max-width: 720px) { .rutas-rapidas { grid-template-columns: 1fr; } }
+  .ruta-rapida {
+    display: flex; flex-direction: column; align-items: flex-start; gap: .6rem;
+    background: var(--gris-card); border: 1px solid var(--gris-brd); border-radius: 18px;
+    padding: 1.4rem 1.3rem; text-decoration: none; color: var(--blanco);
+    transition: border-color .2s, transform .2s;
+  }
+  .ruta-rapida:hover { border-color: var(--verde); transform: translateY(-3px); }
+  .ruta-rapida-icon {
+    width: 42px; height: 42px; border-radius: 12px; background: rgba(29,185,84,.12);
+    display: flex; align-items: center; justify-content: center; font-size: 1.3rem;
+  }
+  .ruta-rapida strong { font-family: 'Syne', sans-serif; font-size: .95rem; font-weight: 800; }
+  .ruta-rapida span { font-size: .78rem; color: var(--texto-sec); line-height: 1.4; }
 
   /* STATS */
   .stats {
@@ -226,10 +241,22 @@
   </div>
 </div>
 
-<div class="hero-links" style="padding-bottom:3rem;">
-  <a href="/raiz-busqueda.html">📍 Buscar negocios por pueblo</a>
-  <a href="/raiz-registro.html">🏪 Soy dueño de un negocio</a>
-  <a href="/raiz-delivery.html">🛵 Quiero repartir con RAIZ</a>
+<div class="rutas-rapidas" style="margin-top:-1rem;">
+  <a href="/raiz-busqueda.html" class="ruta-rapida">
+    <div class="ruta-rapida-icon">📍</div>
+    <strong>Buscar por pueblo</strong>
+    <span>Encuentra negocios cerca de ti en toda República Dominicana.</span>
+  </a>
+  <a href="/raiz-registro.html" class="ruta-rapida">
+    <div class="ruta-rapida-icon">🏪</div>
+    <strong>Soy dueño de un negocio</strong>
+    <span>Publica tu vitrina digital gratis en minutos.</span>
+  </a>
+  <a href="/raiz-delivery.html" class="ruta-rapida">
+    <div class="ruta-rapida-icon">🛵</div>
+    <strong>Quiero ser conductor</strong>
+    <span>Genera ingresos entregando pedidos en tu zona.</span>
+  </a>
 </div>
 
 <div class="cta-negocio">
