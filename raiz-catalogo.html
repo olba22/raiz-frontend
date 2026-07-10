@@ -424,9 +424,7 @@
   </div>
 
   <div class="perfil-stats">
-    <div class="pstat"><strong>48</strong><span>productos</span></div>
-    <div class="pstat"><strong>340</strong><span>pedidos</span></div>
-    <div class="pstat"><strong>⭐ 4.9</strong><span>valoración</span></div>
+    <div class="pstat"><strong id="statProductos">0</strong><span>productos</span></div>
   </div>
 </div>
 
@@ -439,10 +437,6 @@
   <div class="highlight">
     <div class="highlight-ring"><div class="highlight-inner">🏷️</div></div>
     <span>Ofertas</span>
-  </div>
-  <div class="highlight">
-    <div class="highlight-ring"><div class="highlight-inner">⭐</div></div>
-    <span>Reseñas</span>
   </div>
   <div class="highlight">
     <div class="highlight-ring"><div class="highlight-inner">📍</div></div>
@@ -692,6 +686,8 @@
   // Render grid
   function renderGrid() {
     const grid = document.getElementById('productosGrid');
+    const statProductos = document.getElementById('statProductos');
+    if (statProductos) statProductos.textContent = productos.length;
     if (!productos.length) {
       grid.innerHTML = `
         <div style="grid-column:1/-1;text-align:center;padding:2.5rem 1rem;color:var(--texto-sec);">
