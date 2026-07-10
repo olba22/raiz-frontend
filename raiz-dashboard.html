@@ -395,7 +395,7 @@
       <button class="notif-btn" onclick="toast('🔔 Sin notificaciones nuevas','')">
         🔔
       </button>
-      <button class="btn-primary" onclick="abrirModal()" id="btnTopbar">+ Agregar producto</button>
+      <button class="btn-primary" onclick="accionTopbar()" id="btnTopbar">+ Agregar producto</button>
     </div>
   </div>
 
@@ -479,72 +479,21 @@
     <div class="screen" id="screenPedidos">
       <div class="pedidos-kanban">
         <div class="kanban-col">
-          <div class="kanban-title" style="color:var(--azul);">🔵 Nuevos <span class="kanban-count">4</span></div>
-          <div class="kanban-card" onclick="toast('📋 Pedido #RAZ-2851 abierto','')">
-            <div class="kanban-card-id">#RAZ-2851 · hace 5 min</div>
-            <div class="kanban-card-cliente">María González</div>
-            <div class="kanban-card-items">🍗 ×2 · 🎁 ×1 · 🥤 ×1</div>
-            <div class="kanban-card-footer"><span class="kanban-monto">RD$850</span><span class="kanban-time">📍 2.1 km</span></div>
-          </div>
-          <div class="kanban-card" onclick="toast('📋 Pedido #RAZ-2852 abierto','')">
-            <div class="kanban-card-id">#RAZ-2852 · hace 8 min</div>
-            <div class="kanban-card-cliente">Roberto Sánchez</div>
-            <div class="kanban-card-items">🍖 ×1 · 🫘 ×2</div>
-            <div class="kanban-card-footer"><span class="kanban-monto">RD$530</span><span class="kanban-time">📍 1.4 km</span></div>
-          </div>
-          <div class="kanban-card">
-            <div class="kanban-card-id">#RAZ-2853 · hace 12 min</div>
-            <div class="kanban-card-cliente">Carmen Reyes</div>
-            <div class="kanban-card-items">👨‍👩‍👧‍👦 ×1</div>
-            <div class="kanban-card-footer"><span class="kanban-monto">RD$1,100</span><span class="kanban-time">📍 3.2 km</span></div>
-          </div>
-          <div class="kanban-card">
-            <div class="kanban-card-id">#RAZ-2854 · hace 15 min</div>
-            <div class="kanban-card-cliente">Pedro Marte</div>
-            <div class="kanban-card-items">🍗 ×4 · 🥤 ×2</div>
-            <div class="kanban-card-footer"><span class="kanban-monto">RD$660</span><span class="kanban-time">📍 0.8 km</span></div>
-          </div>
+          <div class="kanban-title" style="color:var(--azul);">🔵 Nuevos <span class="kanban-count">0</span></div>
         </div>
         <div class="kanban-col">
-          <div class="kanban-title" style="color:var(--naranja);">🛵 En preparación <span class="kanban-count">2</span></div>
-          <div class="kanban-card">
-            <div class="kanban-card-id">#RAZ-2849 · hace 20 min</div>
-            <div class="kanban-card-cliente">Ana Martínez</div>
-            <div class="kanban-card-items">🎁 ×1 · 🍚 ×1 · 🧃 ×1</div>
-            <div class="kanban-card-footer"><span class="kanban-monto">RD$465</span><span class="kanban-time">⏱ ~8 min</span></div>
-          </div>
-          <div class="kanban-card">
-            <div class="kanban-card-id">#RAZ-2848 · hace 25 min</div>
-            <div class="kanban-card-cliente">José Féliz</div>
-            <div class="kanban-card-items">🍗 ×3 · 🌱 ×2</div>
-            <div class="kanban-card-footer"><span class="kanban-monto">RD$480</span><span class="kanban-time">⏱ ~5 min</span></div>
-          </div>
+          <div class="kanban-title" style="color:var(--naranja);">🛵 En preparación <span class="kanban-count">0</span></div>
         </div>
         <div class="kanban-col">
-          <div class="kanban-title" style="color:var(--naranja);">🚀 En camino <span class="kanban-count">1</span></div>
-          <div class="kanban-card">
-            <div class="kanban-card-id">#RAZ-2847 · hace 18 min</div>
-            <div class="kanban-card-cliente">Carlos Díaz</div>
-            <div class="kanban-card-items">🫘 ×1 · 🥤 ×2 · 🍠 ×1</div>
-            <div class="kanban-card-footer"><span class="kanban-monto">RD$340</span><span class="kanban-time">🛵 Juan P.</span></div>
-          </div>
+          <div class="kanban-title" style="color:var(--naranja);">🚀 En camino <span class="kanban-count">0</span></div>
         </div>
         <div class="kanban-col">
-          <div class="kanban-title" style="color:var(--verde);">✅ Entregados hoy <span class="kanban-count">17</span></div>
-          <div class="kanban-card" style="opacity:.7;">
-            <div class="kanban-card-id">#RAZ-2846 · hace 42 min</div>
-            <div class="kanban-card-cliente">Lucía Herrera</div>
-            <div class="kanban-card-items">🎁 ×2 · 🥤 ×2</div>
-            <div class="kanban-card-footer"><span class="kanban-monto">RD$820</span><span class="kanban-time">✅ 9:02 AM</span></div>
-          </div>
-          <div class="kanban-card" style="opacity:.7;">
-            <div class="kanban-card-id">#RAZ-2845 · hace 1h</div>
-            <div class="kanban-card-cliente">Miguel Torres</div>
-            <div class="kanban-card-items">🍗 ×1 · 🍚 ×1</div>
-            <div class="kanban-card-footer"><span class="kanban-monto">RD$200</span><span class="kanban-time">✅ 8:48 AM</span></div>
-          </div>
-          <div style="text-align:center;padding:.75rem;font-size:.78rem;color:var(--texto-sec);">+15 más entregados</div>
+          <div class="kanban-title" style="color:var(--verde);">✅ Entregados hoy <span class="kanban-count">0</span></div>
         </div>
+      </div>
+      <div style="text-align:center;padding:3rem 1rem;color:var(--texto-sec);">
+        <div style="font-size:2rem;margin-bottom:.5rem;">🛒</div>
+        <p>Aún no tienes pedidos. Cuando lleguen, van a aparecer aquí organizados por estado.</p>
       </div>
     </div>
 
@@ -792,6 +741,14 @@
     }
   }
 
+  function accionTopbar() {
+    if (pantallaActual === 'promotores') {
+      window.open('/raiz-distribuidor.html', '_blank');
+    } else {
+      abrirModal();
+    }
+  }
+
   function abrirModal() {
     editandoIndex = null;
     document.getElementById('modalTitulo').textContent = '➕ Agregar producto';
@@ -872,7 +829,10 @@
     }
   }
 
+  let pantallaActual = 'resumen';
+
   function irA(screen, el) {
+    pantallaActual = screen;
     document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
     document.getElementById('screen' + screen.charAt(0).toUpperCase() + screen.slice(1)).classList.add('active');
     document.querySelectorAll('.sb-item').forEach(i => i.classList.remove('active'));
