@@ -792,6 +792,11 @@
         <div class="drawer-linea"><span>Delivery</span><span>RD$ 100</span></div>
         <div class="drawer-linea total"><span>Total</span><span>RD$ ${(subtotal + 100).toLocaleString()}</span></div>
       </div>
+      <div style="display:flex;flex-direction:column;gap:.6rem;margin-bottom:1rem;">
+        <input type="text" id="clienteNombre" placeholder="Tu nombre" style="background:var(--gris-osc);border:1px solid var(--gris-brd);border-radius:10px;padding:.7rem .9rem;color:var(--blanco);font-size:.88rem;font-family:'Inter',sans-serif;" />
+        <input type="tel" id="clienteTelefono" placeholder="Tu WhatsApp" style="background:var(--gris-osc);border:1px solid var(--gris-brd);border-radius:10px;padding:.7rem .9rem;color:var(--blanco);font-size:.88rem;font-family:'Inter',sans-serif;" />
+        <input type="text" id="clienteDireccion" placeholder="Tu dirección" style="background:var(--gris-osc);border:1px solid var(--gris-brd);border-radius:10px;padding:.7rem .9rem;color:var(--blanco);font-size:.88rem;font-family:'Inter',sans-serif;" />
+      </div>
       <button class="btn-wa-drawer" onclick="enviarWhatsApp()">💬 Enviar pedido por WhatsApp</button>
       <p class="drawer-nota">Tu pedido completo se enviará directo al WhatsApp de ${NEGOCIO_NOMBRE} 🍗</p>
     `;
@@ -803,8 +808,18 @@
     actualizarBar();
   }
 
-  function enviarWhatsApp() {
+  async function enviarWhatsApp() {
     if (!carrito.length) return;
+
+    const nombre = document.getElementById('clienteNombre').value.trim();
+    const telefono = document.getElementById('clienteTelefono').value.trim();
+    const direccion = document.getElementById('clienteDireccion').value.trim();
+
+    if (!nombre || !telefono) {
+      mostrarToast('⚠️ Escribe tu nombre y WhatsApp para continuar');
+      return;
+    }
+
     const subtotal = carrito.reduce((s, i) => s + i.precio * i.qty, 0);
     let msg = '🌱 *Pedido desde RAIZ*\n\n';
     msg += `*🍗 ${NEGOCIO_NOMBRE}*\n`;
@@ -819,7 +834,35 @@
     if (distribuidor) {
       msg += `📣 Código de distribuidor: *${distribuidor}*\n\n`;
     }
-    msg += '📍 *Mi dirección:* ';
+    msg += `👤 *Cliente:* ${nombre} (${telefono})\n`;
+    msg += `📍 *Dirección:* ${direccion || '(la escribo aquí)'}`;
+
+    // Guardar el pedido real en la base de datos (no bloquea el envío por WhatsApp si falla)
+    if (NEGOCIO_ID) {
+      try {
+        await fetch(`${API}/pedidos`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            negocio_id: NEGOCIO_ID,
+            cliente_nombre: nombre,
+            cliente_telefono: telefono,
+            cliente_direccion: direccion || null,
+            items: carrito.map(i => ({
+              producto_id: i.id || null,
+              nombre_producto: i.nombre,
+              precio_unitario: i.precio,
+              cantidad: i.qty
+            })),
+            costo_delivery: 100,
+            promotor_codigo: distribuidor || null
+          })
+        });
+      } catch (e) {
+        console.log('No se pudo guardar el pedido en el servidor', e);
+      }
+    }
+
     window.open(`https://wa.me/${NEGOCIO_WHATSAPP}?text=${encodeURIComponent(msg)}`, '_blank');
   }
 
