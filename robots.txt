@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://raiz-inky-beta.vercel.app/sitemap.xml
