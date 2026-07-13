@@ -396,6 +396,7 @@
         🔔
       </button>
       <button class="btn-primary" onclick="accionTopbar()" id="btnTopbar">+ Agregar producto</button>
+      <button class="btn-primary" onclick="abrirCargaMasiva()" id="btnCargaMasiva" style="background:transparent;border:1px solid var(--gris-brd);color:var(--blanco);margin-left:.6rem;">📋 Cargar varios</button>
     </div>
   </div>
 
@@ -403,6 +404,7 @@
 
     <!-- ══ RESUMEN ══ -->
     <div class="screen active" id="screenResumen">
+      <button class="btn-primary" onclick="abrirFacturar()" style="margin-bottom:1.25rem;">🧾 Facturar venta local</button>
       <div class="kpi-grid">
         <div class="kpi-card">
           <div class="kpi-label">Ventas hoy <span>💰</span></div>
@@ -465,6 +467,7 @@
               <th>Producto</th>
               <th>Categoría</th>
               <th>Precio</th>
+              <th>Stock</th>
               <th>Vendidos</th>
               <th>Disponible</th>
               <th>Acciones</th>
@@ -491,7 +494,7 @@
           <div class="kanban-title" style="color:var(--verde);">✅ Entregados hoy <span class="kanban-count">0</span></div>
         </div>
       </div>
-      <div style="text-align:center;padding:3rem 1rem;color:var(--texto-sec);">
+      <div style="text-align:center;padding:3rem 1rem;color:var(--texto-sec);" id="pedidosVacio">
         <div style="font-size:2rem;margin-bottom:.5rem;">🛒</div>
         <p>Aún no tienes pedidos. Cuando lleguen, van a aparecer aquí organizados por estado.</p>
       </div>
@@ -550,16 +553,20 @@
           <input class="input" id="prodPrecio" type="number" placeholder="120" />
         </div>
         <div class="campo">
-          <label>Categoría <span>*</span></label>
-          <div class="select-wrap">
-            <select id="prodCat">
-              <option value="general">📦 General</option>
-              <option value="plato">🍽️ Plato / Producto principal</option>
-              <option value="bebida">🥤 Bebida</option>
-              <option value="acompanante">🌽 Acompañante</option>
-              <option value="extra">✨ Extra</option>
-            </select>
-          </div>
+          <label>Cantidad en inventario</label>
+          <input class="input" id="prodStock" type="number" placeholder="Déjalo vacío si no llevas control" />
+        </div>
+      </div>
+      <div class="campo">
+        <label>Categoría <span>*</span></label>
+        <div class="select-wrap">
+          <select id="prodCat">
+            <option value="general">📦 General</option>
+            <option value="plato">🍽️ Plato / Producto principal</option>
+            <option value="bebida">🥤 Bebida</option>
+            <option value="acompanante">🌽 Acompañante</option>
+            <option value="extra">✨ Extra</option>
+          </select>
         </div>
       </div>
       <div class="campo">
@@ -573,6 +580,53 @@
     <div class="modal-footer">
       <button class="btn-cancel" onclick="cerrarModalBtn()">Cancelar</button>
       <button class="btn-guardar" onclick="guardarProducto()">✓ Guardar producto</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL FACTURAR -->
+<div class="modal-overlay" id="facturarOverlay" onclick="if(event.target===this) cerrarFacturar()">
+  <div class="modal">
+    <div class="modal-header">
+      <h3>🧾 Facturar venta local</h3>
+      <button class="modal-close" onclick="cerrarFacturar()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="campo">
+        <label>Productos vendidos</label>
+        <div id="facturarLista" style="display:flex;flex-direction:column;gap:.5rem;max-height:260px;overflow-y:auto;"></div>
+      </div>
+      <div style="text-align:right;font-family:'Syne',sans-serif;font-weight:800;font-size:1.2rem;margin-top:1rem;">
+        Total: <span id="facturarTotal" style="color:var(--verde);">RD$0</span>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-cancel" onclick="cerrarFacturar()">Cancelar</button>
+      <button class="btn-guardar" onclick="confirmarFactura()">✓ Confirmar venta</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL CARGA MASIVA DE INVENTARIO -->
+<div class="modal-overlay" id="masivaOverlay" onclick="if(event.target===this) cerrarCargaMasiva()">
+  <div class="modal">
+    <div class="modal-header">
+      <h3>📋 Cargar varios productos</h3>
+      <button class="modal-close" onclick="cerrarCargaMasiva()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="campo">
+        <label>Un producto por línea, así: <code style="color:var(--verde);">nombre, precio, cantidad</code></label>
+        <textarea id="masivaTexto" rows="8" placeholder="Arroz 5lb, 150, 20
+Coca Cola 2L, 120, 15
+Jabón de baño, 60, 30" style="width:100%;background:var(--gris-osc);border:1px solid var(--gris-brd);border-radius:10px;padding:.8rem;color:var(--blanco);font-family:'Inter',sans-serif;font-size:.88rem;resize:vertical;"></textarea>
+        <div class="hint" style="font-size:.78rem;color:var(--texto-sec);margin-top:.4rem;">Si no llevas control de cantidad de un producto, deja la tercera parte vacía: <code>Corte de pelo, 300,</code></div>
+      </div>
+      <div id="masivaPreview" style="margin-top:1rem;font-size:.85rem;color:var(--texto-sec);"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-cancel" onclick="cerrarCargaMasiva()">Cancelar</button>
+      <button class="btn-guardar" onclick="confirmarCargaMasiva()">✓ Cargar todos</button>
     </div>
   </div>
 </div>
@@ -619,15 +673,113 @@
           desc: p.descripcion || '',
           precio: Number(p.precio),
           cat: p.categoria || 'general',
+          stock: p.stock,
           vendidos: p.total_vendidos || 0,
           activo: p.disponible !== false
         }));
         renderTabla();
       }
+
+      // Cargar los pedidos reales de este negocio
+      await cargarPedidos(slug);
     } catch (e) {
       console.log('No se pudo cargar el negocio real, se mantiene el estado por defecto.', e);
     }
   }
+
+  let pedidosReales = [];
+
+  async function cargarPedidos(slug) {
+    try {
+      const res = await fetch(`${API}/negocios/${encodeURIComponent(slug)}/pedidos`);
+      if (!res.ok) return;
+      pedidosReales = await res.json();
+      renderResumenPedidos();
+      renderKanban();
+    } catch (e) {
+      console.log('No se pudieron cargar los pedidos', e);
+    }
+  }
+
+  function renderResumenPedidos() {
+    const hoy = new Date().toDateString();
+    const pedidosHoy = pedidosReales.filter(p => new Date(p.created_at).toDateString() === hoy);
+    const ventasHoy = pedidosHoy.reduce((s, p) => s + Number(p.total), 0);
+
+    const kpiVentas = document.querySelector('.kpi-card:nth-child(1) .kpi-val');
+    const kpiPedidos = document.querySelector('.kpi-card:nth-child(2) .kpi-val');
+    if (kpiVentas) kpiVentas.textContent = `RD$${ventasHoy.toLocaleString()}`;
+    if (kpiPedidos) kpiPedidos.textContent = pedidosHoy.length;
+
+    const contRecientes = document.querySelector('#screenResumen .dash-grid .card:nth-child(1)');
+    if (contRecientes && pedidosReales.length) {
+      const ultimos = pedidosReales.slice(0, 5);
+      contRecientes.innerHTML = `
+        <div class="card-header"><h3>Pedidos recientes</h3></div>
+        ${ultimos.map(p => `
+          <div style="display:flex;justify-content:space-between;padding:.6rem 0;border-bottom:1px solid var(--gris-brd);font-size:.85rem;">
+            <div><strong>${p.cliente_nombre || 'Cliente'}</strong><br><span style="color:var(--texto-sec);font-size:.78rem;">${p.codigo} · ${p.canal === 'local' ? '🧾 Local' : '💬 WhatsApp'}</span></div>
+            <strong style="color:var(--verde);">RD$${Number(p.total).toLocaleString()}</strong>
+          </div>
+        `).join('')}
+      `;
+    }
+  }
+
+  function renderKanban() {
+    const contenedor = document.getElementById('pedidosVacio');
+    const kanban = document.querySelector('.pedidos-kanban');
+    if (!kanban) return;
+
+    const estados = {
+      nuevo: kanban.children[0],
+      preparacion: kanban.children[1],
+      camino: kanban.children[2],
+      entregado: kanban.children[3]
+    };
+
+    Object.entries(estados).forEach(([estado, col]) => {
+      if (!col) return;
+      const titulo = col.querySelector('.kanban-title');
+      const pedidosEstado = pedidosReales.filter(p => p.estado_actual === estado);
+      col.querySelectorAll('.kanban-card').forEach(c => c.remove());
+      const count = col.querySelector('.kanban-count');
+      if (count) count.textContent = pedidosEstado.length;
+      pedidosEstado.forEach(p => {
+        const card = document.createElement('div');
+        card.className = 'kanban-card';
+        card.innerHTML = `
+          <div class="kanban-card-id">${p.codigo} · ${new Date(p.created_at).toLocaleTimeString('es-DO',{hour:'2-digit',minute:'2-digit'})}</div>
+          <div class="kanban-card-cliente">${p.cliente_nombre || 'Cliente'}</div>
+          <div class="kanban-card-items">${(p.items || []).map(i => `${i.nombre_producto} ×${i.cantidad}`).join(' · ')}</div>
+          <div class="kanban-card-footer"><span class="kanban-monto">RD$${Number(p.total).toLocaleString()}</span></div>
+        `;
+        if (estado !== 'entregado') {
+          card.style.cursor = 'pointer';
+          card.onclick = () => avanzarPedido(p.id, estado);
+        }
+        col.appendChild(card);
+      });
+    });
+
+    if (contenedor) contenedor.style.display = pedidosReales.length ? 'none' : 'block';
+  }
+
+  async function avanzarPedido(pedidoId, estadoActual) {
+    const siguiente = { nuevo: 'preparacion', preparacion: 'camino', camino: 'entregado' }[estadoActual];
+    if (!siguiente) return;
+    try {
+      await fetch(`${API}/pedidos/${pedidoId}/estado`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ estado_actual: siguiente })
+      });
+      const slug = NEGOCIO_SLUG || localStorage.getItem('raiz_negocio_slug');
+      await cargarPedidos(slug);
+      toast('✅ Pedido actualizado', 'success');
+    } catch (e) {
+      toast('⚠️ No se pudo actualizar', 'error');
+    }
   // ── Protección: exigir sesión iniciada ──
   if (!localStorage.getItem('raiz_token')) {
     window.location.href = '/raiz-login.html';
@@ -662,7 +814,7 @@
     const tbody = document.getElementById('tbodyProductos');
     if (!lista) lista = productos;
     if (!lista.length) {
-      tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;padding:2.5rem 1rem;color:var(--texto-sec);">📦 Aún no has agregado productos.<br>Toca "+ Agregar producto" para empezar.</td></tr>`;
+      tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;padding:2.5rem 1rem;color:var(--texto-sec);">📦 Aún no has agregado productos.<br>Toca "+ Agregar producto" para empezar.</td></tr>`;
       return;
     }
     tbody.innerHTML = lista.map((p, i) => `
@@ -670,6 +822,7 @@
         <td><div class="prod-td-name"><div class="prod-td-emoji">${p.emoji}</div><div><strong>${p.nombre}</strong><span>${p.desc}</span></div></div></td>
         <td>${catLabels[p.cat] || p.cat}</td>
         <td class="precio-td">RD$ ${p.precio.toLocaleString()}</td>
+        <td>${p.stock === null || p.stock === undefined ? '<span style="color:var(--texto-sec);">—</span>' : (p.stock <= 3 ? `<span style="color:var(--naranja);font-weight:700;">${p.stock} ⚠️</span>` : p.stock)}</td>
         <td>${p.vendidos}</td>
         <td><div class="disponible-toggle-sm ${p.activo?'on':''}" onclick="toggleActivo(${i})"></div></td>
         <td>
@@ -721,6 +874,7 @@
     document.getElementById('prodNombre').value = p.nombre;
     document.getElementById('prodDesc').value = p.desc;
     document.getElementById('prodPrecio').value = p.precio;
+    document.getElementById('prodStock').value = p.stock ?? '';
     document.getElementById('prodCat').value = p.cat;
     productoSelEmoji = p.emoji;
     document.querySelectorAll('.emoji-opt').forEach(e => e.classList.remove('sel'));
@@ -755,6 +909,7 @@
     document.getElementById('prodNombre').value = '';
     document.getElementById('prodDesc').value = '';
     document.getElementById('prodPrecio').value = '';
+    document.getElementById('prodStock').value = '';
     productoSelEmoji = '🍗';
     document.querySelectorAll('.emoji-opt').forEach((e,i) => e.classList.toggle('sel', i===0));
     document.querySelector('.modal-overlay').classList.add('open');
@@ -780,11 +935,13 @@
     const desc = document.getElementById('prodDesc').value;
     const cat = document.getElementById('prodCat').value;
     const emoji = productoSelEmoji;
+    const stockValor = document.getElementById('prodStock').value;
+    const stock = stockValor === '' ? null : parseInt(stockValor);
 
     if (editandoIndex !== null) {
       // ── Editar producto existente ──
       const p = productos[editandoIndex];
-      p.nombre = nombre; p.precio = precio; p.desc = desc; p.cat = cat; p.emoji = emoji;
+      p.nombre = nombre; p.precio = precio; p.desc = desc; p.cat = cat; p.emoji = emoji; p.stock = stock;
       renderTabla();
       cerrarModalBtn();
       toast(`✅ "${nombre}" actualizado`, 'success');
@@ -793,7 +950,7 @@
           await fetch(`${API}/productos/${p.id}`, {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ nombre, descripcion: desc, precio, categoria: cat, emoji })
+            body: JSON.stringify({ nombre, descripcion: desc, precio, categoria: cat, emoji, stock })
           });
         } catch (e) {
           console.log('No se pudo actualizar en el servidor', e);
@@ -803,7 +960,7 @@
     }
 
     // ── Crear producto nuevo ──
-    const nuevo = { emoji, nombre, precio, desc, cat, vendidos: 0, activo: true, id: null };
+    const nuevo = { emoji, nombre, precio, desc, cat, stock, vendidos: 0, activo: true, id: null };
     productos.unshift(nuevo);
     renderTabla();
     cerrarModalBtn();
@@ -819,13 +976,146 @@
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           negocio_id: NEGOCIO_ID, nombre, descripcion: desc,
-          precio, categoria: cat, emoji
+          precio, categoria: cat, emoji, stock
         })
       });
       const creado = await res.json();
       if (creado && creado.id) nuevo.id = creado.id;
     } catch (e) {
       console.log('No se pudo guardar en el servidor', e);
+    }
+  }
+
+  let facturaCantidades = {};
+
+  function abrirFacturar() {
+    facturaCantidades = {};
+    renderFacturarLista();
+    document.getElementById('facturarOverlay').classList.add('open');
+  }
+  function cerrarFacturar() {
+    document.getElementById('facturarOverlay').classList.remove('open');
+  }
+
+  function abrirCargaMasiva() {
+    document.getElementById('masivaTexto').value = '';
+    document.getElementById('masivaPreview').textContent = '';
+    document.getElementById('masivaOverlay').classList.add('open');
+  }
+  function cerrarCargaMasiva() {
+    document.getElementById('masivaOverlay').classList.remove('open');
+  }
+
+  function parsearLineasMasiva() {
+    const texto = document.getElementById('masivaTexto').value;
+    return texto.split('\n')
+      .map(l => l.trim())
+      .filter(l => l.length)
+      .map(l => {
+        const partes = l.split(',').map(p => p.trim());
+        const nombre = partes[0] || '';
+        const precio = parseFloat(partes[1]);
+        const stock = (partes[2] === undefined || partes[2] === '') ? null : parseInt(partes[2]);
+        return { nombre, precio, stock };
+      })
+      .filter(p => p.nombre && !isNaN(p.precio));
+  }
+
+  async function confirmarCargaMasiva() {
+    const items = parsearLineasMasiva();
+    const preview = document.getElementById('masivaPreview');
+    if (!items.length) {
+      preview.textContent = '⚠️ No hay productos válidos para cargar. Revisa el formato.';
+      return;
+    }
+    if (!NEGOCIO_ID) {
+      preview.textContent = '⚠️ No se pudo identificar tu negocio. Recarga la página e intenta de nuevo.';
+      return;
+    }
+    preview.textContent = `Cargando ${items.length} productos...`;
+    try {
+      const res = await fetch(`${API}/productos/masivo`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          negocio_id: NEGOCIO_ID,
+          productos: items.map(i => ({ nombre: i.nombre, precio: i.precio, stock: i.stock, categoria: 'general', emoji: '📦' }))
+        })
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        preview.textContent = '⚠️ ' + (data.detail || 'No se pudo completar la carga.');
+        return;
+      }
+      const creados = data.productos || data;
+      creados.forEach(p => {
+        productos.unshift({
+          id: p.id, emoji: p.emoji || '📦', nombre: p.nombre,
+          desc: '', precio: Number(p.precio), cat: p.categoria || 'general',
+          vendidos: 0, activo: true, stock: p.stock
+        });
+      });
+      renderTabla();
+      toast(`✅ ${creados.length} productos cargados`, 'success');
+      cerrarCargaMasiva();
+    } catch (e) {
+      preview.textContent = '⚠️ No se pudo conectar con el servidor.';
+    }
+  }
+
+  function renderFacturarLista() {
+    const cont = document.getElementById('facturarLista');
+    if (!productos.length) {
+      cont.innerHTML = `<p style="color:var(--texto-sec);font-size:.85rem;">Agrega productos primero en la pestaña "Productos".</p>`;
+      return;
+    }
+    cont.innerHTML = productos.map((p, i) => `
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:.6rem;padding:.5rem 0;border-bottom:1px solid var(--gris-brd);">
+        <div style="flex:1;">
+          <div style="font-size:.88rem;">${p.emoji} ${p.nombre}</div>
+          <div style="font-size:.75rem;color:var(--texto-sec);">RD$${p.precio.toLocaleString()} ${p.stock != null ? `· ${p.stock} disp.` : ''}</div>
+        </div>
+        <input type="number" min="0" value="0" style="width:60px;background:var(--gris-osc);border:1px solid var(--gris-brd);border-radius:8px;padding:.4rem;color:var(--blanco);text-align:center;"
+          onchange="facturaCantidades[${i}] = parseInt(this.value)||0; actualizarTotalFacturar();" />
+      </div>
+    `).join('');
+    actualizarTotalFacturar();
+  }
+
+  function actualizarTotalFacturar() {
+    let total = 0;
+    productos.forEach((p, i) => { total += (facturaCantidades[i] || 0) * p.precio; });
+    document.getElementById('facturarTotal').textContent = `RD$${total.toLocaleString()}`;
+  }
+
+  async function confirmarFactura() {
+    const items = [];
+    productos.forEach((p, i) => {
+      const cant = facturaCantidades[i] || 0;
+      if (cant > 0) items.push({ producto_id: p.id || null, nombre_producto: p.nombre, precio_unitario: p.precio, cantidad: cant });
+    });
+    if (!items.length) { toast('⚠️ Selecciona al menos un producto', 'error'); return; }
+
+    try {
+      const res = await fetch(`${API}/pedidos`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          negocio_id: NEGOCIO_ID,
+          items,
+          costo_delivery: 0,
+          canal: 'local',
+          notas: 'Venta facturada en mostrador'
+        })
+      });
+      const data = await res.json();
+      if (!res.ok) { toast(data.detail || 'No se pudo facturar', 'error'); return; }
+      toast(`✅ Venta facturada — ${data.codigo}`, 'success');
+      cerrarFacturar();
+      const slug = NEGOCIO_SLUG || localStorage.getItem('raiz_negocio_slug');
+      await cargarPedidos(slug);
+    } catch (e) {
+      toast('⚠️ No se pudo conectar con el servidor', 'error');
     }
   }
 
@@ -843,6 +1133,8 @@
     const btnTopbar = document.getElementById('btnTopbar');
     btnTopbar.style.display = screen === 'productos' ? 'flex' : 'flex';
     btnTopbar.textContent = screen === 'promotores' ? '+ Invitar promotor' : '+ Agregar producto';
+    const btnMasiva = document.getElementById('btnCargaMasiva');
+    if (btnMasiva) btnMasiva.style.display = screen === 'productos' ? 'inline-block' : 'none';
     if (screen === 'productos') renderTabla();
   }
 
