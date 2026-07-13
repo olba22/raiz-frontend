@@ -780,6 +780,8 @@ Jabón de baño, 60, 30" style="width:100%;background:var(--gris-osc);border:1px
     } catch (e) {
       toast('⚠️ No se pudo actualizar', 'error');
     }
+  }
+
   // ── Protección: exigir sesión iniciada ──
   if (!localStorage.getItem('raiz_token')) {
     window.location.href = '/raiz-login.html';
