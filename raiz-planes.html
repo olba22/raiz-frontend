@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>RAIZ — Planes para tu negocio</title>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --verde: #1DB954; --negro: #0A0A0A; --gris-osc: #111111;
+      --gris-card: #161616; --gris-brd: #222222; --blanco: #F5F5F5;
+      --texto-sec: #888888; --naranja: #FF6B00; --rojo: #ff4444; --azul: #3b82f6;
+    }
+    html { scroll-behavior: smooth; }
+    body {
+      font-family: 'Inter', sans-serif; background: var(--negro); color: var(--blanco);
+      min-height: 100vh; padding: 2rem 1.25rem;
+    }
+    .topbar { max-width: 1000px; margin: 0 auto 2rem; display: flex; align-items: center; justify-content: space-between; }
+    .logo { font-family: 'Syne', sans-serif; font-size: 1.4rem; font-weight: 800; color: var(--verde); cursor: pointer; }
+    .logo span { color: var(--blanco); }
+    .volver { font-size: .85rem; color: var(--texto-sec); text-decoration: none; cursor: pointer; }
+    .volver:hover { color: var(--blanco); }
+
+    .encabezado { max-width: 700px; margin: 0 auto 2.5rem; text-align: center; }
+    .encabezado h1 { font-family: 'Syne', sans-serif; font-size: 2rem; font-weight: 800; margin-bottom: .6rem; }
+    .encabezado p { color: var(--texto-sec); font-size: .95rem; line-height: 1.6; }
+    .encabezado strong { color: var(--verde); }
+
+    .planes-grid {
+      max-width: 1000px; margin: 0 auto; display: grid;
+      grid-template-columns: repeat(3, 1fr); gap: 1.25rem;
+    }
+    .plan-card {
+      background: var(--gris-card); border: 1px solid var(--gris-brd);
+      border-radius: 20px; padding: 1.75rem; display: flex; flex-direction: column;
+      position: relative;
+    }
+    .plan-card.destacado { border-color: var(--verde); }
+    .plan-badge {
+      position: absolute; top: -13px; left: 50%; transform: translateX(-50%);
+      background: var(--verde); color: var(--negro); font-size: .68rem; font-weight: 800;
+      padding: .3rem .9rem; border-radius: 999px; white-space: nowrap;
+    }
+    .plan-nombre { font-family: 'Syne', sans-serif; font-size: 1.15rem; font-weight: 800; margin-bottom: .3rem; }
+    .plan-precio { font-family: 'Syne', sans-serif; font-size: 2rem; font-weight: 800; color: var(--verde); margin-bottom: .1rem; }
+    .plan-precio span { font-size: .85rem; color: var(--texto-sec); font-weight: 500; font-family: 'Inter', sans-serif; }
+    .plan-desc { font-size: .8rem; color: var(--texto-sec); margin-bottom: 1.4rem; min-height: 34px; }
+    .plan-lista { list-style: none; margin-bottom: 1.5rem; flex: 1; }
+    .plan-lista li { font-size: .85rem; padding: .45rem 0; display: flex; align-items: flex-start; gap: .55rem; border-bottom: 1px solid var(--gris-brd); }
+    .plan-lista li:last-child { border-bottom: none; }
+    .plan-lista li .check { color: var(--verde); flex-shrink: 0; }
+    .btn-plan {
+      width: 100%; border: none; border-radius: 10px; padding: .8rem; cursor: pointer;
+      font-family: 'Inter', sans-serif; font-size: .9rem; font-weight: 700; transition: all .2s;
+      text-align: center; text-decoration: none; display: block;
+    }
+    .btn-plan.primario { background: var(--verde); color: var(--negro); }
+    .btn-plan.primario:hover { background: #25e066; }
+    .btn-plan.secundario { background: transparent; color: var(--texto-sec); border: 1px solid var(--gris-brd); }
+    .btn-plan.secundario:hover { border-color: var(--blanco); color: var(--blanco); }
+    .btn-plan.activo { background: rgba(29,185,84,.12); color: var(--verde); cursor: default; border: 1px solid var(--verde); }
+
+    .info-pago {
+      max-width: 700px; margin: 2.5rem auto 0; background: var(--gris-card);
+      border: 1px solid var(--gris-brd); border-radius: 16px; padding: 1.5rem 1.75rem;
+      font-size: .85rem; color: var(--texto-sec); line-height: 1.7; text-align: center;
+    }
+    .info-pago strong { color: var(--blanco); }
+
+    @media (max-width: 800px) {
+      .planes-grid { grid-template-columns: 1fr; }
+      .encabezado h1 { font-size: 1.5rem; }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="topbar">
+    <div class="logo" onclick="window.location.href='/raiz.html'">RAIZ<span>.</span></div>
+    <a class="volver" onclick="volverAlDashboard()">← Volver a mi dashboard</a>
+  </div>
+
+  <div class="encabezado">
+    <h1>Elige el plan para tu negocio</h1>
+    <p id="negocioTexto">Compara los planes y actualiza cuando quieras — sin contratos, cancela cuando quieras.</p>
+  </div>
+
+  <div class="planes-grid" id="planesGrid">
+
+    <div class="plan-card" data-plan="vitrina">
+      <div class="plan-nombre">🌱 Vitrina</div>
+      <div class="plan-precio">RD$0 <span>/mes</span></div>
+      <div class="plan-desc">Para empezar a vender online, gratis para siempre.</div>
+      <ul class="plan-lista">
+        <li><span class="check">✓</span> Hasta 15 productos</li>
+        <li><span class="check">✓</span> Catálogo público con tu link</li>
+        <li><span class="check">✓</span> Recibir pedidos por WhatsApp</li>
+        <li><span class="check">✓</span> Facturar ventas locales</li>
+      </ul>
+      <button class="btn-plan secundario" id="btnVitrina" onclick="elegirPlan('vitrina')">Seleccionar</button>
+    </div>
+
+    <div class="plan-card destacado" data-plan="pro">
+      <div class="plan-badge">MÁS POPULAR</div>
+      <div class="plan-nombre">⚡ Pro</div>
+      <div class="plan-precio">RD$500 <span>/mes</span></div>
+      <div class="plan-desc">Para negocios que quieren crecer y vender más.</div>
+      <ul class="plan-lista">
+        <li><span class="check">✓</span> Productos ilimitados</li>
+        <li><span class="check">✓</span> Apareces primero en búsquedas</li>
+        <li><span class="check">✓</span> Estadísticas de ventas</li>
+        <li><span class="check">✓</span> Todo lo de Vitrina</li>
+      </ul>
+      <button class="btn-plan primario" id="btnPro" onclick="elegirPlan('pro')">Actualizar a Pro</button>
+    </div>
+
+    <div class="plan-card" data-plan="premium">
+      <div class="plan-nombre">👑 Premium</div>
+      <div class="plan-precio">RD$1,200 <span>/mes</span></div>
+      <div class="plan-desc">Máxima visibilidad para tu negocio en RAIZ.</div>
+      <ul class="plan-lista">
+        <li><span class="check">✓</span> Banner destacado en portada</li>
+        <li><span class="check">✓</span> Soporte prioritario</li>
+        <li><span class="check">✓</span> Todo lo de Pro</li>
+      </ul>
+      <button class="btn-plan secundario" id="btnPremium" onclick="elegirPlan('premium')">Actualizar a Premium</button>
+    </div>
+
+  </div>
+
+  <div class="info-pago">
+    💬 Al elegir un plan pagado, se abre WhatsApp con un mensaje ya escrito.<br>
+    Te respondemos ahí con los datos para pagar por transferencia (<strong>Banreservas</strong> o <strong>Banco Popular</strong>).<br>
+    Tu plan se activa en cuanto confirmamos el pago.
+  </div>
+
+  <script>
+    const API = 'https://raiz-backend.onrender.com';
+    const WHATSAPP_SOPORTE = '18495778946'; // Formato internacional para wa.me
+
+    let NEGOCIO = null;
+
+    async function cargarNegocioActual() {
+      const params = new URLSearchParams(window.location.search);
+      const slug = params.get('slug') || localStorage.getItem('raiz_negocio_slug');
+      if (!slug) return;
+      try {
+        const res = await fetch(`${API}/negocios/${encodeURIComponent(slug)}`);
+        if (!res.ok) return;
+        const data = await res.json();
+        NEGOCIO = data.negocio;
+        if (NEGOCIO) {
+          document.getElementById('negocioTexto').textContent =
+            `Plan actual de "${NEGOCIO.nombre}": ${etiquetaPlan(NEGOCIO.plan)}. Compara y actualiza cuando quieras.`;
+          marcarPlanActivo(NEGOCIO.plan);
+        }
+      } catch (e) {
+        console.log('No se pudo cargar el negocio', e);
+      }
+    }
+
+    function etiquetaPlan(plan) {
+      const nombres = { vitrina: 'Vitrina (gratis)', pro: 'Pro', premium: 'Premium' };
+      return nombres[plan] || 'Vitrina (gratis)';
+    }
+
+    function marcarPlanActivo(planActual) {
+      const botones = { vitrina: 'btnVitrina', pro: 'btnPro', premium: 'btnPremium' };
+      Object.entries(botones).forEach(([plan, id]) => {
+        const btn = document.getElementById(id);
+        if (plan === planActual) {
+          btn.textContent = '✓ Tu plan actual';
+          btn.className = 'btn-plan activo';
+          btn.onclick = null;
+        }
+      });
+    }
+
+    function elegirPlan(plan) {
+      if (plan === 'vitrina') {
+        // El plan gratis no necesita pago, solo confirmar por WhatsApp si ya tenía uno pagado
+        abrirWhatsApp(plan);
+        return;
+      }
+      abrirWhatsApp(plan);
+    }
+
+    function abrirWhatsApp(plan) {
+      const nombresPlan = { pro: 'Pro (RD$500/mes)', premium: 'Premium (RD$1,200/mes)', vitrina: 'Vitrina (gratis)' };
+      const nombreNegocio = NEGOCIO ? NEGOCIO.nombre : '(mi negocio en RAIZ)';
+      const slug = NEGOCIO ? NEGOCIO.slug : (localStorage.getItem('raiz_negocio_slug') || '');
+      const mensaje = `Hola, quiero actualizar mi negocio "${nombreNegocio}" (${slug}) al plan ${nombresPlan[plan]} en RAIZ.`;
+      const url = `https://wa.me/${WHATSAPP_SOPORTE}?text=${encodeURIComponent(mensaje)}`;
+      window.open(url, '_blank');
+    }
+
+    function volverAlDashboard() {
+      const slug = (NEGOCIO && NEGOCIO.slug) || localStorage.getItem('raiz_negocio_slug') || '';
+      window.location.href = `/raiz-dashboard.html?slug=${encodeURIComponent(slug)}`;
+    }
+
+    cargarNegocioActual();
+  </script>
+</body>
+</html>
