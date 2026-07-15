@@ -593,8 +593,13 @@
     </div>
     <div class="modal-body">
       <div class="campo">
-        <label>Productos vendidos</label>
-        <div id="facturarLista" style="display:flex;flex-direction:column;gap:.5rem;max-height:260px;overflow-y:auto;"></div>
+        <label>Buscar producto</label>
+        <input class="input" id="facturarBuscar" type="text" placeholder="Escribe el nombre del producto..." oninput="renderFacturarResultados(this.value)" autocomplete="off" />
+        <div id="facturarResultados" style="margin-top:.5rem;"></div>
+      </div>
+      <div class="campo">
+        <label>Carrito de venta</label>
+        <div id="facturarCarrito" style="display:flex;flex-direction:column;gap:.5rem;max-height:260px;overflow-y:auto;"></div>
       </div>
       <div style="text-align:right;font-family:'Syne',sans-serif;font-weight:800;font-size:1.2rem;margin-top:1rem;">
         Total: <span id="facturarTotal" style="color:var(--verde);">RD$0</span>
@@ -1042,15 +1047,86 @@
     }
   }
 
-  let facturaCantidades = {};
+  let facturaCarrito = []; // { idx, nombre, precio, cantidad }
 
   function abrirFacturar() {
-    facturaCantidades = {};
-    renderFacturarLista();
+    facturaCarrito = [];
+    document.getElementById('facturarBuscar').value = '';
+    document.getElementById('facturarResultados').innerHTML = '';
+    renderFacturarCarrito();
     document.getElementById('facturarOverlay').classList.add('open');
+    setTimeout(() => document.getElementById('facturarBuscar').focus(), 100);
   }
   function cerrarFacturar() {
     document.getElementById('facturarOverlay').classList.remove('open');
+  }
+
+  function renderFacturarResultados(q) {
+    const cont = document.getElementById('facturarResultados');
+    if (!q || !q.trim()) { cont.innerHTML = ''; return; }
+    const coincidencias = productos
+      .map((p, idx) => ({ p, idx }))
+      .filter(({ p }) => p.activo && p.nombre.toLowerCase().includes(q.toLowerCase()))
+      .slice(0, 6);
+    if (!coincidencias.length) {
+      cont.innerHTML = `<p style="font-size:.82rem;color:var(--texto-sec);padding:.4rem 0;">Sin resultados</p>`;
+      return;
+    }
+    cont.innerHTML = coincidencias.map(({ p, idx }) => `
+      <div onclick="agregarAlCarritoFactura(${idx})" style="display:flex;justify-content:space-between;align-items:center;padding:.6rem .8rem;border:1px solid var(--gris-brd);border-radius:9px;margin-bottom:.4rem;cursor:pointer;transition:border-color .15s;" onmouseover="this.style.borderColor='var(--verde)'" onmouseout="this.style.borderColor='var(--gris-brd)'">
+        <span style="font-size:.86rem;">${p.emoji} ${p.nombre}</span>
+        <strong style="color:var(--verde);font-size:.86rem;">RD$${p.precio.toLocaleString()}</strong>
+      </div>
+    `).join('');
+  }
+
+  function agregarAlCarritoFactura(idx) {
+    const p = productos[idx];
+    const existente = facturaCarrito.find(item => item.idx === idx);
+    if (existente) {
+      existente.cantidad += 1;
+    } else {
+      facturaCarrito.push({ idx, nombre: p.nombre, emoji: p.emoji, precio: p.precio, cantidad: 1 });
+    }
+    document.getElementById('facturarBuscar').value = '';
+    document.getElementById('facturarResultados').innerHTML = '';
+    document.getElementById('facturarBuscar').focus();
+    renderFacturarCarrito();
+  }
+
+  function cambiarCantidadCarrito(i, delta) {
+    facturaCarrito[i].cantidad += delta;
+    if (facturaCarrito[i].cantidad <= 0) facturaCarrito.splice(i, 1);
+    renderFacturarCarrito();
+  }
+
+  function quitarDelCarritoFactura(i) {
+    facturaCarrito.splice(i, 1);
+    renderFacturarCarrito();
+  }
+
+  function renderFacturarCarrito() {
+    const cont = document.getElementById('facturarCarrito');
+    if (!facturaCarrito.length) {
+      cont.innerHTML = `<p style="color:var(--texto-sec);font-size:.85rem;text-align:center;padding:1.5rem 0;">🔍 Busca arriba y toca un producto para agregarlo.</p>`;
+    } else {
+      cont.innerHTML = facturaCarrito.map((item, i) => `
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:.6rem;padding:.6rem 0;border-bottom:1px solid var(--gris-brd);">
+          <div style="flex:1;">
+            <div style="font-size:.88rem;">${item.emoji || '📦'} ${item.nombre}</div>
+            <div style="font-size:.75rem;color:var(--texto-sec);">RD$${item.precio.toLocaleString()} c/u</div>
+          </div>
+          <div style="display:flex;align-items:center;gap:.4rem;">
+            <button class="action-btn" onclick="cambiarCantidadCarrito(${i}, -1)">−</button>
+            <span style="min-width:22px;text-align:center;font-weight:700;">${item.cantidad}</span>
+            <button class="action-btn" onclick="cambiarCantidadCarrito(${i}, 1)">+</button>
+          </div>
+          <strong style="min-width:70px;text-align:right;color:var(--verde);">RD$${(item.cantidad * item.precio).toLocaleString()}</strong>
+          <button class="action-btn del" onclick="quitarDelCarritoFactura(${i})">🗑️</button>
+        </div>
+      `).join('');
+    }
+    actualizarTotalFacturar();
   }
 
   let masivaTipoActual = 'venta';
@@ -1232,38 +1308,18 @@
     }
   }
 
-  function renderFacturarLista() {
-    const cont = document.getElementById('facturarLista');
-    if (!productos.length) {
-      cont.innerHTML = `<p style="color:var(--texto-sec);font-size:.85rem;">Agrega productos primero en la pestaña "Productos".</p>`;
-      return;
-    }
-    cont.innerHTML = productos.map((p, i) => `
-      <div style="display:flex;align-items:center;justify-content:space-between;gap:.6rem;padding:.5rem 0;border-bottom:1px solid var(--gris-brd);">
-        <div style="flex:1;">
-          <div style="font-size:.88rem;">${p.emoji} ${p.nombre}</div>
-          <div style="font-size:.75rem;color:var(--texto-sec);">RD$${p.precio.toLocaleString()} ${p.stock != null ? `· ${p.stock} disp.` : ''}</div>
-        </div>
-        <input type="number" min="0" value="0" style="width:60px;background:var(--gris-osc);border:1px solid var(--gris-brd);border-radius:8px;padding:.4rem;color:var(--blanco);text-align:center;"
-          onchange="facturaCantidades[${i}] = parseInt(this.value)||0; actualizarTotalFacturar();" />
-      </div>
-    `).join('');
-    actualizarTotalFacturar();
-  }
-
   function actualizarTotalFacturar() {
     let total = 0;
-    productos.forEach((p, i) => { total += (facturaCantidades[i] || 0) * p.precio; });
+    facturaCarrito.forEach(item => { total += item.cantidad * item.precio; });
     document.getElementById('facturarTotal').textContent = `RD$${total.toLocaleString()}`;
   }
 
   async function confirmarFactura() {
-    const items = [];
-    productos.forEach((p, i) => {
-      const cant = facturaCantidades[i] || 0;
-      if (cant > 0) items.push({ producto_id: p.id || null, nombre_producto: p.nombre, precio_unitario: p.precio, cantidad: cant });
+    if (!facturaCarrito.length) { toast('⚠️ Agrega al menos un producto al carrito', 'error'); return; }
+    const items = facturaCarrito.map(item => {
+      const p = productos[item.idx];
+      return { producto_id: p.id || null, nombre_producto: item.nombre, precio_unitario: item.precio, cantidad: item.cantidad };
     });
-    if (!items.length) { toast('⚠️ Selecciona al menos un producto', 'error'); return; }
 
     try {
       const res = await fetch(`${API}/pedidos`, {
@@ -1283,6 +1339,7 @@
       cerrarFacturar();
       const slug = NEGOCIO_SLUG || localStorage.getItem('raiz_negocio_slug');
       await cargarPedidos(slug);
+      await cargarNegocio();
     } catch (e) {
       toast('⚠️ No se pudo conectar con el servidor', 'error');
     }
