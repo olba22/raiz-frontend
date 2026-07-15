@@ -370,6 +370,7 @@
     <div class="sb-item" onclick="irA('pedidos',this)"><span class="sb-icon">🛒</span> Pedidos</div>
     <div class="sb-item" onclick="irA('productos',this)"><span class="sb-icon">📦</span> Productos</div>
     <div class="sb-label">Negocio</div>
+    <div class="sb-item" onclick="irAPlanes()"><span class="sb-icon">⭐</span> Planes</div>
     <div class="sb-item" onclick="irA('promotores',this)"><span class="sb-icon">📣</span> Promotores</div>
     <div class="sb-item" onclick="toast('🚀 Próximamente','success')"><span class="sb-icon">📈</span> Estadísticas</div>
     <div class="sb-item" onclick="toast('🚀 Próximamente','success')"><span class="sb-icon">⚙️</span> Configuración</div>
@@ -840,6 +841,11 @@
   // ── Protección: exigir sesión iniciada ──
   if (!localStorage.getItem('raiz_token')) {
     window.location.href = '/raiz-login.html';
+  }
+
+  function irAPlanes() {
+    const slug = NEGOCIO_SLUG || localStorage.getItem('raiz_negocio_slug') || '';
+    window.location.href = `/raiz-planes.html?slug=${encodeURIComponent(slug)}`;
   }
 
   function cerrarSesion() {
