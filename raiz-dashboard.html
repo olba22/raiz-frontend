@@ -396,7 +396,7 @@
         🔔
       </button>
       <button class="btn-primary" onclick="accionTopbar()" id="btnTopbar">+ Agregar producto</button>
-      <button class="btn-primary" onclick="abrirCargaMasiva()" id="btnCargaMasiva" style="background:transparent;border:1px solid var(--gris-brd);color:var(--blanco);margin-left:.6rem;">📋 Cargar varios</button>
+      <button class="btn-primary" onclick="abrirCargaMasiva()" id="btnCargaMasiva" style="background:transparent;border:1px solid var(--gris-brd);color:var(--blanco);margin-left:.6rem;">📦 Cargar factura</button>
     </div>
   </div>
 
@@ -607,26 +607,55 @@
   </div>
 </div>
 
-<!-- MODAL CARGA MASIVA DE INVENTARIO -->
+<!-- MODAL CARGAR FACTURA (lector inteligente) -->
 <div class="modal-overlay" id="masivaOverlay" onclick="if(event.target===this) cerrarCargaMasiva()">
   <div class="modal">
     <div class="modal-header">
-      <h3>📋 Cargar varios productos</h3>
+      <h3>📦 Cargar factura</h3>
       <button class="modal-close" onclick="cerrarCargaMasiva()">✕</button>
     </div>
     <div class="modal-body">
-      <div class="campo">
-        <label>Un producto por línea, así: <code style="color:var(--verde);">nombre, precio, cantidad</code></label>
-        <textarea id="masivaTexto" rows="8" placeholder="Arroz 5lb, 150, 20
-Coca Cola 2L, 120, 15
-Jabón de baño, 60, 30" style="width:100%;background:var(--gris-osc);border:1px solid var(--gris-brd);border-radius:10px;padding:.8rem;color:var(--blanco);font-family:'Inter',sans-serif;font-size:.88rem;resize:vertical;"></textarea>
-        <div class="hint" style="font-size:.78rem;color:var(--texto-sec);margin-top:.4rem;">Si no llevas control de cantidad de un producto, deja la tercera parte vacía: <code>Corte de pelo, 300,</code></div>
+
+      <div id="masivaPaso1">
+        <div class="campo">
+          <label>¿Qué tipo de texto vas a pegar?</label>
+          <div class="select-wrap">
+            <select id="masivaTipo" onchange="cambiarTipoMasiva()">
+              <option value="venta">📋 Lista de precios de venta</option>
+              <option value="compra">🛒 Factura de compra a proveedor</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="campo" id="masivaCampoProveedor" style="display:none;">
+          <label>Proveedor (opcional)</label>
+          <input class="input" id="masivaProveedor" type="text" placeholder="Ej: Distribuidora Nacional" />
+        </div>
+
+        <div class="campo" id="masivaCampoMargen" style="display:none;">
+          <label>Margen de ganancia (%) <span>*</span></label>
+          <input class="input" id="masivaMargen" type="number" value="40" placeholder="Ej: 40" />
+          <div class="hint" style="font-size:.78rem;color:var(--texto-sec);margin-top:.4rem;">El precio de venta se calcula automático con este margen. Lo puedes editar producto por producto antes de guardar.</div>
+        </div>
+
+        <div class="campo">
+          <label>Pega el texto tal cual (lista, tabla o factura de compra)</label>
+          <textarea id="masivaTexto" rows="8" placeholder="Pega aquí tu lista de precios o tu factura de compra, sin reformatear nada..." style="width:100%;background:var(--gris-osc);border:1px solid var(--gris-brd);border-radius:10px;padding:.8rem;color:var(--blanco);font-family:'Inter',sans-serif;font-size:.88rem;resize:vertical;"></textarea>
+        </div>
       </div>
-      <div id="masivaPreview" style="margin-top:1rem;font-size:.85rem;color:var(--texto-sec);"></div>
+
+      <div id="masivaPaso2" style="display:none;">
+        <div class="campo">
+          <label>Revisa antes de guardar (puedes editar cualquier valor)</label>
+          <div id="masivaPreviewTabla" style="display:flex;flex-direction:column;gap:.6rem;max-height:340px;overflow-y:auto;"></div>
+        </div>
+      </div>
+
+      <div id="masivaMensaje" style="margin-top:1rem;font-size:.85rem;color:var(--texto-sec);"></div>
     </div>
     <div class="modal-footer">
       <button class="btn-cancel" onclick="cerrarCargaMasiva()">Cancelar</button>
-      <button class="btn-guardar" onclick="confirmarCargaMasiva()">✓ Cargar todos</button>
+      <button class="btn-guardar" id="masivaBtnPrincipal" onclick="interpretarFacturaMasiva()">🔍 Interpretar texto</button>
     </div>
   </div>
 </div>
@@ -1024,70 +1053,182 @@ Jabón de baño, 60, 30" style="width:100%;background:var(--gris-osc);border:1px
     document.getElementById('facturarOverlay').classList.remove('open');
   }
 
+  let masivaTipoActual = 'venta';
+  let masivaItemsPreview = [];
+
+  function cambiarTipoMasiva() {
+    masivaTipoActual = document.getElementById('masivaTipo').value;
+    const esCompra = masivaTipoActual === 'compra';
+    document.getElementById('masivaCampoMargen').style.display = esCompra ? 'block' : 'none';
+    document.getElementById('masivaCampoProveedor').style.display = esCompra ? 'block' : 'none';
+  }
+
   function abrirCargaMasiva() {
     document.getElementById('masivaTexto').value = '';
-    document.getElementById('masivaPreview').textContent = '';
+    document.getElementById('masivaMensaje').textContent = '';
+    document.getElementById('masivaTipo').value = 'venta';
+    document.getElementById('masivaProveedor').value = '';
+    document.getElementById('masivaMargen').value = 40;
+    cambiarTipoMasiva();
+    document.getElementById('masivaPaso1').style.display = 'block';
+    document.getElementById('masivaPaso2').style.display = 'none';
+    const btn = document.getElementById('masivaBtnPrincipal');
+    btn.textContent = '🔍 Interpretar texto';
+    btn.onclick = interpretarFacturaMasiva;
+    masivaItemsPreview = [];
     document.getElementById('masivaOverlay').classList.add('open');
   }
   function cerrarCargaMasiva() {
     document.getElementById('masivaOverlay').classList.remove('open');
   }
 
-  function parsearLineasMasiva() {
-    const texto = document.getElementById('masivaTexto').value;
-    return texto.split('\n')
-      .map(l => l.trim())
-      .filter(l => l.length)
-      .map(l => {
-        const partes = l.split(',').map(p => p.trim());
-        const nombre = partes[0] || '';
-        const precio = parseFloat(partes[1]);
-        const stock = (partes[2] === undefined || partes[2] === '') ? null : parseInt(partes[2]);
-        return { nombre, precio, stock };
-      })
-      .filter(p => p.nombre && !isNaN(p.precio));
-  }
-
-  async function confirmarCargaMasiva() {
-    const items = parsearLineasMasiva();
-    const preview = document.getElementById('masivaPreview');
-    if (!items.length) {
-      preview.textContent = '⚠️ No hay productos válidos para cargar. Revisa el formato.';
-      return;
-    }
-    if (!NEGOCIO_ID) {
-      preview.textContent = '⚠️ No se pudo identificar tu negocio. Recarga la página e intenta de nuevo.';
-      return;
-    }
-    preview.textContent = `Cargando ${items.length} productos...`;
+  async function interpretarFacturaMasiva() {
+    const texto = document.getElementById('masivaTexto').value.trim();
+    const mensaje = document.getElementById('masivaMensaje');
+    if (!texto) { mensaje.textContent = '⚠️ Pega el texto primero.'; return; }
+    mensaje.textContent = 'Interpretando texto...';
     try {
-      const res = await fetch(`${API}/productos/masivo`, {
+      const res = await fetch(`${API}/productos/interpretar-texto`, {
         method: 'POST',
         headers: authHeaders(),
-        body: JSON.stringify({
-          negocio_id: NEGOCIO_ID,
-          productos: items.map(i => ({ nombre: i.nombre, precio: i.precio, stock: i.stock, categoria: 'general', emoji: '📦' }))
-        })
+        body: JSON.stringify({ texto })
       });
       if (manejarRespuestaAuth(res)) return;
       const data = await res.json();
-      if (!res.ok) {
-        preview.textContent = '⚠️ ' + (data.detail || 'No se pudo completar la carga.');
-        return;
-      }
-      const creados = data.productos || data;
-      creados.forEach(p => {
-        productos.unshift({
-          id: p.id, emoji: p.emoji || '📦', nombre: p.nombre,
-          desc: '', precio: Number(p.precio), cat: p.categoria || 'general',
-          vendidos: 0, activo: true, stock: p.stock
-        });
+      if (!res.ok) { mensaje.textContent = '⚠️ ' + (data.detail || 'No se pudo interpretar el texto.'); return; }
+
+      const margen = parseFloat(document.getElementById('masivaMargen').value) || 0;
+
+      masivaItemsPreview = data.productos.map(p => {
+        if (masivaTipoActual === 'compra') {
+          const cantidad = (p.stock && p.stock > 0) ? p.stock : 1;
+          const costoUnitario = cantidad > 0 ? (p.precio / cantidad) : p.precio;
+          const precioSugerido = Math.round(costoUnitario * (1 + margen / 100));
+          return {
+            nombre: p.nombre,
+            costo_unitario: Math.round(costoUnitario * 100) / 100,
+            cantidad,
+            precio_venta_sugerido: precioSugerido
+          };
+        }
+        return { nombre: p.nombre, precio: p.precio, stock: p.stock };
       });
-      renderTabla();
-      toast(`✅ ${creados.length} productos cargados`, 'success');
+
+      mensaje.textContent = '';
+      document.getElementById('masivaPaso1').style.display = 'none';
+      document.getElementById('masivaPaso2').style.display = 'block';
+      renderPreviewMasiva();
+
+      const btn = document.getElementById('masivaBtnPrincipal');
+      btn.textContent = '✓ Guardar todo';
+      btn.onclick = confirmarCargaMasiva;
+    } catch (e) {
+      mensaje.textContent = '⚠️ No se pudo conectar con el servidor.';
+    }
+  }
+
+  function renderPreviewMasiva() {
+    const cont = document.getElementById('masivaPreviewTabla');
+    if (!masivaItemsPreview.length) {
+      cont.innerHTML = `<p style="color:var(--texto-sec);font-size:.85rem;">No se encontró ningún producto en ese texto. Vuelve atrás y revisa el formato.</p>`;
+      return;
+    }
+    if (masivaTipoActual === 'compra') {
+      cont.innerHTML = masivaItemsPreview.map((item, i) => `
+        <div style="border:1px solid var(--gris-brd);border-radius:10px;padding:.7rem;">
+          <input class="input" style="margin-bottom:.5rem;" value="${item.nombre}" onchange="masivaItemsPreview[${i}].nombre=this.value" />
+          <div class="grid2" style="margin-bottom:.5rem;">
+            <div>
+              <label style="font-size:.72rem;color:var(--texto-sec);">Cantidad comprada</label>
+              <input class="input" type="number" value="${item.cantidad}" onchange="masivaItemsPreview[${i}].cantidad=parseInt(this.value)||1" />
+            </div>
+            <div>
+              <label style="font-size:.72rem;color:var(--texto-sec);">Costo unitario</label>
+              <input class="input" type="number" step="0.01" value="${item.costo_unitario}" onchange="masivaItemsPreview[${i}].costo_unitario=parseFloat(this.value)||0" />
+            </div>
+          </div>
+          <label style="font-size:.72rem;color:var(--verde);">Precio de venta sugerido (editable)</label>
+          <input class="input" type="number" value="${item.precio_venta_sugerido}" onchange="masivaItemsPreview[${i}].precio_venta_sugerido=parseFloat(this.value)||0" />
+        </div>
+      `).join('');
+    } else {
+      cont.innerHTML = masivaItemsPreview.map((item, i) => `
+        <div style="border:1px solid var(--gris-brd);border-radius:10px;padding:.7rem;">
+          <input class="input" style="margin-bottom:.5rem;" value="${item.nombre}" onchange="masivaItemsPreview[${i}].nombre=this.value" />
+          <div class="grid2">
+            <div>
+              <label style="font-size:.72rem;color:var(--texto-sec);">Precio de venta</label>
+              <input class="input" type="number" value="${item.precio}" onchange="masivaItemsPreview[${i}].precio=parseFloat(this.value)||0" />
+            </div>
+            <div>
+              <label style="font-size:.72rem;color:var(--texto-sec);">Cantidad (opcional)</label>
+              <input class="input" type="number" value="${item.stock ?? ''}" placeholder="—" onchange="masivaItemsPreview[${i}].stock=this.value?parseInt(this.value):null" />
+            </div>
+          </div>
+        </div>
+      `).join('');
+    }
+  }
+
+  async function confirmarCargaMasiva() {
+    const mensaje = document.getElementById('masivaMensaje');
+    if (!masivaItemsPreview.length) { mensaje.textContent = '⚠️ No hay productos para guardar.'; return; }
+    if (!NEGOCIO_ID) { mensaje.textContent = '⚠️ No se pudo identificar tu negocio. Recarga la página e intenta de nuevo.'; return; }
+    mensaje.textContent = 'Guardando...';
+
+    try {
+      if (masivaTipoActual === 'compra') {
+        const proveedor = document.getElementById('masivaProveedor').value.trim() || null;
+        const res = await fetch(`${API}/compras`, {
+          method: 'POST',
+          headers: authHeaders(),
+          body: JSON.stringify({ negocio_id: NEGOCIO_ID, proveedor, items: masivaItemsPreview })
+        });
+        if (manejarRespuestaAuth(res)) return;
+        const data = await res.json();
+        if (!res.ok) { mensaje.textContent = '⚠️ ' + (data.detail || 'No se pudo registrar la compra.'); return; }
+
+        data.productos.forEach(actualizado => {
+          const existente = productos.find(p => p.id === actualizado.id);
+          if (existente) {
+            existente.stock = actualizado.stock;
+            existente.precio = Number(actualizado.precio);
+          } else {
+            productos.unshift({
+              id: actualizado.id, emoji: '📦', nombre: actualizado.nombre,
+              desc: '', precio: Number(actualizado.precio), cat: 'general',
+              vendidos: 0, activo: true, stock: actualizado.stock
+            });
+          }
+        });
+        renderTabla();
+        toast(`✅ Compra registrada — RD$${Number(data.total_compra).toLocaleString()} en ${data.productos.length} productos`, 'success');
+      } else {
+        const res = await fetch(`${API}/productos/masivo`, {
+          method: 'POST',
+          headers: authHeaders(),
+          body: JSON.stringify({
+            negocio_id: NEGOCIO_ID,
+            productos: masivaItemsPreview.map(i => ({ nombre: i.nombre, precio: i.precio, stock: i.stock, categoria: 'general', emoji: '📦' }))
+          })
+        });
+        if (manejarRespuestaAuth(res)) return;
+        const data = await res.json();
+        if (!res.ok) { mensaje.textContent = '⚠️ ' + (data.detail || 'No se pudo completar la carga.'); return; }
+        const creados = data.productos || data;
+        creados.forEach(p => {
+          productos.unshift({
+            id: p.id, emoji: p.emoji || '📦', nombre: p.nombre,
+            desc: '', precio: Number(p.precio), cat: p.categoria || 'general',
+            vendidos: 0, activo: true, stock: p.stock
+          });
+        });
+        renderTabla();
+        toast(`✅ ${creados.length} productos cargados`, 'success');
+      }
       cerrarCargaMasiva();
     } catch (e) {
-      preview.textContent = '⚠️ No se pudo conectar con el servidor.';
+      mensaje.textContent = '⚠️ No se pudo conectar con el servidor.';
     }
   }
 
