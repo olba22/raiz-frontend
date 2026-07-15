@@ -639,6 +639,26 @@ Jabón de baño, 60, 30" style="width:100%;background:var(--gris-osc);border:1px
   let NEGOCIO_ID = null;
   let NEGOCIO_SLUG = null;
 
+  // ── Encabezados con el token de sesión para peticiones protegidas ──
+  function authHeaders() {
+    const token = localStorage.getItem('raiz_token');
+    return {
+      'Content-Type': 'application/json',
+      'Authorization': 'Bearer ' + token
+    };
+  }
+
+  // Si el backend responde 401 (sesión vencida o inválida), manda a login
+  function manejarRespuestaAuth(res) {
+    if (res.status === 401) {
+      toast('⚠️ Tu sesión expiró, inicia sesión de nuevo', 'error');
+      localStorage.removeItem('raiz_token');
+      setTimeout(() => window.location.href = '/raiz-login.html', 1500);
+      return true;
+    }
+    return false;
+  }
+
   async function cargarNegocio() {
     const params = new URLSearchParams(window.location.search);
     const slug = params.get('slug') || localStorage.getItem('raiz_negocio_slug');
@@ -769,11 +789,12 @@ Jabón de baño, 60, 30" style="width:100%;background:var(--gris-osc);border:1px
     const siguiente = { nuevo: 'preparacion', preparacion: 'camino', camino: 'entregado' }[estadoActual];
     if (!siguiente) return;
     try {
-      await fetch(`${API}/pedidos/${pedidoId}/estado`, {
+      const res = await fetch(`${API}/pedidos/${pedidoId}/estado`, {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
+        headers: authHeaders(),
         body: JSON.stringify({ estado_actual: siguiente })
       });
+      if (manejarRespuestaAuth(res)) return;
       const slug = NEGOCIO_SLUG || localStorage.getItem('raiz_negocio_slug');
       await cargarPedidos(slug);
       toast('✅ Pedido actualizado', 'success');
@@ -859,11 +880,12 @@ Jabón de baño, 60, 30" style="width:100%;background:var(--gris-osc);border:1px
     toast(nuevoEstado ? `✅ ${p.nombre} activado` : `⏸ ${p.nombre} desactivado`, nuevoEstado ? 'success' : '');
     if (!p.id) return;
     try {
-      await fetch(`${API}/productos/${p.id}`, {
+      const res = await fetch(`${API}/productos/${p.id}`, {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
+        headers: authHeaders(),
         body: JSON.stringify({ disponible: nuevoEstado })
       });
+      manejarRespuestaAuth(res);
     } catch (e) {
       console.log('No se pudo actualizar en el servidor', e);
     }
@@ -891,7 +913,8 @@ Jabón de baño, 60, 30" style="width:100%;background:var(--gris-osc);border:1px
     toast('🗑️ Producto eliminado', '');
     if (!p.id) return;
     try {
-      await fetch(`${API}/productos/${p.id}`, { method: 'DELETE' });
+      const res = await fetch(`${API}/productos/${p.id}`, { method: 'DELETE', headers: authHeaders() });
+      manejarRespuestaAuth(res);
     } catch (e) {
       console.log('No se pudo eliminar en el servidor', e);
     }
@@ -949,11 +972,12 @@ Jabón de baño, 60, 30" style="width:100%;background:var(--gris-osc);border:1px
       toast(`✅ "${nombre}" actualizado`, 'success');
       if (p.id) {
         try {
-          await fetch(`${API}/productos/${p.id}`, {
+          const res = await fetch(`${API}/productos/${p.id}`, {
             method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
+            headers: authHeaders(),
             body: JSON.stringify({ nombre, descripcion: desc, precio, categoria: cat, emoji, stock })
           });
+          manejarRespuestaAuth(res);
         } catch (e) {
           console.log('No se pudo actualizar en el servidor', e);
         }
@@ -975,12 +999,13 @@ Jabón de baño, 60, 30" style="width:100%;background:var(--gris-osc);border:1px
     try {
       const res = await fetch(`${API}/productos`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: authHeaders(),
         body: JSON.stringify({
           negocio_id: NEGOCIO_ID, nombre, descripcion: desc,
           precio, categoria: cat, emoji, stock
         })
       });
+      if (manejarRespuestaAuth(res)) return;
       const creado = await res.json();
       if (creado && creado.id) nuevo.id = creado.id;
     } catch (e) {
@@ -1038,12 +1063,13 @@ Jabón de baño, 60, 30" style="width:100%;background:var(--gris-osc);border:1px
     try {
       const res = await fetch(`${API}/productos/masivo`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: authHeaders(),
         body: JSON.stringify({
           negocio_id: NEGOCIO_ID,
           productos: items.map(i => ({ nombre: i.nombre, precio: i.precio, stock: i.stock, categoria: 'general', emoji: '📦' }))
         })
       });
+      if (manejarRespuestaAuth(res)) return;
       const data = await res.json();
       if (!res.ok) {
         preview.textContent = '⚠️ ' + (data.detail || 'No se pudo completar la carga.');
