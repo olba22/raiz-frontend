@@ -3,129 +3,218 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>RAIZ — Planes para tu negocio</title>
-  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
+  <title>RAÍZ — Planes para tu negocio</title>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     :root {
-      --verde: #1DB954; --negro: #0A0A0A; --gris-osc: #111111;
-      --gris-card: #161616; --gris-brd: #222222; --blanco: #F5F5F5;
-      --texto-sec: #888888; --naranja: #FF6B00; --rojo: #ff4444; --azul: #3b82f6;
+      --verde: #1DB954; --verde-suave: rgba(29,185,84,.12);
+      --negro: #0A0A0A; --gris-osc: #111111; --gris-card: #161616;
+      --gris-card2: #1b1b1b; --gris-brd: #222222; --blanco: #F5F5F5;
+      --texto-sec: #8a8a8a; --texto-terciario: #5c5c5c;
+      --naranja: #FF6B00; --dorado: #f0b429;
     }
     html { scroll-behavior: smooth; }
     body {
       font-family: 'Inter', sans-serif; background: var(--negro); color: var(--blanco);
-      min-height: 100vh; padding: 2rem 1.25rem;
+      min-height: 100vh; padding: 0 0 4rem;
     }
-    .topbar { max-width: 1000px; margin: 0 auto 2rem; display: flex; align-items: center; justify-content: space-between; }
-    .logo { font-family: 'Syne', sans-serif; font-size: 1.4rem; font-weight: 800; color: var(--verde); cursor: pointer; }
+
+    /* ── TOPBAR ── */
+    .topbar {
+      max-width: 1100px; margin: 0 auto; padding: 1.5rem 1.25rem;
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .logo { font-family: 'Syne', sans-serif; font-size: 1.3rem; font-weight: 800; color: var(--verde); cursor: pointer; }
     .logo span { color: var(--blanco); }
-    .volver { font-size: .85rem; color: var(--texto-sec); text-decoration: none; cursor: pointer; }
+    .volver { font-size: .85rem; color: var(--texto-sec); text-decoration: none; cursor: pointer; transition: color .15s; }
     .volver:hover { color: var(--blanco); }
 
-    .encabezado { max-width: 700px; margin: 0 auto 2.5rem; text-align: center; }
-    .encabezado h1 { font-family: 'Syne', sans-serif; font-size: 2rem; font-weight: 800; margin-bottom: .6rem; }
-    .encabezado p { color: var(--texto-sec); font-size: .95rem; line-height: 1.6; }
+    /* ── BANNER FUNDADOR ── */
+    .banner-fundador {
+      max-width: 620px; margin: 0 auto 2.5rem; text-align: center;
+      background: linear-gradient(135deg, rgba(240,180,41,.13), rgba(29,185,84,.09));
+      border: 1px solid rgba(240,180,41,.35); border-radius: 14px;
+      padding: .8rem 1.5rem; font-size: .84rem; color: var(--blanco);
+    }
+    .banner-fundador strong { color: var(--dorado); }
+
+    /* ── ENCABEZADO ── */
+    .encabezado { max-width: 640px; margin: 0 auto 3rem; text-align: center; padding: 0 1.25rem; }
+    .encabezado h1 { font-family: 'Syne', sans-serif; font-size: 2.3rem; font-weight: 800; margin-bottom: .8rem; letter-spacing: -.5px; }
+    .encabezado p { color: var(--texto-sec); font-size: 1rem; line-height: 1.6; }
     .encabezado strong { color: var(--verde); }
 
+    /* ── GRID DE PLANES ── */
     .planes-grid {
-      max-width: 1000px; margin: 0 auto; display: grid;
-      grid-template-columns: repeat(3, 1fr); gap: 1.25rem;
+      max-width: 1180px; margin: 0 auto; padding: 0 1.25rem;
+      display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem;
     }
     .plan-card {
       background: var(--gris-card); border: 1px solid var(--gris-brd);
-      border-radius: 20px; padding: 1.75rem; display: flex; flex-direction: column;
-      position: relative;
+      border-radius: 18px; padding: 1.6rem 1.4rem; display: flex; flex-direction: column;
+      position: relative; transition: transform .2s, border-color .2s;
     }
-    .plan-card.destacado { border-color: var(--verde); }
+    .plan-card:hover { transform: translateY(-3px); border-color: #333; }
+    .plan-card.destacado { border-color: var(--verde); background: linear-gradient(180deg, var(--verde-suave), var(--gris-card) 40%); }
+    .plan-card.destacado:hover { border-color: var(--verde); }
     .plan-badge {
-      position: absolute; top: -13px; left: 50%; transform: translateX(-50%);
-      background: var(--verde); color: var(--negro); font-size: .68rem; font-weight: 800;
-      padding: .3rem .9rem; border-radius: 999px; white-space: nowrap;
+      position: absolute; top: -12px; left: 50%; transform: translateX(-50%);
+      background: var(--verde); color: var(--negro); font-size: .64rem; font-weight: 800;
+      padding: .3rem .85rem; border-radius: 999px; white-space: nowrap; letter-spacing: .03em;
     }
-    .plan-nombre { font-family: 'Syne', sans-serif; font-size: 1.15rem; font-weight: 800; margin-bottom: .3rem; }
-    .plan-precio { font-family: 'Syne', sans-serif; font-size: 2rem; font-weight: 800; color: var(--verde); margin-bottom: .1rem; }
-    .plan-precio span { font-size: .85rem; color: var(--texto-sec); font-weight: 500; font-family: 'Inter', sans-serif; }
-    .plan-desc { font-size: .8rem; color: var(--texto-sec); margin-bottom: 1.4rem; min-height: 34px; }
-    .plan-lista { list-style: none; margin-bottom: 1.5rem; flex: 1; }
-    .plan-lista li { font-size: .85rem; padding: .45rem 0; display: flex; align-items: flex-start; gap: .55rem; border-bottom: 1px solid var(--gris-brd); }
-    .plan-lista li:last-child { border-bottom: none; }
-    .plan-lista li .check { color: var(--verde); flex-shrink: 0; }
+    .plan-nombre { font-family: 'Syne', sans-serif; font-size: 1.05rem; font-weight: 800; margin-bottom: .5rem; display: flex; align-items: center; gap: .4rem; }
+    .plan-precio-row { margin-bottom: .15rem; }
+    .plan-precio { font-family: 'Syne', sans-serif; font-size: 1.75rem; font-weight: 800; color: var(--blanco); }
+    .plan-precio.gratis { color: var(--verde); }
+    .plan-precio-normal { font-size: .74rem; color: var(--texto-terciario); text-decoration: line-through; margin-left: .3rem; }
+    .plan-precio span.periodo { font-size: .78rem; color: var(--texto-sec); font-weight: 500; font-family: 'Inter', sans-serif; }
+    .plan-lanzamiento { font-size: .68rem; color: var(--dorado); font-weight: 700; margin-bottom: 1rem; min-height: 14px; }
+    .plan-desc { font-size: .78rem; color: var(--texto-sec); margin-bottom: 1.2rem; line-height: 1.5; min-height: 32px; }
+
+    .plan-lista { list-style: none; margin-bottom: 1.4rem; flex: 1; }
+    .plan-lista li { font-size: .8rem; padding: .4rem 0; display: flex; align-items: flex-start; gap: .5rem; line-height: 1.35; }
+    .plan-lista li .check { color: var(--verde); flex-shrink: 0; font-size: .8rem; margin-top: .05rem; }
+    .plan-lista li.proximamente { color: var(--texto-terciario); }
+    .plan-lista li.proximamente .check { color: var(--texto-terciario); }
+    .plan-lista .separador-proximamente { font-size: .66rem; color: var(--texto-terciario); text-transform: uppercase; letter-spacing: .06em; font-weight: 700; margin: .6rem 0 .3rem; }
+
     .btn-plan {
       width: 100%; border: none; border-radius: 10px; padding: .8rem; cursor: pointer;
-      font-family: 'Inter', sans-serif; font-size: .9rem; font-weight: 700; transition: all .2s;
+      font-family: 'Inter', sans-serif; font-size: .85rem; font-weight: 700; transition: all .2s;
       text-align: center; text-decoration: none; display: block;
     }
     .btn-plan.primario { background: var(--verde); color: var(--negro); }
     .btn-plan.primario:hover { background: #25e066; }
-    .btn-plan.secundario { background: transparent; color: var(--texto-sec); border: 1px solid var(--gris-brd); }
-    .btn-plan.secundario:hover { border-color: var(--blanco); color: var(--blanco); }
-    .btn-plan.activo { background: rgba(29,185,84,.12); color: var(--verde); cursor: default; border: 1px solid var(--verde); }
+    .btn-plan.secundario { background: transparent; color: var(--blanco); border: 1px solid var(--gris-brd); }
+    .btn-plan.secundario:hover { border-color: var(--blanco); }
+    .btn-plan.activo { background: var(--verde-suave); color: var(--verde); cursor: default; border: 1px solid var(--verde); }
 
+    /* ── FOOTER INFO ── */
     .info-pago {
-      max-width: 700px; margin: 2.5rem auto 0; background: var(--gris-card);
-      border: 1px solid var(--gris-brd); border-radius: 16px; padding: 1.5rem 1.75rem;
-      font-size: .85rem; color: var(--texto-sec); line-height: 1.7; text-align: center;
+      max-width: 640px; margin: 3rem auto 0; background: var(--gris-card);
+      border: 1px solid var(--gris-brd); border-radius: 16px; padding: 1.4rem 1.75rem;
+      font-size: .84rem; color: var(--texto-sec); line-height: 1.7; text-align: center;
     }
     .info-pago strong { color: var(--blanco); }
 
-    @media (max-width: 800px) {
+    .otros-ingresos {
+      max-width: 900px; margin: 3.5rem auto 0; padding: 0 1.25rem; text-align: center;
+    }
+    .otros-ingresos h3 { font-family: 'Syne', sans-serif; font-size: 1rem; font-weight: 800; color: var(--texto-sec); margin-bottom: 1rem; }
+    .tags-servicios { display: flex; flex-wrap: wrap; justify-content: center; gap: .5rem; }
+    .tag-servicio {
+      font-size: .76rem; color: var(--texto-sec); background: var(--gris-card2);
+      border: 1px solid var(--gris-brd); border-radius: 999px; padding: .4rem .9rem;
+    }
+
+    @media (max-width: 980px) {
+      .planes-grid { grid-template-columns: repeat(2, 1fr); }
+    }
+    @media (max-width: 620px) {
       .planes-grid { grid-template-columns: 1fr; }
-      .encabezado h1 { font-size: 1.5rem; }
+      .encabezado h1 { font-size: 1.7rem; }
     }
   </style>
 </head>
 <body>
 
   <div class="topbar">
-    <div class="logo" onclick="window.location.href='/raiz.html'">RAIZ<span>.</span></div>
+    <div class="logo" onclick="window.location.href='/raiz.html'">RAÍZ<span>.</span></div>
     <a class="volver" onclick="volverAlDashboard()">← Volver a mi dashboard</a>
   </div>
 
+  <div class="banner-fundador">
+    🏆 Oferta de Fundador: <strong>los primeros 500 negocios</strong> se quedan con su precio congelado <strong>de por vida</strong>.
+    <span id="cupoFundador"></span>
+  </div>
+
   <div class="encabezado">
-    <h1>Elige el plan para tu negocio</h1>
-    <p id="negocioTexto">Compara los planes y actualiza cuando quieras — sin contratos, cancela cuando quieras.</p>
+    <h1>El sistema operativo del comercio dominicano</h1>
+    <p id="negocioTexto">Primero creamos la red. Luego el hábito. Al final, todos ganamos más — elige el plan de hoy sabiendo que crecerá contigo.</p>
   </div>
 
   <div class="planes-grid" id="planesGrid">
 
-    <div class="plan-card" data-plan="vitrina">
-      <div class="plan-nombre">🌱 Vitrina</div>
-      <div class="plan-precio">RD$0 <span>/mes</span></div>
-      <div class="plan-desc">Para empezar a vender online, gratis para siempre.</div>
+    <!-- BÁSICO -->
+    <div class="plan-card" data-plan="basico">
+      <div class="plan-nombre">🌱 RAÍZ Básico</div>
+      <div class="plan-precio-row"><span class="plan-precio gratis">Gratis</span></div>
+      <div class="plan-lanzamiento">&nbsp;</div>
+      <div class="plan-desc">Para cualquier negocio que quiera empezar a vender online hoy mismo.</div>
       <ul class="plan-lista">
-        <li><span class="check">✓</span> Hasta 15 productos</li>
+        <li><span class="check">✓</span> Perfil del negocio + WhatsApp</li>
+        <li><span class="check">✓</span> Hasta 10 productos</li>
         <li><span class="check">✓</span> Catálogo público con tu link</li>
-        <li><span class="check">✓</span> Recibir pedidos por WhatsApp</li>
-        <li><span class="check">✓</span> Facturar ventas locales</li>
+        <li><span class="check">✓</span> Aparición en búsquedas</li>
+        <li><span class="check">✓</span> Recibir pedidos y facturar ventas</li>
+        <li class="proximamente"><span class="check">○</span> Galería de imágenes y reseñas</li>
       </ul>
-      <button class="btn-plan secundario" id="btnVitrina" onclick="elegirPlan('vitrina')">Seleccionar</button>
+      <button class="btn-plan secundario" id="btnBasico" onclick="elegirPlan('basico')">Seleccionar</button>
     </div>
 
-    <div class="plan-card destacado" data-plan="pro">
-      <div class="plan-badge">MÁS POPULAR</div>
-      <div class="plan-nombre">⚡ Pro</div>
-      <div class="plan-precio">RD$500 <span>/mes</span></div>
-      <div class="plan-desc">Para negocios que quieren crecer y vender más.</div>
+    <!-- PLUS -->
+    <div class="plan-card destacado" data-plan="plus">
+      <div class="plan-badge">RECOMENDADO</div>
+      <div class="plan-nombre">🚀 RAÍZ Plus</div>
+      <div class="plan-precio-row">
+        <span class="plan-precio">RD$299<span class="periodo">/mes</span></span>
+        <span class="plan-precio-normal">RD$599</span>
+      </div>
+      <div class="plan-lanzamiento">⚡ Precio de lanzamiento</div>
+      <div class="plan-desc">Para negocios que ya venden y quieren más visibilidad.</div>
+      <ul class="plan-lista">
+        <li><span class="check">✓</span> Hasta 100 productos</li>
+        <li><span class="check">✓</span> Mayor prioridad en búsquedas</li>
+        <li><span class="check">✓</span> Catálogo profesional compartible por WhatsApp</li>
+        <li><span class="check">✓</span> Todo lo de Básico</li>
+        <div class="separador-proximamente">🔜 Próximamente</div>
+        <li class="proximamente"><span class="check">○</span> Estadísticas de ventas</li>
+        <li class="proximamente"><span class="check">○</span> Promociones y ofertas destacadas</li>
+      </ul>
+      <button class="btn-plan primario" id="btnPlus" onclick="elegirPlan('plus')">Actualizar a Plus</button>
+    </div>
+
+    <!-- PREMIUM -->
+    <div class="plan-card" data-plan="premium">
+      <div class="plan-nombre">👑 RAÍZ Premium</div>
+      <div class="plan-precio-row">
+        <span class="plan-precio">RD$699<span class="periodo">/mes</span></span>
+        <span class="plan-precio-normal">RD$1,299</span>
+      </div>
+      <div class="plan-lanzamiento">⚡ Precio de lanzamiento</div>
+      <div class="plan-desc">Para negocios que venden todos los días y quieren crecer más rápido.</div>
       <ul class="plan-lista">
         <li><span class="check">✓</span> Productos ilimitados</li>
-        <li><span class="check">✓</span> Apareces primero en búsquedas</li>
-        <li><span class="check">✓</span> Estadísticas de ventas</li>
-        <li><span class="check">✓</span> Todo lo de Vitrina</li>
-      </ul>
-      <button class="btn-plan primario" id="btnPro" onclick="elegirPlan('pro')">Actualizar a Pro</button>
-    </div>
-
-    <div class="plan-card" data-plan="premium">
-      <div class="plan-nombre">👑 Premium</div>
-      <div class="plan-precio">RD$1,200 <span>/mes</span></div>
-      <div class="plan-desc">Máxima visibilidad para tu negocio en RAIZ.</div>
-      <ul class="plan-lista">
-        <li><span class="check">✓</span> Banner destacado en portada</li>
-        <li><span class="check">✓</span> Soporte prioritario</li>
-        <li><span class="check">✓</span> Todo lo de Pro</li>
+        <li><span class="check">✓</span> Pedidos online + delivery</li>
+        <li><span class="check">✓</span> Conexión con Instagram y Facebook</li>
+        <li><span class="check">✓</span> Todo lo de Plus</li>
+        <div class="separador-proximamente">🔜 Próximamente</div>
+        <li class="proximamente"><span class="check">○</span> Dashboard avanzado + analíticas</li>
+        <li class="proximamente"><span class="check">○</span> IA para responder clientes</li>
+        <li class="proximamente"><span class="check">○</span> Dominio propio</li>
       </ul>
       <button class="btn-plan secundario" id="btnPremium" onclick="elegirPlan('premium')">Actualizar a Premium</button>
+    </div>
+
+    <!-- ENTERPRISE -->
+    <div class="plan-card" data-plan="enterprise">
+      <div class="plan-nombre">🏆 RAÍZ Enterprise</div>
+      <div class="plan-precio-row">
+        <span class="plan-precio">RD$1,499<span class="periodo">/mes</span></span>
+        <span class="plan-precio-normal">RD$2,999</span>
+      </div>
+      <div class="plan-lanzamiento">⚡ Precio de lanzamiento</div>
+      <div class="plan-desc">Para empresas con varios puntos de venta.</div>
+      <ul class="plan-lista">
+        <li><span class="check">✓</span> Todo lo de Premium</li>
+        <li><span class="check">✓</span> Soporte prioritario por WhatsApp</li>
+        <div class="separador-proximamente">🔜 Próximamente</div>
+        <li class="proximamente"><span class="check">○</span> Varias sucursales y administradores</li>
+        <li class="proximamente"><span class="check">○</span> Panel administrativo + API</li>
+        <li class="proximamente"><span class="check">○</span> Reportes avanzados y permisos por empleado</li>
+      </ul>
+      <button class="btn-plan secundario" id="btnEnterprise" onclick="elegirPlan('enterprise')">Actualizar a Enterprise</button>
     </div>
 
   </div>
@@ -136,9 +225,21 @@
     Tu plan se activa en cuanto confirmamos el pago.
   </div>
 
+  <div class="otros-ingresos">
+    <h3>RAÍZ también puede ayudarte con</h3>
+    <div class="tags-servicios">
+      <span class="tag-servicio">🎨 Diseño de logotipo</span>
+      <span class="tag-servicio">📸 Fotografía de productos</span>
+      <span class="tag-servicio">📱 Gestión de redes sociales</span>
+      <span class="tag-servicio">🌐 Página web a medida</span>
+      <span class="tag-servicio">📢 Publicidad destacada</span>
+    </div>
+  </div>
+
   <script>
     const API = 'https://raiz-backend.onrender.com';
-    const WHATSAPP_SOPORTE = '18495778946'; // Formato internacional para wa.me
+    const WHATSAPP_SOPORTE = '18495778946';
+    const CUPO_FUNDADOR_TOTAL = 500;
 
     let NEGOCIO = null;
 
@@ -161,16 +262,30 @@
       }
     }
 
+    async function cargarCupoFundador() {
+      try {
+        const res = await fetch(`${API}/negocios`);
+        if (!res.ok) return;
+        const lista = await res.json();
+        const restantes = Math.max(CUPO_FUNDADOR_TOTAL - lista.length, 0);
+        document.getElementById('cupoFundador').textContent = ` Quedan ${restantes} cupos.`;
+      } catch (e) {
+        console.log('No se pudo calcular el cupo de fundador', e);
+      }
+    }
+
     function etiquetaPlan(plan) {
-      const nombres = { vitrina: 'Vitrina (gratis)', pro: 'Pro', premium: 'Premium' };
-      return nombres[plan] || 'Vitrina (gratis)';
+      const nombres = { vitrina: 'Básico (gratis)', basico: 'Básico (gratis)', pro: 'Plus', plus: 'Plus', premium: 'Premium', enterprise: 'Enterprise' };
+      return nombres[plan] || 'Básico (gratis)';
     }
 
     function marcarPlanActivo(planActual) {
-      const botones = { vitrina: 'btnVitrina', pro: 'btnPro', premium: 'btnPremium' };
+      const equivalencias = { vitrina: 'basico', pro: 'plus' };
+      const planNormalizado = equivalencias[planActual] || planActual;
+      const botones = { basico: 'btnBasico', plus: 'btnPlus', premium: 'btnPremium', enterprise: 'btnEnterprise' };
       Object.entries(botones).forEach(([plan, id]) => {
         const btn = document.getElementById(id);
-        if (plan === planActual) {
+        if (plan === planNormalizado) {
           btn.textContent = '✓ Tu plan actual';
           btn.className = 'btn-plan activo';
           btn.onclick = null;
@@ -179,19 +294,19 @@
     }
 
     function elegirPlan(plan) {
-      if (plan === 'vitrina') {
-        // El plan gratis no necesita pago, solo confirmar por WhatsApp si ya tenía uno pagado
-        abrirWhatsApp(plan);
-        return;
-      }
       abrirWhatsApp(plan);
     }
 
     function abrirWhatsApp(plan) {
-      const nombresPlan = { pro: 'Pro (RD$500/mes)', premium: 'Premium (RD$1,200/mes)', vitrina: 'Vitrina (gratis)' };
-      const nombreNegocio = NEGOCIO ? NEGOCIO.nombre : '(mi negocio en RAIZ)';
+      const nombresPlan = {
+        basico: 'Básico (gratis)',
+        plus: 'Plus (RD$299/mes, precio de lanzamiento)',
+        premium: 'Premium (RD$699/mes, precio de lanzamiento)',
+        enterprise: 'Enterprise (RD$1,499/mes, precio de lanzamiento)'
+      };
+      const nombreNegocio = NEGOCIO ? NEGOCIO.nombre : '(mi negocio en RAÍZ)';
       const slug = NEGOCIO ? NEGOCIO.slug : (localStorage.getItem('raiz_negocio_slug') || '');
-      const mensaje = `Hola, quiero actualizar mi negocio "${nombreNegocio}" (${slug}) al plan ${nombresPlan[plan]} en RAIZ.`;
+      const mensaje = `Hola, quiero actualizar mi negocio "${nombreNegocio}" (${slug}) al plan ${nombresPlan[plan]} en RAÍZ.`;
       const url = `https://wa.me/${WHATSAPP_SOPORTE}?text=${encodeURIComponent(mensaje)}`;
       window.open(url, '_blank');
     }
@@ -202,6 +317,7 @@
     }
 
     cargarNegocioActual();
+    cargarCupoFundador();
   </script>
 </body>
 </html>
