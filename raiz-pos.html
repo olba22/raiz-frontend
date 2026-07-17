@@ -1,0 +1,418 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>RAIZ — Facturar</title>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+    :root {
+      --verde: #1DB954; --negro: #0A0A0A; --gris-osc: #111111;
+      --gris-card: #161616; --gris-brd: #222222; --blanco: #F5F5F5;
+      --texto-sec: #888888; --naranja: #FF6B00; --rojo: #ff4444; --azul: #3b82f6;
+    }
+    html { scroll-behavior: smooth; }
+    body { font-family: 'Inter', sans-serif; background: var(--negro); color: var(--blanco); min-height: 100vh; overflow: hidden; }
+
+    /* ── ENCABEZADO ── */
+    .pos-header {
+      display: flex; align-items: center; gap: .85rem;
+      padding: .85rem 1rem; border-bottom: 1px solid var(--gris-brd);
+      background: var(--gris-osc); position: sticky; top: 0; z-index: 20;
+    }
+    .pos-back {
+      width: 38px; height: 38px; border-radius: 10px; background: var(--gris-card);
+      border: 1px solid var(--gris-brd); color: var(--blanco); font-size: 1.1rem;
+      display: flex; align-items: center; justify-content: center; cursor: pointer; text-decoration: none; flex-shrink: 0;
+      transition: border-color .15s;
+    }
+    .pos-back:hover { border-color: var(--verde); }
+    .pos-title { font-family: 'Syne', sans-serif; font-weight: 800; font-size: 1.05rem; flex: 1; }
+    .pos-title span { display: block; font-family: 'Inter'; font-weight: 500; font-size: .72rem; color: var(--texto-sec); }
+
+    /* ── BUSCADOR ── */
+    .pos-buscar-wrap { padding: .75rem 1rem 0; background: var(--negro); }
+    .pos-buscar {
+      width: 100%; background: var(--gris-card); border: 1px solid var(--gris-brd);
+      border-radius: 12px; padding: .8rem 1rem; color: var(--blanco); font-size: .95rem; font-family: inherit;
+    }
+    .pos-buscar:focus { outline: none; border-color: var(--verde); }
+
+    /* ── CATEGORIAS ── */
+    .pos-cats {
+      display: flex; gap: .5rem; padding: .85rem 1rem; overflow-x: auto;
+      background: var(--negro); scrollbar-width: none;
+    }
+    .pos-cats::-webkit-scrollbar { display: none; }
+    .pos-cat-pill {
+      flex-shrink: 0; padding: .55rem 1.1rem; border-radius: 999px; border: 1px solid var(--gris-brd);
+      background: var(--gris-card); color: var(--texto-sec); font-size: .82rem; font-weight: 600;
+      cursor: pointer; white-space: nowrap; transition: all .15s;
+    }
+    .pos-cat-pill.active { background: var(--verde); border-color: var(--verde); color: var(--negro); }
+
+    /* ── LAYOUT PRINCIPAL ── */
+    .pos-body { display: flex; height: calc(100vh - 178px); }
+    .pos-grid-wrap { flex: 1; overflow-y: auto; padding: 0 1rem 1rem; }
+    .pos-grid {
+      display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: .7rem;
+    }
+    .pos-prod {
+      background: var(--gris-card); border: 1px solid var(--gris-brd); border-radius: 14px;
+      padding: .8rem .7rem; cursor: pointer; user-select: none; transition: transform .1s, border-color .15s;
+      display: flex; flex-direction: column; gap: .35rem; position: relative; overflow: hidden;
+    }
+    .pos-prod:active { transform: scale(.96); border-color: var(--verde); }
+    .pos-prod-emoji { font-size: 1.6rem; }
+    .pos-prod-nombre { font-size: .82rem; font-weight: 600; line-height: 1.25; min-height: 2.1em; }
+    .pos-prod-precio { font-size: .85rem; font-weight: 700; color: var(--verde); }
+    .pos-prod-badge {
+      position: absolute; top: .5rem; right: .5rem; background: var(--verde); color: var(--negro);
+      font-size: .72rem; font-weight: 800; min-width: 20px; height: 20px; border-radius: 999px;
+      display: flex; align-items: center; justify-content: center; padding: 0 .3rem;
+    }
+    .pos-vacio { color: var(--texto-sec); font-size: .88rem; text-align: center; padding: 3rem 1rem; }
+
+    /* ── CARRITO (desktop: panel fijo / mobile: bandeja) ── */
+    .pos-carrito {
+      width: 340px; flex-shrink: 0; background: var(--gris-osc); border-left: 1px solid var(--gris-brd);
+      display: flex; flex-direction: column;
+    }
+    .pos-carrito-lista { flex: 1; overflow-y: auto; padding: 1rem; display: flex; flex-direction: column; gap: .6rem; }
+    .pos-item {
+      display: flex; align-items: center; gap: .6rem; padding: .6rem 0; border-bottom: 1px solid var(--gris-brd);
+    }
+    .pos-item-info { flex: 1; min-width: 0; }
+    .pos-item-nombre { font-size: .84rem; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .pos-item-precio { font-size: .72rem; color: var(--texto-sec); }
+    .pos-stepper { display: flex; align-items: center; gap: .4rem; }
+    .pos-stepper button {
+      width: 26px; height: 26px; border-radius: 7px; border: 1px solid var(--gris-brd); background: var(--gris-card);
+      color: var(--blanco); font-size: 1rem; font-weight: 700; cursor: pointer;
+    }
+    .pos-stepper button:hover { border-color: var(--verde); }
+    .pos-stepper span { min-width: 18px; text-align: center; font-weight: 700; font-size: .85rem; }
+    .pos-item-total { min-width: 64px; text-align: right; font-weight: 700; font-size: .84rem; color: var(--verde); }
+
+    .pos-carrito-footer { padding: 1rem; border-top: 1px solid var(--gris-brd); }
+    .pos-total-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: .85rem; }
+    .pos-total-label { font-size: .85rem; color: var(--texto-sec); }
+    .pos-total-valor { font-family: 'Syne', sans-serif; font-weight: 800; font-size: 1.5rem; color: var(--verde); }
+    .pos-confirmar {
+      width: 100%; padding: 1rem; border-radius: 12px; border: none; background: var(--verde);
+      color: var(--negro); font-weight: 800; font-size: .95rem; cursor: pointer; font-family: inherit;
+    }
+    .pos-confirmar:disabled { opacity: .6; cursor: not-allowed; }
+    .pos-confirmar:hover:not(:disabled) { filter: brightness(1.08); }
+
+    /* ── BANDEJA MÓVIL ── */
+    .pos-mobile-bar {
+      display: none; position: fixed; bottom: 0; left: 0; right: 0; z-index: 30;
+      background: var(--gris-osc); border-top: 1px solid var(--gris-brd);
+    }
+    .pos-mobile-toggle {
+      display: flex; align-items: center; justify-content: space-between; padding: .9rem 1.1rem; cursor: pointer;
+    }
+    .pos-mobile-toggle-info { display: flex; align-items: center; gap: .6rem; }
+    .pos-mobile-count {
+      background: var(--verde); color: var(--negro); font-weight: 800; font-size: .78rem;
+      min-width: 22px; height: 22px; border-radius: 999px; display: flex; align-items: center; justify-content: center;
+    }
+    .pos-mobile-total { font-family: 'Syne', sans-serif; font-weight: 800; color: var(--verde); }
+    .pos-mobile-flecha { color: var(--texto-sec); font-size: .8rem; transition: transform .2s; }
+    .pos-mobile-bar.open .pos-mobile-flecha { transform: rotate(180deg); }
+    .pos-mobile-panel { max-height: 0; overflow: hidden; transition: max-height .25s ease; }
+    .pos-mobile-bar.open .pos-mobile-panel { max-height: 60vh; overflow-y: auto; }
+
+    /* ── TOAST ── */
+    .toast {
+      position: fixed; top: 1.25rem; right: 1.25rem; z-index: 500;
+      background: var(--gris-card); border: 1px solid var(--gris-brd);
+      border-radius: 12px; padding: .85rem 1.25rem;
+      font-size: .88rem; font-weight: 600;
+      display: flex; align-items: center; gap: .6rem;
+      opacity: 0; transform: translateY(-8px); transition: all .3s;
+      max-width: 320px; left: 1.25rem;
+    }
+    .toast.show { opacity: 1; transform: translateY(0); }
+    .toast.success { border-color: var(--verde); }
+    .toast.error { border-color: var(--rojo); }
+
+    /* ── RESPONSIVE ── */
+    @media (max-width: 860px) {
+      .pos-body { height: calc(100vh - 152px); }
+      .pos-carrito { display: none; }
+      .pos-mobile-bar { display: block; }
+      .pos-grid-wrap { padding-bottom: 1rem; }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="pos-header">
+    <a class="pos-back" href="raiz-dashboard.html" title="Volver al panel">←</a>
+    <div class="pos-title" id="posTitulo">Facturar
+      <span id="posSubtitulo">Cargando negocio...</span>
+    </div>
+  </div>
+
+  <div class="pos-buscar-wrap">
+    <input class="pos-buscar" id="posBuscar" type="text" placeholder="🔍 Buscar producto..." oninput="posFiltrar()" autocomplete="off" />
+  </div>
+
+  <div class="pos-cats" id="posCats"></div>
+
+  <div class="pos-body">
+    <div class="pos-grid-wrap">
+      <div class="pos-grid" id="posGrid"></div>
+    </div>
+
+    <!-- CARRITO DE ESCRITORIO -->
+    <div class="pos-carrito">
+      <div class="pos-carrito-lista" id="posCarritoDesktop"></div>
+      <div class="pos-carrito-footer">
+        <div class="pos-total-row">
+          <span class="pos-total-label">Total a cobrar</span>
+          <span class="pos-total-valor" id="posTotalDesktop">RD$0</span>
+        </div>
+        <button class="pos-confirmar" id="posBtnConfirmarDesktop" onclick="posConfirmarVenta()">✓ Confirmar venta</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- BANDEJA MÓVIL -->
+  <div class="pos-mobile-bar" id="posMobileBar">
+    <div class="pos-mobile-toggle" onclick="posToggleMobile()">
+      <div class="pos-mobile-toggle-info">
+        <span class="pos-mobile-count" id="posMobileCount">0</span>
+        <span>Ver carrito</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:.7rem;">
+        <span class="pos-mobile-total" id="posTotalMobile">RD$0</span>
+        <span class="pos-mobile-flecha">▲</span>
+      </div>
+    </div>
+    <div class="pos-mobile-panel">
+      <div class="pos-carrito-lista" id="posCarritoMobile" style="max-height:40vh;"></div>
+      <div class="pos-carrito-footer">
+        <button class="pos-confirmar" id="posBtnConfirmarMobile" onclick="posConfirmarVenta()">✓ Confirmar venta</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <script>
+    const API = 'https://raiz-backend.onrender.com';
+    let NEGOCIO_ID = null;
+    let NEGOCIO_SLUG = null;
+    let productos = [];
+    let categoriaActiva = 'todas';
+    let carrito = []; // { idx, nombre, emoji, precio, cantidad }
+
+    function authHeaders() {
+      const token = localStorage.getItem('raiz_token');
+      return { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token };
+    }
+
+    function manejarRespuestaAuth(res) {
+      if (res.status === 401) {
+        toast('⚠️ Tu sesión expiró, inicia sesión de nuevo', 'error');
+        localStorage.removeItem('raiz_token');
+        setTimeout(() => window.location.href = '/raiz-login.html', 1500);
+        return true;
+      }
+      return false;
+    }
+
+    function toast(msg, tipo) {
+      const t = document.getElementById('toast');
+      t.textContent = msg;
+      t.className = 'toast show ' + (tipo || '');
+      setTimeout(() => t.classList.remove('show'), 3000);
+    }
+
+    async function cargarDatos() {
+      const params = new URLSearchParams(window.location.search);
+      const slug = params.get('slug') || localStorage.getItem('raiz_negocio_slug');
+      if (!slug) { toast('⚠️ No se encontró el negocio, vuelve al panel', 'error'); return; }
+      try {
+        const res = await fetch(`${API}/negocios/${encodeURIComponent(slug)}`);
+        if (!res.ok) { toast('⚠️ No se pudo cargar el negocio', 'error'); return; }
+        const data = await res.json();
+        const negocio = data.negocio;
+        if (!negocio) return;
+
+        NEGOCIO_ID = negocio.id;
+        NEGOCIO_SLUG = negocio.slug;
+        document.getElementById('posSubtitulo').textContent = negocio.nombre || 'Mi negocio';
+
+        productos = (data.productos || [])
+          .map((p, idx) => ({
+            idx,
+            id: p.id,
+            emoji: p.emoji || '📦',
+            nombre: p.nombre,
+            precio: Number(p.precio),
+            cat: p.categoria || 'general',
+            activo: p.disponible !== false
+          }))
+          .filter(p => p.activo);
+
+        renderCategorias();
+        renderGrid();
+      } catch (e) {
+        toast('⚠️ No se pudo conectar con el servidor', 'error');
+        console.error('Error al cargar negocio/productos:', e);
+      }
+    }
+
+    function renderCategorias() {
+      const cats = Array.from(new Set(productos.map(p => p.cat)));
+      const cont = document.getElementById('posCats');
+      const todas = [{ valor: 'todas', label: 'Todos' }, ...cats.map(c => ({ valor: c, label: c.charAt(0).toUpperCase() + c.slice(1) }))];
+      cont.innerHTML = todas.map(c => `
+        <div class="pos-cat-pill ${c.valor === categoriaActiva ? 'active' : ''}" onclick="posSetCategoria('${c.valor}')">${c.label}</div>
+      `).join('');
+    }
+
+    function posSetCategoria(cat) {
+      categoriaActiva = cat;
+      renderCategorias();
+      renderGrid();
+    }
+
+    function posFiltrar() {
+      renderGrid();
+    }
+
+    function renderGrid() {
+      const texto = (document.getElementById('posBuscar').value || '').trim().toLowerCase();
+      const cont = document.getElementById('posGrid');
+      const lista = productos.filter(p =>
+        (categoriaActiva === 'todas' || p.cat === categoriaActiva) &&
+        (!texto || p.nombre.toLowerCase().includes(texto))
+      );
+      if (!lista.length) {
+        cont.innerHTML = `<div class="pos-vacio">Sin productos en esta categoría.</div>`;
+        return;
+      }
+      cont.innerHTML = lista.map(p => {
+        const enCarrito = carrito.find(i => i.idx === p.idx);
+        return `
+          <div class="pos-prod" onclick="posAgregar(${p.idx})">
+            ${enCarrito ? `<div class="pos-prod-badge">${enCarrito.cantidad}</div>` : ''}
+            <div class="pos-prod-emoji">${p.emoji}</div>
+            <div class="pos-prod-nombre">${p.nombre}</div>
+            <div class="pos-prod-precio">RD$${p.precio.toLocaleString()}</div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function posAgregar(idx) {
+      const p = productos.find(x => x.idx === idx);
+      if (!p) return;
+      const existente = carrito.find(i => i.idx === idx);
+      if (existente) existente.cantidad += 1;
+      else carrito.push({ idx, nombre: p.nombre, emoji: p.emoji, precio: p.precio, cantidad: 1 });
+      renderGrid();
+      renderCarrito();
+    }
+
+    function posCambiarCantidad(idx, delta) {
+      const item = carrito.find(i => i.idx === idx);
+      if (!item) return;
+      item.cantidad += delta;
+      if (item.cantidad <= 0) carrito = carrito.filter(i => i.idx !== idx);
+      renderGrid();
+      renderCarrito();
+    }
+
+    function renderCarrito() {
+      const total = carrito.reduce((s, i) => s + i.cantidad * i.precio, 0);
+      const cantidadTotal = carrito.reduce((s, i) => s + i.cantidad, 0);
+
+      const filas = !carrito.length
+        ? `<p style="color:var(--texto-sec);font-size:.85rem;text-align:center;padding:1.5rem 0;">Toca un producto para agregarlo.</p>`
+        : carrito.map(item => `
+          <div class="pos-item">
+            <div class="pos-item-info">
+              <div class="pos-item-nombre">${item.emoji} ${item.nombre}</div>
+              <div class="pos-item-precio">RD$${item.precio.toLocaleString()} c/u</div>
+            </div>
+            <div class="pos-stepper">
+              <button onclick="posCambiarCantidad(${item.idx}, -1)">−</button>
+              <span>${item.cantidad}</span>
+              <button onclick="posCambiarCantidad(${item.idx}, 1)">+</button>
+            </div>
+            <div class="pos-item-total">RD$${(item.cantidad * item.precio).toLocaleString()}</div>
+          </div>
+        `).join('');
+
+      document.getElementById('posCarritoDesktop').innerHTML = filas;
+      document.getElementById('posCarritoMobile').innerHTML = filas;
+      document.getElementById('posTotalDesktop').textContent = `RD$${total.toLocaleString()}`;
+      document.getElementById('posTotalMobile').textContent = `RD$${total.toLocaleString()}`;
+      document.getElementById('posMobileCount').textContent = cantidadTotal;
+    }
+
+    function posToggleMobile() {
+      document.getElementById('posMobileBar').classList.toggle('open');
+    }
+
+    async function posConfirmarVenta() {
+      if (!carrito.length) { toast('⚠️ Agrega al menos un producto', 'error'); return; }
+
+      const items = carrito.map(item => {
+        const p = productos.find(x => x.idx === item.idx);
+        return { producto_id: p.id || null, nombre_producto: item.nombre, precio_unitario: item.precio, cantidad: item.cantidad };
+      });
+
+      const btnD = document.getElementById('posBtnConfirmarDesktop');
+      const btnM = document.getElementById('posBtnConfirmarMobile');
+      [btnD, btnM].forEach(b => { b.disabled = true; b.textContent = 'Enviando...'; });
+
+      try {
+        const res = await fetch(`${API}/pedidos`, {
+          method: 'POST',
+          headers: authHeaders(),
+          body: JSON.stringify({
+            negocio_id: NEGOCIO_ID,
+            items,
+            costo_delivery: 0,
+            canal: 'local',
+            notas: 'Venta facturada en mostrador (POS)'
+          })
+        });
+        if (manejarRespuestaAuth(res)) return;
+
+        const textoRespuesta = await res.text();
+        let data = {};
+        try { data = textoRespuesta ? JSON.parse(textoRespuesta) : {}; } catch (e) { /* no era JSON */ }
+
+        if (!res.ok) {
+          toast(`⚠️ ${data.detail || textoRespuesta || 'No se pudo facturar (Error ' + res.status + ')'}`, 'error');
+          console.error('Error al facturar:', res.status, textoRespuesta);
+          return;
+        }
+
+        toast(`✅ Venta facturada — ${data.codigo}`, 'success');
+        carrito = [];
+        renderGrid();
+        renderCarrito();
+        document.getElementById('posMobileBar').classList.remove('open');
+      } catch (e) {
+        toast('⚠️ No se pudo conectar con el servidor', 'error');
+        console.error('Error de red al facturar:', e);
+      } finally {
+        [btnD, btnM].forEach(b => { b.disabled = false; b.textContent = '✓ Confirmar venta'; });
+      }
+    }
+
+    cargarDatos();
+    renderCarrito();
+  </script>
+</body>
+</html>
