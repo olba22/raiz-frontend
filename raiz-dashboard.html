@@ -595,7 +595,7 @@
     <div class="modal-body">
       <div class="campo">
         <label>Buscar producto</label>
-        <input class="input" id="facturarBuscar" type="text" placeholder="Escribe el nombre del producto..." oninput="renderFacturarResultados(this.value)" autocomplete="off" />
+        <input class="input" id="facturarBuscar" type="text" placeholder="Escribe o toca un producto..." oninput="renderFacturarResultados(this.value)" onkeydown="if(event.key==='Enter'){event.preventDefault();agregarPrimerResultado();}" autocomplete="off" />
         <div id="facturarResultados" style="margin-top:.5rem;"></div>
       </div>
       <div class="campo">
@@ -608,7 +608,7 @@
     </div>
     <div class="modal-footer">
       <button class="btn-cancel" onclick="cerrarFacturar()">Cancelar</button>
-      <button class="btn-guardar" onclick="confirmarFactura()">✓ Confirmar venta</button>
+      <button class="btn-guardar" id="btnConfirmarFactura" onclick="confirmarFactura()">✓ Confirmar venta</button>
     </div>
   </div>
 </div>
@@ -1058,7 +1058,7 @@
   function abrirFacturar() {
     facturaCarrito = [];
     document.getElementById('facturarBuscar').value = '';
-    document.getElementById('facturarResultados').innerHTML = '';
+    renderFacturarResultados('');
     renderFacturarCarrito();
     document.getElementById('facturarOverlay').classList.add('open');
     setTimeout(() => document.getElementById('facturarBuscar').focus(), 100);
@@ -1069,21 +1069,29 @@
 
   function renderFacturarResultados(q) {
     const cont = document.getElementById('facturarResultados');
-    if (!q || !q.trim()) { cont.innerHTML = ''; return; }
+    const texto = (q || '').trim().toLowerCase();
     const coincidencias = productos
       .map((p, idx) => ({ p, idx }))
-      .filter(({ p }) => p.activo && p.nombre.toLowerCase().includes(q.toLowerCase()))
-      .slice(0, 6);
+      .filter(({ p }) => p.activo && (!texto || p.nombre.toLowerCase().includes(texto)))
+      .slice(0, texto ? 6 : 12);
     if (!coincidencias.length) {
       cont.innerHTML = `<p style="font-size:.82rem;color:var(--texto-sec);padding:.4rem 0;">Sin resultados</p>`;
       return;
     }
-    cont.innerHTML = coincidencias.map(({ p, idx }) => `
-      <div onclick="agregarAlCarritoFactura(${idx})" style="display:flex;justify-content:space-between;align-items:center;padding:.6rem .8rem;border:1px solid var(--gris-brd);border-radius:9px;margin-bottom:.4rem;cursor:pointer;transition:border-color .15s;" onmouseover="this.style.borderColor='var(--verde)'" onmouseout="this.style.borderColor='var(--gris-brd)'">
-        <span style="font-size:.86rem;">${p.emoji} ${p.nombre}</span>
-        <strong style="color:var(--verde);font-size:.86rem;">RD$${p.precio.toLocaleString()}</strong>
+    cont.innerHTML = `<div style="display:grid;grid-template-columns:1fr 1fr;gap:.4rem;">` + coincidencias.map(({ p, idx }) => `
+      <div onclick="agregarAlCarritoFactura(${idx})" style="display:flex;justify-content:space-between;align-items:center;padding:.6rem .7rem;border:1px solid var(--gris-brd);border-radius:9px;cursor:pointer;transition:border-color .15s;" onmouseover="this.style.borderColor='var(--verde)'" onmouseout="this.style.borderColor='var(--gris-brd)'">
+        <span style="font-size:.82rem;">${p.emoji || '📦'} ${p.nombre}</span>
+        <strong style="color:var(--verde);font-size:.82rem;">RD$${p.precio.toLocaleString()}</strong>
       </div>
-    `).join('');
+    `).join('') + `</div>`;
+  }
+
+  function agregarPrimerResultado() {
+    const q = (document.getElementById('facturarBuscar').value || '').trim().toLowerCase();
+    const match = productos
+      .map((p, idx) => ({ p, idx }))
+      .find(({ p }) => p.activo && (!q || p.nombre.toLowerCase().includes(q)));
+    if (match) agregarAlCarritoFactura(match.idx);
   }
 
   function agregarAlCarritoFactura(idx) {
@@ -1095,7 +1103,7 @@
       facturaCarrito.push({ idx, nombre: p.nombre, emoji: p.emoji, precio: p.precio, cantidad: 1 });
     }
     document.getElementById('facturarBuscar').value = '';
-    document.getElementById('facturarResultados').innerHTML = '';
+    renderFacturarResultados('');
     document.getElementById('facturarBuscar').focus();
     renderFacturarCarrito();
   }
@@ -1327,10 +1335,14 @@
       return { producto_id: p.id || null, nombre_producto: item.nombre, precio_unitario: item.precio, cantidad: item.cantidad };
     });
 
+    const btn = document.getElementById('btnConfirmarFactura');
+    btn.disabled = true;
+    btn.textContent = 'Enviando...';
+
     try {
       const res = await fetch(`${API}/pedidos`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: authHeaders(),
         body: JSON.stringify({
           negocio_id: NEGOCIO_ID,
           items,
@@ -1339,8 +1351,17 @@
           notas: 'Venta facturada en mostrador'
         })
       });
-      const data = await res.json();
-      if (!res.ok) { toast(data.detail || 'No se pudo facturar', 'error'); return; }
+      if (manejarRespuestaAuth(res)) return;
+
+      const textoRespuesta = await res.text();
+      let data = {};
+      try { data = textoRespuesta ? JSON.parse(textoRespuesta) : {}; } catch (e) { /* el servidor no respondió JSON */ }
+
+      if (!res.ok) {
+        toast(`⚠️ ${data.detail || textoRespuesta || 'No se pudo facturar (Error ' + res.status + ')'}`, 'error');
+        console.error('Error al facturar:', res.status, textoRespuesta);
+        return;
+      }
       toast(`✅ Venta facturada — ${data.codigo}`, 'success');
       cerrarFacturar();
       const slug = NEGOCIO_SLUG || localStorage.getItem('raiz_negocio_slug');
@@ -1348,6 +1369,10 @@
       await cargarNegocio();
     } catch (e) {
       toast('⚠️ No se pudo conectar con el servidor', 'error');
+      console.error('Error de red al facturar:', e);
+    } finally {
+      btn.disabled = false;
+      btn.textContent = '✓ Confirmar venta';
     }
   }
 
