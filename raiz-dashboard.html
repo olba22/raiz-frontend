@@ -96,7 +96,7 @@
     .screen.active { display: block; }
 
     /* ── RESUMEN (HOME) ── */
-    .kpi-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; margin-bottom: 2rem; }
+    .kpi-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 1rem; margin-bottom: 2rem; }
     .kpi-card {
       background: var(--gris-card); border: 1px solid var(--gris-brd);
       border-radius: 14px; padding: 1.25rem;
@@ -369,7 +369,7 @@
     <div class="sb-item active" onclick="irA('resumen',this)"><span class="sb-icon">📊</span> Resumen</div>
     <div class="sb-item" onclick="irA('pedidos',this)"><span class="sb-icon">🛒</span> Pedidos</div>
     <div class="sb-item" onclick="irAFacturarRapido()"><span class="sb-icon">🧾</span> Facturar rápido</div>
-    <div class="sb-item" onclick="irA('productos',this)"><span class="sb-icon">📦</span> Productos</div>
+    <div class="sb-item" id="sbItemProductos" onclick="irA('productos',this)"><span class="sb-icon">📦</span> Productos</div>
     <div class="sb-label">Negocio</div>
     <div class="sb-item" onclick="irAPlanes()"><span class="sb-icon">⭐</span> Planes</div>
     <div class="sb-item" onclick="irA('promotores',this)"><span class="sb-icon">📣</span> Promotores</div>
@@ -423,6 +423,12 @@
           <div class="kpi-val" id="kpiProductos">0</div>
           <div class="kpi-delta" style="color:var(--texto-sec);">Agrega tu primer producto</div>
         </div>
+        <div class="kpi-card" style="cursor:pointer;" onclick="irAStockBajo()">
+          <div class="kpi-label">Stock bajo <span>⚠️</span></div>
+          <div class="kpi-val" id="kpiStockBajo">0</div>
+          <div class="kpi-delta" id="kpiStockBajoDetalle" style="color:var(--texto-sec);">Todo en orden</div>
+          <div style="font-size:.68rem;color:var(--texto-sec);text-decoration:underline;margin-top:.35rem;" onclick="event.stopPropagation();configurarUmbralStockBajo()">Ajustar umbral</div>
+        </div>
         <div class="kpi-card">
           <div class="kpi-label">Valoración <span>⭐</span></div>
           <div class="kpi-val">—</div>
@@ -460,6 +466,7 @@
         <button class="filter-btn" onclick="filtrarCat('plato',this)">🍽️ Platos</button>
         <button class="filter-btn" onclick="filtrarCat('acompanante',this)">🌽 Acomp.</button>
         <button class="filter-btn" onclick="filtrarCat('bebida',this)">🥤 Bebidas</button>
+        <button class="filter-btn" id="btnFiltroStockBajo" style="border-color:var(--naranja);color:var(--naranja);" onclick="filtrarCat('stock_bajo',this)">⚠️ Stock bajo</button>
       </div>
 
       <div class="card">
@@ -643,6 +650,22 @@
           <label>Margen de ganancia (%) <span>*</span></label>
           <input class="input" id="masivaMargen" type="number" value="40" placeholder="Ej: 40" />
           <div class="hint" style="font-size:.78rem;color:var(--texto-sec);margin-top:.4rem;">El precio de venta se calcula automático con este margen. Lo puedes editar producto por producto antes de guardar.</div>
+        </div>
+
+        <div class="campo">
+          <label>Categoría para todos estos productos</label>
+          <div class="select-wrap">
+            <select id="masivaCategoria" onchange="onCambioMasivaCategoria()">
+              <option value="general">📦 General</option>
+              <option value="bebida">🥤 Bebidas</option>
+              <option value="plato">🍽️ Platos</option>
+              <option value="acompanante">🌽 Acompañantes</option>
+              <option value="extra">✨ Extra</option>
+              <option value="otra">✏️ Otra categoría...</option>
+            </select>
+          </div>
+          <input class="input" id="masivaCategoriaOtra" type="text" placeholder="Escribe el nombre de la categoría" style="display:none;margin-top:.5rem;" />
+          <div class="hint" style="font-size:.78rem;color:var(--texto-sec);margin-top:.4rem;">Si esta lista mezcla varios tipos de producto, cárgala en tandas por categoría para mantener tu inventario organizado.</div>
         </div>
 
         <div class="campo">
@@ -871,14 +894,33 @@
   let editandoIndex = null;
 
   let catFiltro = 'todos';
+  let STOCK_BAJO_UMBRAL = parseInt(localStorage.getItem('raiz_umbral_stock_bajo')) || 3;
+
+  function configurarUmbralStockBajo() {
+    const actual = STOCK_BAJO_UMBRAL;
+    const respuesta = prompt('¿A partir de cuántas unidades quieres que te avisemos que un producto se está por acabar?', actual);
+    if (respuesta === null) return;
+    const num = parseInt(respuesta);
+    if (isNaN(num) || num < 0) { toast('⚠️ Escribe un número válido', 'error'); return; }
+    STOCK_BAJO_UMBRAL = num;
+    localStorage.setItem('raiz_umbral_stock_bajo', num);
+    renderTabla();
+    toast(`✅ Alerta de stock bajo ajustada a ${num} unidades`, 'success');
+  }
 
   const catLabels = { general:'📦 General', plato:'🍽️ Plato/Producto', bebida:'🥤 Bebida', acompanante:'🌽 Acomp.', extra:'✨ Extra' };
 
   function renderTabla(lista) {
     const tbody = document.getElementById('tbodyProductos');
     if (!lista) lista = productos;
+    actualizarKpiStockBajo();
+    const kpiProd = document.getElementById('kpiProductos');
+    if (kpiProd) kpiProd.textContent = productos.filter(p => p.activo).length;
     if (!lista.length) {
-      tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;padding:2.5rem 1rem;color:var(--texto-sec);">📦 Aún no has agregado productos.<br>Toca "+ Agregar producto" para empezar.</td></tr>`;
+      const mensajeVacio = catFiltro === 'stock_bajo'
+        ? '✅ Ningún producto con stock bajo por ahora.'
+        : '📦 Aún no has agregado productos.<br>Toca "+ Agregar producto" para empezar.';
+      tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;padding:2.5rem 1rem;color:var(--texto-sec);">${mensajeVacio}</td></tr>`;
       return;
     }
     tbody.innerHTML = lista.map((p, i) => `
@@ -886,7 +928,7 @@
         <td><div class="prod-td-name"><div class="prod-td-emoji">${p.emoji}</div><div><strong>${p.nombre}</strong><span>${p.desc}</span></div></div></td>
         <td>${catLabels[p.cat] || p.cat}</td>
         <td class="precio-td">RD$ ${p.precio.toLocaleString()}</td>
-        <td>${p.stock === null || p.stock === undefined ? '<span style="color:var(--texto-sec);">—</span>' : (p.stock <= 3 ? `<span style="color:var(--naranja);font-weight:700;">${p.stock} ⚠️</span>` : p.stock)}</td>
+        <td>${p.stock === null || p.stock === undefined ? '<span style="color:var(--texto-sec);">—</span>' : (p.stock <= STOCK_BAJO_UMBRAL ? `<span style="color:var(--naranja);font-weight:700;">${p.stock} ⚠️</span>` : p.stock)}</td>
         <td>${p.vendidos}</td>
         <td><div class="disponible-toggle-sm ${p.activo?'on':''}" onclick="toggleActivo(${i})"></div></td>
         <td>
@@ -897,12 +939,38 @@
         </td>
       </tr>
     `).join('');
-    const kpiProd = document.getElementById('kpiProductos');
-    if (kpiProd) kpiProd.textContent = productos.filter(p => p.activo).length;
+  }
+
+  function actualizarKpiStockBajo() {
+    const bajos = productos.filter(p => p.activo && p.stock !== null && p.stock !== undefined && p.stock <= STOCK_BAJO_UMBRAL);
+    const el = document.getElementById('kpiStockBajo');
+    const detalle = document.getElementById('kpiStockBajoDetalle');
+    if (el) el.textContent = bajos.length;
+    if (detalle) {
+      if (!bajos.length) {
+        detalle.textContent = 'Todo en orden';
+        detalle.style.color = 'var(--texto-sec)';
+      } else {
+        const nombres = bajos.slice(0, 2).map(p => p.nombre).join(', ');
+        detalle.textContent = bajos.length > 2 ? `${nombres} y ${bajos.length - 2} más` : nombres;
+        detalle.style.color = 'var(--naranja)';
+      }
+    }
+  }
+
+  function irAStockBajo() {
+    irA('productos', document.getElementById('sbItemProductos'));
+    setTimeout(() => filtrarCat('stock_bajo', document.getElementById('btnFiltroStockBajo')), 50);
   }
 
   function filtrarProductos(q) {
-    const lista = productos.filter(p => p.nombre.toLowerCase().includes(q.toLowerCase()) && (catFiltro === 'todos' || p.cat === catFiltro));
+    const texto = q.toLowerCase();
+    const lista = productos.filter(p => {
+      if (!p.nombre.toLowerCase().includes(texto)) return false;
+      if (catFiltro === 'todos') return true;
+      if (catFiltro === 'stock_bajo') return p.stock !== null && p.stock !== undefined && p.stock <= STOCK_BAJO_UMBRAL;
+      return p.cat === catFiltro;
+    });
     renderTabla(lista);
   }
 
@@ -1153,6 +1221,20 @@
   let masivaTipoActual = 'venta';
   let masivaItemsPreview = [];
 
+  function onCambioMasivaCategoria() {
+    const val = document.getElementById('masivaCategoria').value;
+    document.getElementById('masivaCategoriaOtra').style.display = val === 'otra' ? 'block' : 'none';
+  }
+
+  function obtenerCategoriaMasivaSeleccionada() {
+    const val = document.getElementById('masivaCategoria').value;
+    if (val === 'otra') {
+      const otra = document.getElementById('masivaCategoriaOtra').value.trim();
+      return otra || 'general';
+    }
+    return val;
+  }
+
   function cambiarTipoMasiva() {
     masivaTipoActual = document.getElementById('masivaTipo').value;
     const esCompra = masivaTipoActual === 'compra';
@@ -1166,6 +1248,9 @@
     document.getElementById('masivaTipo').value = 'venta';
     document.getElementById('masivaProveedor').value = '';
     document.getElementById('masivaMargen').value = 40;
+    document.getElementById('masivaCategoria').value = 'general';
+    document.getElementById('masivaCategoriaOtra').value = '';
+    document.getElementById('masivaCategoriaOtra').style.display = 'none';
     cambiarTipoMasiva();
     document.getElementById('masivaPaso1').style.display = 'block';
     document.getElementById('masivaPaso2').style.display = 'none';
@@ -1293,7 +1378,7 @@
           } else {
             productos.unshift({
               id: actualizado.id, emoji: '📦', nombre: actualizado.nombre,
-              desc: '', precio: Number(actualizado.precio), cat: 'general',
+              desc: '', precio: Number(actualizado.precio), cat: obtenerCategoriaMasivaSeleccionada(),
               vendidos: 0, activo: true, stock: actualizado.stock
             });
           }
@@ -1306,7 +1391,7 @@
           headers: authHeaders(),
           body: JSON.stringify({
             negocio_id: NEGOCIO_ID,
-            productos: masivaItemsPreview.map(i => ({ nombre: i.nombre, precio: i.precio, stock: i.stock, categoria: 'general', emoji: '📦' }))
+            productos: masivaItemsPreview.map(i => ({ nombre: i.nombre, precio: i.precio, stock: i.stock, categoria: obtenerCategoriaMasivaSeleccionada(), emoji: '📦' }))
           })
         });
         if (manejarRespuestaAuth(res)) return;
