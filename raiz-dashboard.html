@@ -368,6 +368,7 @@
     <div class="sb-label">Principal</div>
     <div class="sb-item active" onclick="irA('resumen',this)"><span class="sb-icon">📊</span> Resumen</div>
     <div class="sb-item" onclick="irA('pedidos',this)"><span class="sb-icon">🛒</span> Pedidos</div>
+    <div class="sb-item" onclick="irAFacturarRapido()"><span class="sb-icon">🧾</span> Facturar rápido</div>
     <div class="sb-item" onclick="irA('productos',this)"><span class="sb-icon">📦</span> Productos</div>
     <div class="sb-label">Negocio</div>
     <div class="sb-item" onclick="irAPlanes()"><span class="sb-icon">⭐</span> Planes</div>
@@ -1054,6 +1055,12 @@
   }
 
   let facturaCarrito = []; // { idx, nombre, precio, cantidad }
+
+  function irAFacturarRapido() {
+    const slug = NEGOCIO_SLUG || new URLSearchParams(window.location.search).get('slug') || localStorage.getItem('raiz_negocio_slug') || '';
+    if (!slug) { toast('⚠️ Espera a que cargue el negocio e intenta de nuevo', 'error'); return; }
+    window.location.href = `raiz-pos.html?slug=${encodeURIComponent(slug)}`;
+  }
 
   function abrirFacturar() {
     facturaCarrito = [];
