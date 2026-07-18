@@ -376,6 +376,7 @@
     <div class="sb-item" onclick="toast('🚀 Próximamente','success')"><span class="sb-icon">📈</span> Estadísticas</div>
     <div class="sb-item" onclick="toast('🚀 Próximamente','success')"><span class="sb-icon">⚙️</span> Configuración</div>
     <div class="sb-label">Mi vitrina</div>
+    <div class="sb-item" id="sbItemAnuncios" onclick="irA('anuncios',this)"><span class="sb-icon">📢</span> Anuncios</div>
     <div class="sb-item" onclick="window.open('/raiz-catalogo.html?slug=' + (new URLSearchParams(window.location.search).get('slug') || localStorage.getItem('raiz_negocio_slug') || ''))"><span class="sb-icon">🌱</span> Ver mi catálogo</div>
     <div class="sb-item" onclick="toast('🔗 Link copiado','success')"><span class="sb-icon">🔗</span> Compartir vitrina</div>
   </nav>
@@ -520,6 +521,48 @@
       </div>
     </div>
 
+    <!-- ══ ANUNCIOS ══ -->
+    <div class="screen" id="screenAnuncios">
+      <div id="anunciosVacio" style="display:none;text-align:center;padding:3rem 1rem;color:var(--texto-sec);">
+        <div style="font-size:2rem;margin-bottom:.5rem;">📢</div>
+        <p>Aún no has publicado anuncios.<br>Toca "+ Publicar anuncio" para aparecer en el feed de RAIZ.</p>
+      </div>
+      <div id="anunciosGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:1rem;"></div>
+    </div>
+
+  </div>
+</div>
+
+<!-- MODAL ANUNCIO -->
+<div class="modal-overlay" id="modalAnuncioOverlay" onclick="if(event.target===this) cerrarModalAnuncio()">
+  <div class="modal">
+    <div class="modal-header">
+      <h3 id="modalAnuncioTitulo">📢 Publicar anuncio</h3>
+      <button class="modal-close" onclick="cerrarModalAnuncio()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="campo">
+        <label>Foto del anuncio</label>
+        <input type="file" id="anuncioFotoInput" accept="image/*" style="display:none;" onchange="manejarFotoAnuncio(this)" />
+        <div class="upload-zone" id="anuncioUploadZone" onclick="document.getElementById('anuncioFotoInput').click()">
+          <div style="font-size:2rem;margin-bottom:.5rem;">📷</div>
+          <p><strong>Sube una foto</strong><br>JPG, PNG · se ajusta automático</p>
+        </div>
+      </div>
+      <div class="campo">
+        <label>Título del anuncio <span>*</span></label>
+        <input class="input" id="anuncioTitulo" type="text" placeholder="Ej: 20% de descuento este fin de semana" />
+      </div>
+      <div class="campo">
+        <label>Descripción</label>
+        <textarea class="input" id="anuncioDescripcion" placeholder="Cuéntale a la gente por qué debería visitarte..."></textarea>
+      </div>
+      <div id="anuncioMensaje" style="font-size:.85rem;color:var(--texto-sec);"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-cancel" onclick="cerrarModalAnuncio()">Cancelar</button>
+      <button class="btn-guardar" id="btnGuardarAnuncio" onclick="guardarAnuncio()">✓ Publicar anuncio</button>
+    </div>
   </div>
 </div>
 
@@ -1032,6 +1075,8 @@
   function accionTopbar() {
     if (pantallaActual === 'promotores') {
       window.open('/raiz-distribuidor.html', '_blank');
+    } else if (pantallaActual === 'anuncios') {
+      abrirModalAnuncio();
     } else {
       abrirModal();
     }
@@ -1470,6 +1515,193 @@
     }
   }
 
+  // ═══════════════════════════════════════════════════════════
+  // ANUNCIOS
+  // ═══════════════════════════════════════════════════════════
+  let anuncios = [];
+  let anuncioEditandoId = null;
+  let anuncioFotoBase64 = null;
+
+  async function cargarAnuncios() {
+    const slug = NEGOCIO_SLUG || localStorage.getItem('raiz_negocio_slug');
+    if (!slug) return;
+    try {
+      const res = await fetch(`${API}/negocios/${encodeURIComponent(slug)}/anuncios`, { headers: authHeaders() });
+      if (manejarRespuestaAuth(res)) return;
+      if (!res.ok) return;
+      anuncios = await res.json();
+      renderAnuncios();
+    } catch (e) {
+      console.log('No se pudieron cargar los anuncios', e);
+    }
+  }
+
+  function renderAnuncios() {
+    const grid = document.getElementById('anunciosGrid');
+    const vacio = document.getElementById('anunciosVacio');
+    if (!anuncios.length) {
+      grid.innerHTML = '';
+      vacio.style.display = 'block';
+      return;
+    }
+    vacio.style.display = 'none';
+    grid.innerHTML = anuncios.map(a => `
+      <div class="card">
+        <div style="width:100%;aspect-ratio:4/3;background:var(--negro);display:flex;align-items:center;justify-content:center;overflow:hidden;">
+          ${a.imagen_base64
+            ? `<img src="${a.imagen_base64}" style="width:100%;height:100%;object-fit:cover;" />`
+            : `<span style="font-size:2rem;">📢</span>`}
+        </div>
+        <div style="padding:1rem;">
+          <strong style="display:block;font-size:.92rem;margin-bottom:.3rem;">${a.titulo}</strong>
+          <p style="font-size:.8rem;color:var(--texto-sec);margin-bottom:.75rem;min-height:1.2rem;">${a.descripcion || ''}</p>
+          <div style="display:flex;gap:1rem;font-size:.75rem;color:var(--texto-sec);margin-bottom:.75rem;">
+            <span>👁️ ${a.vistas} vistas</span>
+            <span>💬 ${a.clics_whatsapp} clics</span>
+          </div>
+          <div style="display:flex;align-items:center;justify-content:space-between;">
+            <div class="disponible-toggle-sm ${a.activo?'on':''}" onclick="toggleActivoAnuncio('${a.id}')" title="${a.activo ? 'Activo' : 'Pausado'}"></div>
+            <div class="row-actions">
+              <button class="action-btn" onclick="editarAnuncio('${a.id}')" title="Editar">✏️</button>
+              <button class="action-btn del" onclick="eliminarAnuncio('${a.id}')" title="Eliminar">🗑️</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    `).join('');
+  }
+
+  function abrirModalAnuncio() {
+    anuncioEditandoId = null;
+    anuncioFotoBase64 = null;
+    document.getElementById('modalAnuncioTitulo').textContent = '📢 Publicar anuncio';
+    document.getElementById('btnGuardarAnuncio').textContent = '✓ Publicar anuncio';
+    document.getElementById('anuncioTitulo').value = '';
+    document.getElementById('anuncioDescripcion').value = '';
+    document.getElementById('anuncioMensaje').textContent = '';
+    document.getElementById('anuncioUploadZone').innerHTML = `<div style="font-size:2rem;margin-bottom:.5rem;">📷</div><p><strong>Sube una foto</strong><br>JPG, PNG · se ajusta automático</p>`;
+    document.getElementById('modalAnuncioOverlay').classList.add('open');
+  }
+
+  function editarAnuncio(id) {
+    const a = anuncios.find(x => x.id === id);
+    if (!a) return;
+    anuncioEditandoId = id;
+    anuncioFotoBase64 = a.imagen_base64 || null;
+    document.getElementById('modalAnuncioTitulo').textContent = '✏️ Editar anuncio';
+    document.getElementById('btnGuardarAnuncio').textContent = '✓ Guardar cambios';
+    document.getElementById('anuncioTitulo').value = a.titulo;
+    document.getElementById('anuncioDescripcion').value = a.descripcion || '';
+    document.getElementById('anuncioMensaje').textContent = '';
+    const zona = document.getElementById('anuncioUploadZone');
+    zona.innerHTML = a.imagen_base64
+      ? `<img src="${a.imagen_base64}" style="max-width:100%;max-height:140px;border-radius:8px;" />`
+      : `<div style="font-size:2rem;margin-bottom:.5rem;">📷</div><p><strong>Sube una foto</strong><br>JPG, PNG · se ajusta automático</p>`;
+    document.getElementById('modalAnuncioOverlay').classList.add('open');
+  }
+
+  function cerrarModalAnuncio() {
+    document.getElementById('modalAnuncioOverlay').classList.remove('open');
+  }
+
+  function manejarFotoAnuncio(input) {
+    const archivo = input.files[0];
+    if (!archivo) return;
+    const mensaje = document.getElementById('anuncioMensaje');
+    mensaje.textContent = 'Procesando foto...';
+    const lector = new FileReader();
+    lector.onload = (e) => {
+      const img = new Image();
+      img.onload = () => {
+        const anchoMax = 900;
+        const escala = Math.min(1, anchoMax / img.width);
+        const canvas = document.createElement('canvas');
+        canvas.width = img.width * escala;
+        canvas.height = img.height * escala;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+        anuncioFotoBase64 = canvas.toDataURL('image/jpeg', 0.75);
+        document.getElementById('anuncioUploadZone').innerHTML = `<img src="${anuncioFotoBase64}" style="max-width:100%;max-height:140px;border-radius:8px;" />`;
+        mensaje.textContent = '';
+      };
+      img.src = e.target.result;
+    };
+    lector.readAsDataURL(archivo);
+  }
+
+  async function guardarAnuncio() {
+    const titulo = document.getElementById('anuncioTitulo').value.trim();
+    if (!titulo) { toast('⚠️ Escribe un título para el anuncio', 'error'); return; }
+    const descripcion = document.getElementById('anuncioDescripcion').value.trim();
+    const mensaje = document.getElementById('anuncioMensaje');
+    const btn = document.getElementById('btnGuardarAnuncio');
+    btn.disabled = true;
+    mensaje.textContent = 'Guardando...';
+
+    try {
+      if (anuncioEditandoId) {
+        const res = await fetch(`${API}/anuncios/${anuncioEditandoId}`, {
+          method: 'PUT',
+          headers: authHeaders(),
+          body: JSON.stringify({ titulo, descripcion, imagen_base64: anuncioFotoBase64 })
+        });
+        if (manejarRespuestaAuth(res)) return;
+        if (!res.ok) { const d = await res.json(); mensaje.textContent = '⚠️ ' + (d.detail || 'No se pudo guardar.'); return; }
+        toast('✅ Anuncio actualizado', 'success');
+      } else {
+        if (!NEGOCIO_ID) { mensaje.textContent = '⚠️ No se pudo identificar tu negocio. Recarga la página.'; return; }
+        const res = await fetch(`${API}/anuncios`, {
+          method: 'POST',
+          headers: authHeaders(),
+          body: JSON.stringify({ negocio_id: NEGOCIO_ID, titulo, descripcion, imagen_base64: anuncioFotoBase64 })
+        });
+        if (manejarRespuestaAuth(res)) return;
+        if (!res.ok) { const d = await res.json(); mensaje.textContent = '⚠️ ' + (d.detail || 'No se pudo publicar.'); return; }
+        toast('✅ Anuncio publicado', 'success');
+      }
+      cerrarModalAnuncio();
+      cargarAnuncios();
+    } catch (e) {
+      mensaje.textContent = '⚠️ No se pudo conectar con el servidor.';
+    } finally {
+      btn.disabled = false;
+    }
+  }
+
+  async function toggleActivoAnuncio(id) {
+    const a = anuncios.find(x => x.id === id);
+    if (!a) return;
+    const nuevoEstado = !a.activo;
+    try {
+      const res = await fetch(`${API}/anuncios/${id}`, {
+        method: 'PUT',
+        headers: authHeaders(),
+        body: JSON.stringify({ activo: nuevoEstado })
+      });
+      if (manejarRespuestaAuth(res)) return;
+      if (!res.ok) { toast('⚠️ No se pudo actualizar', 'error'); return; }
+      a.activo = nuevoEstado;
+      renderAnuncios();
+      toast(nuevoEstado ? '✅ Anuncio activado' : '⏸ Anuncio pausado', nuevoEstado ? 'success' : '');
+    } catch (e) {
+      toast('⚠️ No se pudo conectar con el servidor', 'error');
+    }
+  }
+
+  async function eliminarAnuncio(id) {
+    if (!confirm('¿Eliminar este anuncio?')) return;
+    try {
+      const res = await fetch(`${API}/anuncios/${id}`, { method: 'DELETE', headers: authHeaders() });
+      if (manejarRespuestaAuth(res)) return;
+      if (!res.ok) { toast('⚠️ No se pudo eliminar', 'error'); return; }
+      anuncios = anuncios.filter(x => x.id !== id);
+      renderAnuncios();
+      toast('🗑️ Anuncio eliminado', '');
+    } catch (e) {
+      toast('⚠️ No se pudo conectar con el servidor', 'error');
+    }
+  }
+
   let pantallaActual = 'resumen';
 
   function irA(screen, el) {
@@ -1479,14 +1711,16 @@
     document.querySelectorAll('.sb-item').forEach(i => i.classList.remove('active'));
     if (el) el.classList.add('active');
     cerrarMenuMovil();
-    const titulos = { resumen:'Resumen del negocio', pedidos:'Gestión de pedidos', productos:'Mis productos', promotores:'Mis promotores' };
+    const titulos = { resumen:'Resumen del negocio', pedidos:'Gestión de pedidos', productos:'Mis productos', promotores:'Mis promotores', anuncios:'Mis anuncios' };
     document.getElementById('topbarTitle').textContent = titulos[screen] || screen;
     const btnTopbar = document.getElementById('btnTopbar');
-    btnTopbar.style.display = screen === 'productos' ? 'flex' : 'flex';
-    btnTopbar.textContent = screen === 'promotores' ? '+ Invitar promotor' : '+ Agregar producto';
+    const textosBtnTopbar = { promotores:'+ Invitar promotor', anuncios:'+ Publicar anuncio' };
+    btnTopbar.style.display = 'flex';
+    btnTopbar.textContent = textosBtnTopbar[screen] || '+ Agregar producto';
     const btnMasiva = document.getElementById('btnCargaMasiva');
     if (btnMasiva) btnMasiva.style.display = screen === 'productos' ? 'inline-block' : 'none';
     if (screen === 'productos') renderTabla();
+    if (screen === 'anuncios') cargarAnuncios();
   }
 
   function toast(msg, tipo) {
