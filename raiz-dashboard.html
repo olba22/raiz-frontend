@@ -374,7 +374,7 @@
     <div class="sb-item" onclick="irAPlanes()"><span class="sb-icon">⭐</span> Planes</div>
     <div class="sb-item" onclick="irA('promotores',this)"><span class="sb-icon">📣</span> Promotores</div>
     <div class="sb-item" onclick="toast('🚀 Próximamente','success')"><span class="sb-icon">📈</span> Estadísticas</div>
-    <div class="sb-item" onclick="toast('🚀 Próximamente','success')"><span class="sb-icon">⚙️</span> Configuración</div>
+    <div class="sb-item" onclick="abrirModalFotos()"><span class="sb-icon">⚙️</span> Configuración</div>
     <div class="sb-label">Mi vitrina</div>
     <div class="sb-item" id="sbItemAnuncios" onclick="irA('anuncios',this)"><span class="sb-icon">📢</span> Anuncios</div>
     <div class="sb-item" onclick="window.open('/raiz-catalogo.html?slug=' + (new URLSearchParams(window.location.search).get('slug') || localStorage.getItem('raiz_negocio_slug') || ''))"><span class="sb-icon">🌱</span> Ver mi catálogo</div>
@@ -562,6 +562,39 @@
     <div class="modal-footer">
       <button class="btn-cancel" onclick="cerrarModalAnuncio()">Cancelar</button>
       <button class="btn-guardar" id="btnGuardarAnuncio" onclick="guardarAnuncio()">✓ Publicar anuncio</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL EDITAR FOTOS DE PERFIL -->
+<div class="modal-overlay" id="modalFotosOverlay" onclick="if(event.target===this) cerrarModalFotos()">
+  <div class="modal">
+    <div class="modal-header">
+      <h3>🖼️ Foto de perfil y portada</h3>
+      <button class="modal-close" onclick="cerrarModalFotos()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="campo">
+        <label>Foto de perfil</label>
+        <input type="file" id="perfilFotoInput" accept="image/*" style="display:none;" onchange="manejarFotoPerfil(this)" />
+        <div class="upload-zone" id="perfilUploadZone" onclick="document.getElementById('perfilFotoInput').click()">
+          <div style="font-size:2rem;margin-bottom:.5rem;">📷</div>
+          <p><strong>Sube tu foto de perfil</strong><br>JPG, PNG · se ajusta automático</p>
+        </div>
+      </div>
+      <div class="campo">
+        <label>Foto de portada</label>
+        <input type="file" id="portadaFotoInput" accept="image/*" style="display:none;" onchange="manejarFotoPortada(this)" />
+        <div class="upload-zone" id="portadaUploadZone" onclick="document.getElementById('portadaFotoInput').click()">
+          <div style="font-size:2rem;margin-bottom:.5rem;">🖼️</div>
+          <p><strong>Sube tu portada</strong><br>Se ve arriba de tu catálogo</p>
+        </div>
+      </div>
+      <div id="fotosMensaje" style="font-size:.85rem;color:var(--texto-sec);"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-cancel" onclick="cerrarModalFotos()">Cancelar</button>
+      <button class="btn-guardar" id="btnGuardarFotos" onclick="guardarFotosNegocio()">✓ Guardar cambios</button>
     </div>
   </div>
 </div>
@@ -1602,6 +1635,108 @@
 
   function cerrarModalAnuncio() {
     document.getElementById('modalAnuncioOverlay').classList.remove('open');
+  }
+
+  let perfilFotoBase64 = null;
+  let portadaFotoBase64 = null;
+
+  function abrirModalFotos() {
+    perfilFotoBase64 = null;
+    portadaFotoBase64 = null;
+    document.getElementById('perfilUploadZone').innerHTML = `<div style="font-size:2rem;margin-bottom:.5rem;">📷</div><p><strong>Sube tu foto de perfil</strong><br>JPG, PNG · se ajusta automático</p>`;
+    document.getElementById('portadaUploadZone').innerHTML = `<div style="font-size:2rem;margin-bottom:.5rem;">🖼️</div><p><strong>Sube tu portada</strong><br>Se ve arriba de tu catálogo</p>`;
+    document.getElementById('fotosMensaje').textContent = '';
+    document.getElementById('modalFotosOverlay').classList.add('open');
+  }
+
+  function cerrarModalFotos() {
+    document.getElementById('modalFotosOverlay').classList.remove('open');
+  }
+
+  function manejarFotoPerfil(input) {
+    const archivo = input.files[0];
+    if (!archivo) return;
+    const mensaje = document.getElementById('fotosMensaje');
+    mensaje.textContent = 'Procesando foto...';
+    const lector = new FileReader();
+    lector.onload = (e) => {
+      const img = new Image();
+      img.onload = () => {
+        const anchoMax = 500;
+        const escala = Math.min(1, anchoMax / img.width);
+        const canvas = document.createElement('canvas');
+        canvas.width = img.width * escala;
+        canvas.height = img.height * escala;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+        perfilFotoBase64 = canvas.toDataURL('image/jpeg', 0.75);
+        document.getElementById('perfilUploadZone').innerHTML = `<img src="${perfilFotoBase64}" style="max-width:100%;max-height:140px;border-radius:8px;" />`;
+        mensaje.textContent = '';
+      };
+      img.src = e.target.result;
+    };
+    lector.readAsDataURL(archivo);
+  }
+
+  function manejarFotoPortada(input) {
+    const archivo = input.files[0];
+    if (!archivo) return;
+    const mensaje = document.getElementById('fotosMensaje');
+    mensaje.textContent = 'Procesando foto...';
+    const lector = new FileReader();
+    lector.onload = (e) => {
+      const img = new Image();
+      img.onload = () => {
+        const anchoMax = 1000;
+        const escala = Math.min(1, anchoMax / img.width);
+        const canvas = document.createElement('canvas');
+        canvas.width = img.width * escala;
+        canvas.height = img.height * escala;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+        portadaFotoBase64 = canvas.toDataURL('image/jpeg', 0.75);
+        document.getElementById('portadaUploadZone').innerHTML = `<img src="${portadaFotoBase64}" style="max-width:100%;max-height:140px;border-radius:8px;" />`;
+        mensaje.textContent = '';
+      };
+      img.src = e.target.result;
+    };
+    lector.readAsDataURL(archivo);
+  }
+
+  async function guardarFotosNegocio() {
+    if (!perfilFotoBase64 && !portadaFotoBase64) {
+      toast('⚠️ Sube al menos una foto para guardar', 'error');
+      return;
+    }
+    if (!NEGOCIO_ID) { toast('⚠️ No se pudo identificar tu negocio. Recarga la página.', 'error'); return; }
+    const btn = document.getElementById('btnGuardarFotos');
+    const mensaje = document.getElementById('fotosMensaje');
+    btn.disabled = true;
+    mensaje.textContent = 'Guardando...';
+
+    const payload = {};
+    if (perfilFotoBase64) payload.foto_perfil = perfilFotoBase64;
+    if (portadaFotoBase64) payload.foto_portada = portadaFotoBase64;
+
+    try {
+      const res = await fetch(`${API}/negocios/${NEGOCIO_ID}/fotos`, {
+        method: 'PUT',
+        headers: authHeaders(),
+        body: JSON.stringify(payload)
+      });
+      if (manejarRespuestaAuth(res)) return;
+      if (!res.ok) {
+        const d = await res.json();
+        mensaje.textContent = '⚠️ ' + (d.detail || 'No se pudo guardar.');
+        btn.disabled = false;
+        return;
+      }
+      toast('✅ Fotos actualizadas', 'success');
+      cerrarModalFotos();
+    } catch (e) {
+      mensaje.textContent = '⚠️ No se pudo conectar con el servidor.';
+    }
+    btn.disabled = false;
   }
 
   function manejarFotoAnuncio(input) {
