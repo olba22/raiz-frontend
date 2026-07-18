@@ -319,19 +319,11 @@
   const vistasRegistradas = new Set();
   let anunciosActuales = [];
 
-  function numeroWhatsapp(crudo) {
-    let digitos = (crudo || '').replace(/\D/g, '');
-    if (!digitos) return null;
-    if (digitos.length === 10) digitos = '1' + digitos; // código de República Dominicana
-    return digitos;
-  }
-
   function escapeHtml(texto) {
     return (texto || '').replace(/[&<>"']/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c]));
   }
 
   function tarjetaAnuncio(a, i) {
-    const numero = numeroWhatsapp(a.negocio_whatsapp);
     const titulo = escapeHtml(a.titulo);
     const descripcion = escapeHtml(a.descripcion);
     const nombreNegocio = escapeHtml(a.negocio_nombre);
@@ -340,31 +332,27 @@
       : `<div class="anuncio-img-fallback">🌱</div>`;
     return `
       <div class="anuncio-card" style="animation-delay:${Math.min(i * 0.07, 0.6)}s;" data-anuncio-id="${a.id}">
-        <div class="anuncio-img-wrap">
+        <div class="anuncio-img-wrap" style="cursor:pointer;" onclick="irACatalogo('${a.id}','${encodeURIComponent(a.negocio_slug)}')">
           ${imagen}
           <div class="anuncio-negocio-badge">
             <span class="emoji">${a.negocio_emoji || '🏪'}</span> ${nombreNegocio}
           </div>
         </div>
         <div class="anuncio-body">
-          <div class="anuncio-titulo">${titulo}</div>
+          <div class="anuncio-titulo" style="cursor:pointer;" onclick="irACatalogo('${a.id}','${encodeURIComponent(a.negocio_slug)}')">${titulo}</div>
           ${descripcion ? `<div class="anuncio-desc">${descripcion}</div>` : ''}
           <div class="anuncio-footer">
             <span class="anuncio-vistas">👁️ ${a.vistas}</span>
-            ${numero
-              ? `<button class="btn-whatsapp-anuncio" onclick="contactarWhatsapp('${a.id}','${numero}', this)" data-negocio-nombre="${nombreNegocio}">💬 WhatsApp</button>`
-              : `<a class="btn-whatsapp-anuncio" href="/raiz-catalogo.html?slug=${encodeURIComponent(a.negocio_slug)}">Ver negocio</a>`}
+            <button class="btn-whatsapp-anuncio" onclick="irACatalogo('${a.id}','${encodeURIComponent(a.negocio_slug)}')">🛍️ Ver catálogo</button>
           </div>
         </div>
       </div>
     `;
   }
 
-  async function contactarWhatsapp(anuncioId, numero, botonEl) {
+  function irACatalogo(anuncioId, slugCodificado) {
     fetch(`${API}/anuncios/${anuncioId}/clic-whatsapp`, { method: 'POST' }).catch(() => {});
-    const nombreNegocio = botonEl.getAttribute('data-negocio-nombre') || '';
-    const texto = encodeURIComponent(`Hola ${nombreNegocio}, vi tu anuncio en RAIZ y quiero más información 🌱`);
-    window.open(`https://wa.me/${numero}?text=${texto}`, '_blank');
+    window.location.href = `/raiz-catalogo.html?slug=${slugCodificado}`;
   }
 
   function observarVistas() {
