@@ -161,23 +161,58 @@
   .negocio-info h3 { font-family: 'Syne', sans-serif; font-size: 1.05rem; margin-bottom: .25rem; }
   .negocio-info p { color: var(--texto-sec); font-size: .82rem; }
 
-  /* FEED DE ANUNCIOS (estilo Instagram) */
-  .feed-grid {
-    display: grid; grid-template-columns: repeat(3, 1fr); gap: .35rem;
-    position: relative; filter: blur(1px) brightness(.5);
-    pointer-events: none; user-select: none;
+  /* FEED DE ANUNCIOS (estilo Instagram, en vivo) */
+  .pulse-dot {
+    display: inline-block; width: 7px; height: 7px; border-radius: 50%;
+    background: var(--verde); margin-right: .3rem;
+    animation: pulse 1.6s ease-in-out infinite;
   }
-  .feed-slot {
-    aspect-ratio: 1; background: linear-gradient(135deg, var(--gris-card), var(--gris-osc));
-    border: 1px solid var(--gris-brd); border-radius: 4px;
-    display: flex; align-items: center; justify-content: center;
+  @keyframes pulse {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(29,185,84,.55); }
+    70% { box-shadow: 0 0 0 6px rgba(29,185,84,0); }
   }
-  .feed-slot-icon { font-size: 1.8rem; opacity: .3; }
+  .anuncios-feed {
+    columns: 3 220px; column-gap: .9rem;
+  }
+  @media (max-width: 900px) { .anuncios-feed { columns: 2 180px; } }
+  @media (max-width: 560px) { .anuncios-feed { columns: 1 100%; } }
+  .anuncio-card {
+    break-inside: avoid; margin-bottom: .9rem; display: block;
+    background: var(--gris-card); border: 1px solid var(--gris-brd); border-radius: 16px;
+    overflow: hidden; opacity: 0; transform: translateY(18px) scale(.98);
+    animation: feedIn .55s ease forwards;
+    transition: border-color .2s, transform .2s;
+  }
+  .anuncio-card:hover { border-color: var(--verde); transform: translateY(-3px); }
+  @keyframes feedIn { to { opacity: 1; transform: translateY(0) scale(1); } }
+  .anuncio-img-wrap { position: relative; width: 100%; background: linear-gradient(135deg, #0d2b12, #050505); }
+  .anuncio-img-wrap img { width: 100%; display: block; }
+  .anuncio-img-fallback { aspect-ratio: 1; display: flex; align-items: center; justify-content: center; font-size: 2.2rem; }
+  .anuncio-negocio-badge {
+    position: absolute; top: .55rem; left: .55rem;
+    background: rgba(10,10,10,.72); backdrop-filter: blur(6px);
+    border-radius: 100px; padding: .3rem .6rem .3rem .35rem;
+    display: flex; align-items: center; gap: .35rem; font-size: .72rem; font-weight: 600;
+  }
+  .anuncio-negocio-badge .emoji { font-size: .95rem; }
+  .anuncio-body { padding: .85rem 1rem 1rem; }
+  .anuncio-titulo { font-family: 'Syne', sans-serif; font-size: .95rem; font-weight: 800; margin-bottom: .3rem; line-height: 1.25; }
+  .anuncio-desc { color: var(--texto-sec); font-size: .8rem; line-height: 1.45; margin-bottom: .85rem; }
+  .anuncio-footer { display: flex; align-items: center; justify-content: space-between; gap: .5rem; }
+  .anuncio-vistas { font-size: .7rem; color: var(--texto-sec); }
+  .btn-whatsapp-anuncio {
+    background: var(--verde); color: #000; font-weight: 700; font-size: .78rem;
+    padding: .5rem .85rem; border-radius: 100px; text-decoration: none;
+    display: inline-flex; align-items: center; gap: .35rem; white-space: nowrap;
+    border: none; cursor: pointer; font-family: 'Inter', sans-serif;
+    transition: transform .15s, filter .15s;
+  }
+  .btn-whatsapp-anuncio:hover { filter: brightness(1.08); transform: translateY(-1px); }
   .feed-empty {
-    position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%);
-    text-align: center; width: 90%; max-width: 380px;
+    position: relative; left: 0; top: 0; transform: none;
+    text-align: center; max-width: 380px; margin: 0 auto;
     background: var(--gris-osc); border: 1px solid var(--gris-brd); border-radius: 18px;
-    padding: 2rem 1.5rem;
+    padding: 2.5rem 1.5rem;
   }
   .feed-empty h3 { font-family: 'Syne', sans-serif; font-size: 1.1rem; margin-bottom: .4rem; }
   .feed-empty p { color: var(--texto-sec); font-size: .85rem; margin-bottom: 1.25rem; }
@@ -230,21 +265,18 @@
 </nav>
 
 <div class="hero" style="padding-bottom:2rem;">
-  <div class="hero-badge">📸 Anuncios en vivo</div>
+  <div class="hero-badge"><span class="pulse-dot"></span> Anuncios en vivo</div>
   <h1>Lo que se vende<br><span>hoy</span> en tu comunidad.</h1>
-  <p>Cada negocio y vendedor independiente publica aquí lo que está ofreciendo. Toca una publicación para ver el catálogo completo.</p>
+  <p>Cada negocio y vendedor independiente publica aquí lo que está ofreciendo. Toca el botón de WhatsApp para escribirle directo.</p>
 </div>
 
 <div class="section" style="padding-top:0;">
-  <div class="feed-grid" id="feedGrid">
-    <div class="feed-slot"><div class="feed-slot-icon">📸</div></div>
-    <div class="feed-slot"><div class="feed-slot-icon">📸</div></div>
-    <div class="feed-slot"><div class="feed-slot-icon">📸</div></div>
-    <div class="feed-slot"><div class="feed-slot-icon">📸</div></div>
-    <div class="feed-slot"><div class="feed-slot-icon">📸</div></div>
-    <div class="feed-slot"><div class="feed-slot-icon">📸</div></div>
+  <div id="feedCargando" style="text-align:center;padding:3rem 1rem;color:var(--texto-sec);">
+    <div style="font-size:1.6rem;margin-bottom:.5rem;">🌱</div>
+    Cargando anuncios...
   </div>
-  <div class="feed-empty">
+  <div class="anuncios-feed" id="anunciosFeed" style="display:none;"></div>
+  <div class="feed-empty" id="feedEmpty" style="display:none;">
     <div style="font-size:2rem;margin-bottom:.75rem;">🌱</div>
     <h3>Aún no hay publicaciones</h3>
     <p>Sé el primero en anunciar lo que vendes en RAIZ.</p>
@@ -281,6 +313,100 @@
 <footer>
   <span>RAIZ.</span> — Vitrina digital dominicana · Hecho en República Dominicana 🇩🇴
 </footer>
+
+<script>
+  const API = 'https://raiz-backend.onrender.com';
+  const vistasRegistradas = new Set();
+  let anunciosActuales = [];
+
+  function numeroWhatsapp(crudo) {
+    let digitos = (crudo || '').replace(/\D/g, '');
+    if (!digitos) return null;
+    if (digitos.length === 10) digitos = '1' + digitos; // código de República Dominicana
+    return digitos;
+  }
+
+  function escapeHtml(texto) {
+    return (texto || '').replace(/[&<>"']/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c]));
+  }
+
+  function tarjetaAnuncio(a, i) {
+    const numero = numeroWhatsapp(a.negocio_whatsapp);
+    const titulo = escapeHtml(a.titulo);
+    const descripcion = escapeHtml(a.descripcion);
+    const nombreNegocio = escapeHtml(a.negocio_nombre);
+    const imagen = a.imagen_base64
+      ? `<img src="${a.imagen_base64}" alt="${titulo}" loading="lazy" />`
+      : `<div class="anuncio-img-fallback">🌱</div>`;
+    return `
+      <div class="anuncio-card" style="animation-delay:${Math.min(i * 0.07, 0.6)}s;" data-anuncio-id="${a.id}">
+        <div class="anuncio-img-wrap">
+          ${imagen}
+          <div class="anuncio-negocio-badge">
+            <span class="emoji">${a.negocio_emoji || '🏪'}</span> ${nombreNegocio}
+          </div>
+        </div>
+        <div class="anuncio-body">
+          <div class="anuncio-titulo">${titulo}</div>
+          ${descripcion ? `<div class="anuncio-desc">${descripcion}</div>` : ''}
+          <div class="anuncio-footer">
+            <span class="anuncio-vistas">👁️ ${a.vistas}</span>
+            ${numero
+              ? `<button class="btn-whatsapp-anuncio" onclick="contactarWhatsapp('${a.id}','${numero}', this)" data-negocio-nombre="${nombreNegocio}">💬 WhatsApp</button>`
+              : `<a class="btn-whatsapp-anuncio" href="/raiz-catalogo.html?slug=${encodeURIComponent(a.negocio_slug)}">Ver negocio</a>`}
+          </div>
+        </div>
+      </div>
+    `;
+  }
+
+  async function contactarWhatsapp(anuncioId, numero, botonEl) {
+    fetch(`${API}/anuncios/${anuncioId}/clic-whatsapp`, { method: 'POST' }).catch(() => {});
+    const nombreNegocio = botonEl.getAttribute('data-negocio-nombre') || '';
+    const texto = encodeURIComponent(`Hola ${nombreNegocio}, vi tu anuncio en RAIZ y quiero más información 🌱`);
+    window.open(`https://wa.me/${numero}?text=${texto}`, '_blank');
+  }
+
+  function observarVistas() {
+    const observer = new IntersectionObserver((entradas) => {
+      entradas.forEach(entrada => {
+        if (!entrada.isIntersecting) return;
+        const id = entrada.target.getAttribute('data-anuncio-id');
+        if (!id || vistasRegistradas.has(id)) return;
+        vistasRegistradas.add(id);
+        fetch(`${API}/anuncios/${id}/vista`, { method: 'POST' }).catch(() => {});
+      });
+    }, { threshold: 0.4 });
+    document.querySelectorAll('.anuncio-card').forEach(card => observer.observe(card));
+  }
+
+  async function cargarFeed() {
+    try {
+      const res = await fetch(`${API}/anuncios?limite=30`);
+      if (!res.ok) throw new Error('respuesta no ok');
+      const anuncios = await res.json();
+      anunciosActuales = anuncios;
+      document.getElementById('feedCargando').style.display = 'none';
+
+      if (!anuncios.length) {
+        document.getElementById('feedEmpty').style.display = 'block';
+        document.getElementById('anunciosFeed').style.display = 'none';
+        return;
+      }
+
+      document.getElementById('feedEmpty').style.display = 'none';
+      const cont = document.getElementById('anunciosFeed');
+      cont.style.display = 'block';
+      cont.innerHTML = anuncios.map((a, i) => tarjetaAnuncio(a, i)).join('');
+      observarVistas();
+    } catch (e) {
+      document.getElementById('feedCargando').innerHTML = '<div style="font-size:1.6rem;margin-bottom:.5rem;">⚠️</div>No se pudo cargar el feed. Intenta recargar la página.';
+    }
+  }
+
+  cargarFeed();
+  setInterval(cargarFeed, 60000); // refresca solo para traer anuncios nuevos, sin interrumpir al usuario
+</script>
 
 </body>
 </html>
