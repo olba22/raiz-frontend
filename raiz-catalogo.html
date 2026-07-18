@@ -576,6 +576,8 @@
       const nombre = negocio.nombre || NEGOCIO_NOMBRE;
       const categoria = negocio.categoria || 'Negocio local';
       const emoji = negocio.avatar_emoji || negocio.emoji || '🏪';
+      const fotoPerfil = negocio.foto_perfil || null;
+      const fotoPortada = negocio.foto_portada || null;
       const municipio = negocio.municipio || negocio.pueblo || '';
       const whatsapp = negocio.whatsapp || negocio.telefono || null;
 
@@ -606,8 +608,25 @@
       document.getElementById('perfilHandle').textContent = `@${slug} · 🍽️ ${categoria}`;
       document.getElementById('perfilBio').innerHTML = `📍 ${municipio || 'República Dominicana'}`;
       document.getElementById('perfilLink').textContent = `🌱 raiz.do/${slug}`;
-      document.getElementById('avatarEmoji').textContent = emoji;
-      document.getElementById('portadaEmoji').textContent = emoji;
+      const avatarEl = document.getElementById('avatarEmoji');
+      if (fotoPerfil) {
+        avatarEl.textContent = '';
+        avatarEl.style.backgroundImage = `url(${fotoPerfil})`;
+        avatarEl.style.backgroundSize = 'cover';
+        avatarEl.style.backgroundPosition = 'center';
+      } else {
+        avatarEl.textContent = emoji;
+      }
+
+      const portadaEl = document.querySelector('.portada');
+      if (fotoPortada) {
+        document.getElementById('portadaEmoji').textContent = '';
+        portadaEl.style.backgroundImage = `url(${fotoPortada})`;
+        portadaEl.style.backgroundSize = 'cover';
+        portadaEl.style.backgroundPosition = 'center';
+      } else {
+        document.getElementById('portadaEmoji').textContent = emoji;
+      }
 
       // Actualizar (o esconder) los botones de redes sociales con los datos reales
       const igLink = document.getElementById('igLink');
