@@ -581,6 +581,15 @@
       </div>
 
       <div class="campo">
+        <label>Foto de portada</label>
+        <div class="upload-area" id="uploadAreaPortada" onclick="document.getElementById('portadaInput').click()">
+          <div class="upload-icon">🖼️</div>
+          <p><strong>Toca para subir una portada</strong><br>Se ve arriba de tu catálogo · máx. 5MB</p>
+        </div>
+        <input type="file" id="portadaInput" accept="image/*" style="display:none" onchange="previewPortada(event)" />
+      </div>
+
+      <div class="campo">
         <label>O elige un ícono para tu perfil</label>
         <div class="emoji-grid" id="emojiGrid">
           <div class="emoji-btn selected" onclick="selEmoji(this,'🏪')">🏪</div>
@@ -817,12 +826,50 @@
     if (!file) return;
     const reader = new FileReader();
     reader.onload = ev => {
-      const area = document.getElementById('uploadArea');
-      area.innerHTML = `<img src="${ev.target.result}" style="width:80px;height:80px;border-radius:50%;object-fit:cover;margin-bottom:.5rem;"><p><strong>Foto cargada ✓</strong><br><span style="color:var(--texto-sec);font-size:.8rem;">${file.name}</span></p>`;
-      area.classList.add('has-file');
-      document.getElementById('previewAvatar').textContent = '';
-      document.getElementById('previewAvatar').style.backgroundImage = `url(${ev.target.result})`;
-      document.getElementById('previewAvatar').style.backgroundSize = 'cover';
+      const img = new Image();
+      img.onload = () => {
+        const anchoMax = 500;
+        const escala = Math.min(1, anchoMax / img.width);
+        const canvas = document.createElement('canvas');
+        canvas.width = img.width * escala;
+        canvas.height = img.height * escala;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+        datos.foto_perfil = canvas.toDataURL('image/jpeg', 0.75);
+
+        const area = document.getElementById('uploadArea');
+        area.innerHTML = `<img src="${datos.foto_perfil}" style="width:80px;height:80px;border-radius:50%;object-fit:cover;margin-bottom:.5rem;"><p><strong>Foto cargada ✓</strong><br><span style="color:var(--texto-sec);font-size:.8rem;">${file.name}</span></p>`;
+        area.classList.add('has-file');
+        document.getElementById('previewAvatar').textContent = '';
+        document.getElementById('previewAvatar').style.backgroundImage = `url(${datos.foto_perfil})`;
+        document.getElementById('previewAvatar').style.backgroundSize = 'cover';
+      };
+      img.src = ev.target.result;
+    };
+    reader.readAsDataURL(file);
+  }
+
+  function previewPortada(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = ev => {
+      const img = new Image();
+      img.onload = () => {
+        const anchoMax = 1000;
+        const escala = Math.min(1, anchoMax / img.width);
+        const canvas = document.createElement('canvas');
+        canvas.width = img.width * escala;
+        canvas.height = img.height * escala;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+        datos.foto_portada = canvas.toDataURL('image/jpeg', 0.75);
+
+        const area = document.getElementById('uploadAreaPortada');
+        area.innerHTML = `<img src="${datos.foto_portada}" style="width:100%;max-height:100px;object-fit:cover;border-radius:8px;margin-bottom:.5rem;"><p><strong>Portada cargada ✓</strong><br><span style="color:var(--texto-sec);font-size:.8rem;">${file.name}</span></p>`;
+        area.classList.add('has-file');
+      };
+      img.src = ev.target.result;
     };
     reader.readAsDataURL(file);
   }
@@ -840,7 +887,7 @@
 
     document.getElementById('resumenBox').innerHTML = `
       <div class="resumen-header">
-        <div class="resumen-avatar">${datos.emoji}</div>
+        <div class="resumen-avatar" style="${datos.foto_perfil ? `background-image:url(${datos.foto_perfil});background-size:cover;` : ''}">${datos.foto_perfil ? '' : datos.emoji}</div>
         <div>
           <h3>${n}</h3>
           <span>${datos.catEmoji} ${datos.categoria} · ${mun}, ${prov}</span>
@@ -882,6 +929,8 @@
       facebook: document.getElementById('facebook').value,
       categoria: datos.categoria,
       avatar_emoji: datos.emoji,
+      foto_perfil: datos.foto_perfil || null,
+      foto_portada: datos.foto_portada || null,
       tiene_delivery: datos.delivery,
       plan: datos.plan,
       municipio: document.getElementById('municipio').value,
