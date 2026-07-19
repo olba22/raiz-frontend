@@ -79,6 +79,9 @@
       padding: .5rem 1rem; font-size: .82rem; font-weight: 600;
       font-family: 'Inter', sans-serif;
     }
+    .btn-seguir.siguiendo {
+      background: rgba(29,185,84,.15); color: var(--verde); border-color: var(--verde);
+    }
 
     .perfil-nombre {
       font-family: 'Syne', sans-serif; font-size: 1.2rem; font-weight: 800;
@@ -402,7 +405,7 @@
     </div>
     <div class="perfil-btns" id="perfilBtns">
       <button class="btn-wa-perfil" id="btnPedir" onclick="abrirDrawer()">💬 Pedir</button>
-      <button class="btn-seguir" id="btnSeguir">Seguir</button>
+      <button class="btn-seguir" id="btnSeguir" onclick="toggleSeguir()">Seguir</button>
       <button class="btn-compartir" onclick="abrirCompartir()" title="Compartir">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
       </button>
@@ -596,10 +599,14 @@
         const btnSeguir = document.getElementById('btnSeguir');
         if (btnPedir) btnPedir.style.display = 'none';
         if (btnSeguir) {
-          btnSeguir.textContent = '👥 0 seguidores';
+          btnSeguir.textContent = `👥 ${negocio.total_seguidores || 0} seguidores`;
           btnSeguir.style.cursor = 'default';
           btnSeguir.onclick = null;
         }
+      } else {
+        // Vista de visitante: el botón "Seguir" sí funciona de verdad
+        const yaSigue = localStorage.getItem(`raiz_sigo_${slug}`) === '1';
+        actualizarBotonSeguir(yaSigue);
       }
       if (whatsapp) NEGOCIO_WHATSAPP = whatsapp.replace(/\D/g, '');
 
@@ -883,6 +890,33 @@
     }
 
     window.location.href = urlWhatsApp;
+  }
+
+  function actualizarBotonSeguir(siguiendo) {
+    const btn = document.getElementById('btnSeguir');
+    if (!btn) return;
+    btn.textContent = siguiendo ? '✓ Siguiendo' : 'Seguir';
+    btn.classList.toggle('siguiendo', siguiendo);
+  }
+
+  async function toggleSeguir() {
+    const yaSigue = localStorage.getItem(`raiz_sigo_${NEGOCIO_SLUG}`) === '1';
+    const nuevoEstado = !yaSigue;
+
+    // Reflejar el cambio de inmediato (no hacer esperar al usuario por el servidor)
+    localStorage.setItem(`raiz_sigo_${NEGOCIO_SLUG}`, nuevoEstado ? '1' : '0');
+    actualizarBotonSeguir(nuevoEstado);
+    mostrarToast(nuevoEstado ? `✓ Ahora sigues a ${NEGOCIO_NOMBRE}` : `Dejaste de seguir a ${NEGOCIO_NOMBRE}`);
+
+    try {
+      await fetch(`${API}/negocios/${encodeURIComponent(NEGOCIO_SLUG)}/seguir`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ seguir: nuevoEstado })
+      });
+    } catch (e) {
+      console.log('No se pudo actualizar el conteo de seguidores en el servidor', e);
+    }
   }
 
   function mostrarToast(msg) {
