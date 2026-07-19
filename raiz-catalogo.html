@@ -856,33 +856,33 @@
     msg += `👤 *Cliente:* ${nombre} (${telefono})\n`;
     msg += `📍 *Dirección:* ${direccion || '(la escribo aquí)'}`;
 
-    // Guardar el pedido real en la base de datos (no bloquea el envío por WhatsApp si falla)
+    const urlWhatsApp = `https://wa.me/${NEGOCIO_WHATSAPP}?text=${encodeURIComponent(msg)}`;
+
+    // Guardar el pedido real en la base de datos, pero SIN esperarlo (con await
+    // aquí, muchos navegadores de celular bloquean la apertura de WhatsApp
+    // porque ya no lo consideran una acción directa del usuario).
     if (NEGOCIO_ID) {
-      try {
-        await fetch(`${API}/pedidos`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            negocio_id: NEGOCIO_ID,
-            cliente_nombre: nombre,
-            cliente_telefono: telefono,
-            cliente_direccion: direccion || null,
-            items: carrito.map(i => ({
-              producto_id: i.id || null,
-              nombre_producto: i.nombre,
-              precio_unitario: i.precio,
-              cantidad: i.qty
-            })),
-            costo_delivery: 100,
-            promotor_codigo: distribuidor || null
-          })
-        });
-      } catch (e) {
-        console.log('No se pudo guardar el pedido en el servidor', e);
-      }
+      fetch(`${API}/pedidos`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          negocio_id: NEGOCIO_ID,
+          cliente_nombre: nombre,
+          cliente_telefono: telefono,
+          cliente_direccion: direccion || null,
+          items: carrito.map(i => ({
+            producto_id: i.id || null,
+            nombre_producto: i.nombre,
+            precio_unitario: i.precio,
+            cantidad: i.qty
+          })),
+          costo_delivery: 100,
+          promotor_codigo: distribuidor || null
+        })
+      }).catch(e => console.log('No se pudo guardar el pedido en el servidor', e));
     }
 
-    window.open(`https://wa.me/${NEGOCIO_WHATSAPP}?text=${encodeURIComponent(msg)}`, '_blank');
+    window.location.href = urlWhatsApp;
   }
 
   function mostrarToast(msg) {
