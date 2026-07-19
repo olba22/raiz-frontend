@@ -874,6 +874,9 @@
 
     const urlWhatsApp = `https://wa.me/${NEGOCIO_WHATSAPP}?text=${encodeURIComponent(msg)}`;
 
+    // 🔧 DIAGNÓSTICO TEMPORAL — quitar después de encontrar el problema
+    alert('DEBUG\nNúmero: ' + NEGOCIO_WHATSAPP + '\nLink: ' + urlWhatsApp);
+
     // Guardar el pedido real en la base de datos, pero SIN esperarlo (con await
     // aquí, muchos navegadores de celular bloquean la apertura de WhatsApp
     // porque ya no lo consideran una acción directa del usuario).
