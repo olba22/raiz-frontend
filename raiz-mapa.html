@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>RAIZ — Mapa de negocios</title>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --verde: #1DB954; --negro: #0A0A0A; --gris-osc: #111111;
+      --gris-card: #161616; --gris-brd: #222222; --blanco: #F5F5F5; --texto-sec: #888888;
+    }
+    html, body { height: 100%; }
+    body { font-family: 'Inter', sans-serif; background: var(--negro); color: var(--blanco); overflow: hidden; }
+
+    nav {
+      position: fixed; top: 0; left: 0; right: 0; z-index: 500;
+      display: flex; align-items: center; justify-content: space-between;
+      padding: .85rem 1.25rem;
+      background: rgba(10,10,10,.92); backdrop-filter: blur(14px);
+      border-bottom: 1px solid var(--gris-brd);
+    }
+    .logo { font-family: 'Syne', sans-serif; font-size: 1.6rem; font-weight: 800; color: var(--verde); letter-spacing: -1px; text-decoration: none; }
+    .logo span { color: var(--blanco); }
+    .nav-link { font-size: .85rem; color: var(--texto-sec); text-decoration: none; transition: color .2s; }
+    .nav-link:hover { color: var(--blanco); }
+
+    #mapa { position: absolute; top: 0; left: 0; right: 0; bottom: 0; z-index: 1; }
+
+    #cargando {
+      position: fixed; inset: 0; z-index: 400;
+      background: var(--negro);
+      display: flex; flex-direction: column; align-items: center; justify-content: center; gap: .75rem;
+      transition: opacity .3s;
+    }
+    #cargando .spinner {
+      width: 34px; height: 34px; border-radius: 50%;
+      border: 3px solid var(--gris-brd); border-top-color: var(--verde);
+      animation: girar .8s linear infinite;
+    }
+    @keyframes girar { to { transform: rotate(360deg); } }
+    #cargando p { color: var(--texto-sec); font-size: .85rem; }
+
+    .buscador-flotante {
+      position: fixed; top: 4.2rem; left: 1rem; right: 1rem; z-index: 400;
+      max-width: 420px;
+      background: var(--gris-card); border: 1px solid var(--gris-brd);
+      border-radius: 12px; padding: .6rem .9rem;
+      display: flex; align-items: center; gap: .5rem;
+      box-shadow: 0 4px 16px rgba(0,0,0,.4);
+    }
+    .buscador-flotante input {
+      flex: 1; background: none; border: none; outline: none;
+      color: var(--blanco); font-family: 'Inter', sans-serif; font-size: .9rem;
+    }
+    .buscador-flotante input::placeholder { color: var(--texto-sec); }
+
+    .contador-flotante {
+      position: fixed; bottom: 1.25rem; left: 1rem; z-index: 400;
+      background: var(--gris-card); border: 1px solid var(--gris-brd);
+      border-radius: 999px; padding: .5rem 1rem;
+      font-size: .8rem; color: var(--texto-sec);
+      box-shadow: 0 4px 16px rgba(0,0,0,.4);
+    }
+    .contador-flotante strong { color: var(--verde); }
+
+    /* Marcador tipo pin de negocio */
+    .raiz-pin {
+      width: 40px; height: 40px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.3rem;
+      background: var(--gris-card);
+      border: 2.5px solid var(--verde);
+      border-radius: 50% 50% 50% 0;
+      transform: rotate(45deg);
+      box-shadow: 0 3px 10px rgba(0,0,0,.5);
+      overflow: hidden;
+    }
+    .raiz-pin > * { transform: rotate(-45deg); }
+    .raiz-pin img { width: 100%; height: 100%; object-fit: cover; border-radius: 50%; }
+
+    /* Popup */
+    .leaflet-popup-content-wrapper {
+      background: var(--gris-card); color: var(--blanco);
+      border: 1px solid var(--gris-brd); border-radius: 12px;
+    }
+    .leaflet-popup-tip { background: var(--gris-card); }
+    .leaflet-popup-content { margin: .75rem .85rem; }
+    .popup-negocio { display: flex; flex-direction: column; gap: .4rem; min-width: 160px; }
+    .popup-header { display: flex; align-items: center; gap: .6rem; }
+    .popup-avatar {
+      width: 40px; height: 40px; border-radius: 50%;
+      background: var(--negro); display: flex; align-items: center; justify-content: center;
+      font-size: 1.3rem; flex-shrink: 0; overflow: hidden;
+    }
+    .popup-avatar img { width: 100%; height: 100%; object-fit: cover; }
+    .popup-nombre { font-weight: 700; font-size: .92rem; font-family: 'Syne', sans-serif; }
+    .popup-cat { font-size: .75rem; color: var(--texto-sec); }
+    .popup-btn {
+      margin-top: .3rem; text-align: center;
+      background: var(--verde); color: #000; font-weight: 700; font-size: .8rem;
+      padding: .5rem; border-radius: 8px; text-decoration: none;
+    }
+  </style>
+</head>
+<body>
+
+<nav>
+  <a href="/raiz.html" class="logo">RAIZ<span>.</span></a>
+  <a href="/raiz-busqueda.html" class="nav-link">← Volver a la búsqueda</a>
+</nav>
+
+<div class="buscador-flotante">
+  <span>🔍</span>
+  <input type="text" id="buscarInput" placeholder="Busca un municipio o negocio..." oninput="filtrarMapa(this.value)" />
+</div>
+
+<div class="contador-flotante" id="contador">Cargando negocios...</div>
+
+<div id="mapa"></div>
+
+<div id="cargando">
+  <div class="spinner"></div>
+  <p>Ubicando los negocios en el mapa...</p>
+</div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+  const API = 'https://raiz-backend.onrender.com';
+
+  // República Dominicana, vista general
+  const mapa = L.map('mapa', { zoomControl: false }).setView([18.85, -70.4], 8);
+  L.control.zoom({ position: 'bottomright' }).addTo(mapa);
+
+  // Tiles estilo "mapa claro moderno", visualmente parecido a Google Maps
+  L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+    attribution: '© OpenStreetMap, © CARTO',
+    maxZoom: 19
+  }).addTo(mapa);
+
+  let negocios = [];
+  let marcadores = [];
+
+  // Coordenadas conocidas de municipios ya ubicados (para no golpear el
+  // servicio de geocodificación de más, y para que cargue rápido).
+  const CACHE_KEY = 'raiz_mapa_coords_cache';
+  function leerCache() {
+    try { return JSON.parse(localStorage.getItem(CACHE_KEY)) || {}; }
+    catch (e) { return {}; }
+  }
+  function guardarCache(cache) {
+    try { localStorage.setItem(CACHE_KEY, JSON.stringify(cache)); } catch (e) {}
+  }
+
+  async function geocodificar(municipio, provincia, cache) {
+    const clave = `${municipio}, ${provincia}`.toLowerCase();
+    if (cache[clave]) return cache[clave];
+    try {
+      const url = `https://nominatim.openstreetmap.org/search?format=json&limit=1&q=${encodeURIComponent(municipio + ', ' + provincia + ', República Dominicana')}`;
+      const res = await fetch(url, { headers: { 'Accept-Language': 'es' } });
+      const data = await res.json();
+      if (data && data[0]) {
+        const coords = { lat: parseFloat(data[0].lat), lon: parseFloat(data[0].lon) };
+        cache[clave] = coords;
+        guardarCache(cache);
+        return coords;
+      }
+    } catch (e) { /* si falla, se ignora ese negocio en el mapa */ }
+    return null;
+  }
+
+  function avatarHtml(n) {
+    if (n.foto_perfil) return `<img src="${n.foto_perfil}" />`;
+    return n.avatar_emoji || '🏪';
+  }
+
+  function crearIcono(n) {
+    return L.divIcon({
+      html: `<div class="raiz-pin"><div>${avatarHtml(n)}</div></div>`,
+      className: '',
+      iconSize: [40, 40],
+      iconAnchor: [20, 38],
+      popupAnchor: [0, -36]
+    });
+  }
+
+  function popupHtml(n) {
+    return `
+      <div class="popup-negocio">
+        <div class="popup-header">
+          <div class="popup-avatar">${avatarHtml(n)}</div>
+          <div>
+            <div class="popup-nombre">${n.nombre}</div>
+            <div class="popup-cat">${n.categoria || 'Negocio local'} · ${n.municipio}</div>
+          </div>
+        </div>
+        <a class="popup-btn" href="/raiz-catalogo.html?slug=${n.slug}">Ver catálogo →</a>
+      </div>
+    `;
+  }
+
+  async function cargarMapa() {
+    const cache = leerCache();
+    try {
+      const res = await fetch(`${API}/negocios`);
+      negocios = await res.json();
+    } catch (e) {
+      negocios = [];
+    }
+
+    document.getElementById('contador').innerHTML = `<strong>${negocios.length}</strong> negocios en RAIZ`;
+
+    // Agrupar por municipio para ubicar varios negocios del mismo pueblo
+    // en puntos ligeramente distintos (para que no queden apilados).
+    const porMunicipio = {};
+    negocios.forEach(n => {
+      const clave = `${n.municipio}|${n.provincia}`;
+      if (!porMunicipio[clave]) porMunicipio[clave] = [];
+      porMunicipio[clave].push(n);
+    });
+
+    for (const clave of Object.keys(porMunicipio)) {
+      const [municipio, provincia] = clave.split('|');
+      const coords = await geocodificar(municipio, provincia, cache);
+      if (!coords) continue;
+
+      const negociosDelMunicipio = porMunicipio[clave];
+      negociosDelMunicipio.forEach((n, i) => {
+        // Pequeño desplazamiento en espiral para separar negocios del mismo municipio
+        const angulo = i * 2.4;
+        const radio = i === 0 ? 0 : 0.004 + (i * 0.0015);
+        const lat = coords.lat + radio * Math.cos(angulo);
+        const lon = coords.lon + radio * Math.sin(angulo);
+
+        const marker = L.marker([lat, lon], { icon: crearIcono(n) })
+          .addTo(mapa)
+          .bindPopup(popupHtml(n));
+        marker.negocioData = n;
+        marcadores.push(marker);
+      });
+    }
+
+    document.getElementById('cargando').style.opacity = '0';
+    setTimeout(() => document.getElementById('cargando').style.display = 'none', 300);
+  }
+
+  function filtrarMapa(texto) {
+    const q = texto.trim().toLowerCase();
+    marcadores.forEach(m => {
+      const n = m.negocioData;
+      const coincide = !q || n.nombre.toLowerCase().includes(q) || (n.municipio || '').toLowerCase().includes(q) || (n.categoria || '').toLowerCase().includes(q);
+      const el = m.getElement();
+      if (el) el.style.display = coincide ? '' : 'none';
+    });
+  }
+
+  cargarMapa();
+</script>
+</body>
+</html>
