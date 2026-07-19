@@ -249,8 +249,28 @@
   @media (max-width: 560px) {
     .cats-grid { grid-template-columns: repeat(2, 1fr); }
     .search-box { flex-direction: column; }
-    .nav-link { display: none; }
+    .nav-actions { display: none; }
+    .nav-hamburguesa { display: flex !important; }
   }
+
+  .nav-hamburguesa {
+    display: none; align-items: center; justify-content: center;
+    width: 38px; height: 38px; background: var(--gris-card);
+    border: 1px solid var(--gris-brd); border-radius: 8px;
+    font-size: 1.1rem; color: var(--blanco); cursor: pointer;
+  }
+  .menu-movil {
+    position: fixed; top: 3.6rem; left: 0; right: 0; z-index: 99;
+    background: var(--gris-osc); border-bottom: 1px solid var(--gris-brd);
+    display: none; flex-direction: column; padding: .5rem 1.25rem 1rem;
+    gap: .2rem;
+  }
+  .menu-movil.abierto { display: flex; }
+  .menu-movil a {
+    color: var(--blanco); text-decoration: none; font-size: .95rem;
+    padding: .8rem 0; border-bottom: 1px solid var(--gris-brd);
+  }
+  .menu-movil a:last-child { border-bottom: none; }
 </style>
 </head>
 <body>
@@ -259,10 +279,18 @@
   <a href="/raiz.html" class="logo">RAIZ<span>.</span></a>
   <div class="nav-actions">
     <a href="/raiz-busqueda.html" class="nav-link">Buscar negocios</a>
+    <a href="/raiz-mapa.html" class="nav-link">🗺️ Mapa</a>
     <a href="/raiz-login.html" class="nav-link">Iniciar sesión</a>
     <a href="/raiz-registro.html" class="nav-cta">Registra tu negocio</a>
   </div>
+  <div class="nav-hamburguesa" onclick="document.getElementById('menuMovil').classList.toggle('abierto')">☰</div>
 </nav>
+<div class="menu-movil" id="menuMovil">
+  <a href="/raiz-busqueda.html">🔍 Buscar negocios</a>
+  <a href="/raiz-mapa.html">🗺️ Ver en mapa</a>
+  <a href="/raiz-login.html">👤 Iniciar sesión</a>
+  <a href="/raiz-registro.html">🌱 Registra tu negocio</a>
+</div>
 
 <div class="hero" style="padding-bottom:2rem;">
   <div class="hero-badge"><span class="pulse-dot"></span> Anuncios en vivo</div>
