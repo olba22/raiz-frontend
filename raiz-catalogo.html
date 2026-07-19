@@ -562,6 +562,15 @@
 <script>
   const API = 'https://raiz-backend.onrender.com';
   let NEGOCIO_WHATSAPP = '18091234567';
+
+  // WhatsApp exige el número completo con código de país (ej. 18095551234).
+  // Muchos negocios registran solo su número local dominicano (809/829/849 + 7
+  // dígitos, 10 dígitos en total), así que aquí se le agrega el "1" que falta.
+  function normalizarWhatsapp(numero) {
+    let digitos = (numero || '').replace(/\D/g, '');
+    if (digitos.length === 10) digitos = '1' + digitos;
+    return digitos;
+  }
   let NEGOCIO_NOMBRE = 'Pollo Frito Doña Carmen';
   let NEGOCIO_SLUG = 'donacarmensantiago';
 
@@ -608,7 +617,7 @@
         const yaSigue = localStorage.getItem(`raiz_sigo_${slug}`) === '1';
         actualizarBotonSeguir(yaSigue);
       }
-      if (whatsapp) NEGOCIO_WHATSAPP = whatsapp.replace(/\D/g, '');
+      if (whatsapp) NEGOCIO_WHATSAPP = normalizarWhatsapp(whatsapp);
 
       document.getElementById('navTitle').textContent = nombre;
       document.getElementById('perfilNombre').textContent = nombre;
