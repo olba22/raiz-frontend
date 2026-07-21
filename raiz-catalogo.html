@@ -573,6 +573,7 @@
   }
   let NEGOCIO_NOMBRE = 'Pollo Frito Doña Carmen';
   let NEGOCIO_SLUG = 'donacarmensantiago';
+  let NEGOCIO_ID = null;
 
   async function cargarNegocio() {
     const params = new URLSearchParams(window.location.search);
@@ -595,6 +596,7 @@
 
       NEGOCIO_NOMBRE = nombre;
       NEGOCIO_SLUG = slug;
+      NEGOCIO_ID = negocio.id || null;
 
       // Mostrar botón "Ir a mi panel" solo si este navegador es el que registró el negocio
       if (localStorage.getItem('raiz_negocio_slug') === slug) {
@@ -873,9 +875,6 @@
     msg += `📍 *Dirección:* ${direccion || '(la escribo aquí)'}`;
 
     const urlWhatsApp = `https://wa.me/${NEGOCIO_WHATSAPP}?text=${encodeURIComponent(msg)}`;
-
-    // 🔧 DIAGNÓSTICO TEMPORAL — quitar después de encontrar el problema
-    alert('DEBUG\nNúmero: ' + NEGOCIO_WHATSAPP + '\nLink: ' + urlWhatsApp);
 
     // Guardar el pedido real en la base de datos, pero SIN esperarlo (con await
     // aquí, muchos navegadores de celular bloquean la apertura de WhatsApp
