@@ -654,6 +654,19 @@
           </select>
         </div>
       </div>
+      <div class="campo" id="campoUnidadVenta" style="display:none;">
+        <label>¿Cómo se vende? <span>*</span></label>
+        <div class="select-wrap">
+          <select id="prodUnidad">
+            <option value="unidad">🔢 Unidad</option>
+            <option value="libra">⚖️ Libra</option>
+            <option value="funda">🛍️ Funda</option>
+            <option value="onza">⚖️ Onza</option>
+            <option value="docena">📦 Docena</option>
+          </select>
+        </div>
+        <div class="hint" style="font-size:.78rem;color:var(--texto-sec);margin-top:.4rem;">Esto define los botones rápidos de cantidad que verás al facturar este producto.</div>
+      </div>
       <div class="campo">
         <label>Foto del producto</label>
         <div class="upload-zone" onclick="toast('📸 Seleccionar foto...','')">
@@ -773,6 +786,7 @@
   const API = 'https://raiz-backend.onrender.com';
   let NEGOCIO_ID = null;
   let NEGOCIO_SLUG = null;
+  let NEGOCIO_TIPO = 'general';
 
   // ── Encabezados con el token de sesión para peticiones protegidas ──
   function authHeaders() {
@@ -807,6 +821,7 @@
 
       NEGOCIO_ID = negocio.id;
       NEGOCIO_SLUG = negocio.slug;
+      NEGOCIO_TIPO = negocio.tipo_negocio || 'general';
 
       const nombre = negocio.nombre || 'Mi negocio';
       const emoji = negocio.avatar_emoji || '🏪';
@@ -830,7 +845,8 @@
           cat: p.categoria || 'general',
           stock: p.stock,
           vendidos: p.total_vendidos || 0,
-          activo: p.disponible !== false
+          activo: p.disponible !== false,
+          unidad: p.unidad_venta || 'unidad'
         }));
         renderTabla();
       }
@@ -1085,6 +1101,8 @@
     document.getElementById('prodPrecio').value = p.precio;
     document.getElementById('prodStock').value = p.stock ?? '';
     document.getElementById('prodCat').value = p.cat;
+    document.getElementById('campoUnidadVenta').style.display = NEGOCIO_TIPO === 'colmado' ? 'block' : 'none';
+    document.getElementById('prodUnidad').value = p.unidad || 'unidad';
     productoSelEmoji = p.emoji;
     document.querySelectorAll('.emoji-opt').forEach(e => e.classList.remove('sel'));
     document.querySelector('.modal-overlay').classList.add('open');
@@ -1122,6 +1140,8 @@
     document.getElementById('prodDesc').value = '';
     document.getElementById('prodPrecio').value = '';
     document.getElementById('prodStock').value = '';
+    document.getElementById('campoUnidadVenta').style.display = NEGOCIO_TIPO === 'colmado' ? 'block' : 'none';
+    document.getElementById('prodUnidad').value = 'unidad';
     productoSelEmoji = '🍗';
     document.querySelectorAll('.emoji-opt').forEach((e,i) => e.classList.toggle('sel', i===0));
     document.querySelector('.modal-overlay').classList.add('open');
@@ -1149,11 +1169,12 @@
     const emoji = productoSelEmoji;
     const stockValor = document.getElementById('prodStock').value;
     const stock = stockValor === '' ? null : parseInt(stockValor);
+    const unidad = NEGOCIO_TIPO === 'colmado' ? document.getElementById('prodUnidad').value : 'unidad';
 
     if (editandoIndex !== null) {
       // ── Editar producto existente ──
       const p = productos[editandoIndex];
-      p.nombre = nombre; p.precio = precio; p.desc = desc; p.cat = cat; p.emoji = emoji; p.stock = stock;
+      p.nombre = nombre; p.precio = precio; p.desc = desc; p.cat = cat; p.emoji = emoji; p.stock = stock; p.unidad = unidad;
       renderTabla();
       cerrarModalBtn();
       toast(`✅ "${nombre}" actualizado`, 'success');
@@ -1162,7 +1183,7 @@
           const res = await fetch(`${API}/productos/${p.id}`, {
             method: 'PUT',
             headers: authHeaders(),
-            body: JSON.stringify({ nombre, descripcion: desc, precio, categoria: cat, emoji, stock })
+            body: JSON.stringify({ nombre, descripcion: desc, precio, categoria: cat, emoji, stock, unidad_venta: unidad })
           });
           manejarRespuestaAuth(res);
         } catch (e) {
@@ -1173,7 +1194,7 @@
     }
 
     // ── Crear producto nuevo ──
-    const nuevo = { emoji, nombre, precio, desc, cat, stock, vendidos: 0, activo: true, id: null };
+    const nuevo = { emoji, nombre, precio, desc, cat, stock, unidad, vendidos: 0, activo: true, id: null };
     productos.unshift(nuevo);
     renderTabla();
     cerrarModalBtn();
@@ -1189,7 +1210,7 @@
         headers: authHeaders(),
         body: JSON.stringify({
           negocio_id: NEGOCIO_ID, nombre, descripcion: desc,
-          precio, categoria: cat, emoji, stock
+          precio, categoria: cat, emoji, stock, unidad_venta: unidad
         })
       });
       if (manejarRespuestaAuth(res)) return;
@@ -1457,7 +1478,7 @@
             productos.unshift({
               id: actualizado.id, emoji: '📦', nombre: actualizado.nombre,
               desc: '', precio: Number(actualizado.precio), cat: obtenerCategoriaMasivaSeleccionada(),
-              vendidos: 0, activo: true, stock: actualizado.stock
+              vendidos: 0, activo: true, stock: actualizado.stock, unidad: 'unidad'
             });
           }
         });
@@ -1480,7 +1501,7 @@
           productos.unshift({
             id: p.id, emoji: p.emoji || '📦', nombre: p.nombre,
             desc: '', precio: Number(p.precio), cat: p.categoria || 'general',
-            vendidos: 0, activo: true, stock: p.stock
+            vendidos: 0, activo: true, stock: p.stock, unidad: p.unidad_venta || 'unidad'
           });
         });
         renderTabla();
