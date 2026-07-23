@@ -95,6 +95,22 @@
     .pos-stepper span { min-width: 18px; text-align: center; font-weight: 700; font-size: .85rem; }
     .pos-item-total { min-width: 64px; text-align: right; font-weight: 700; font-size: .84rem; color: var(--verde); }
 
+    /* ── CANTIDAD RÁPIDA POR LIBRA (solo Colmado) ── */
+    .pos-qty-wrap { display: flex; flex-direction: column; gap: .4rem; flex: 1; min-width: 0; }
+    .pos-qty-label { font-size: .8rem; font-weight: 800; color: var(--verde); }
+    .pos-qty-btns { display: flex; gap: .3rem; flex-wrap: wrap; }
+    .pos-qty-btn {
+      padding: .28rem .5rem; border-radius: 7px; border: 1px solid var(--gris-brd);
+      background: var(--gris-card); color: var(--blanco); font-size: .76rem; font-weight: 700;
+      cursor: pointer; font-family: inherit;
+    }
+    .pos-qty-btn:hover { border-color: var(--verde); color: var(--verde); }
+    .pos-qty-quitar {
+      width: 26px; height: 26px; border-radius: 7px; border: 1px solid var(--gris-brd); background: var(--gris-card);
+      color: var(--texto-sec); font-size: .85rem; cursor: pointer; flex-shrink: 0;
+    }
+    .pos-qty-quitar:hover { border-color: var(--rojo); color: var(--rojo); }
+
     .pos-carrito-footer { padding: 1rem; border-top: 1px solid var(--gris-brd); }
     .pos-total-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: .85rem; }
     .pos-total-label { font-size: .85rem; color: var(--texto-sec); }
@@ -207,9 +223,23 @@
     const API = 'https://raiz-backend.onrender.com';
     let NEGOCIO_ID = null;
     let NEGOCIO_SLUG = null;
+    let NEGOCIO_TIPO = 'general';
     let productos = [];
     let categoriaActiva = 'todas';
-    let carrito = []; // { idx, nombre, emoji, precio, cantidad }
+    let carrito = []; // { idx, nombre, emoji, precio, cantidad, unidad }
+
+    // Botones rápidos de cantidad para productos que se venden por libra
+    const PRESETS_LIBRA = [0.25, 0.5, 0.75, 1, 2, 5];
+
+    // Convierte 1.75 -> "1¾", 0.5 -> "½", 2 -> "2", etc.
+    function formatCantidad(n) {
+      const entero = Math.floor(n);
+      const frac = Math.round((n - entero) * 100) / 100;
+      const glifos = { 0: '', 0.25: '¼', 0.5: '½', 0.75: '¾' };
+      const glifo = glifos[frac] !== undefined ? glifos[frac] : (frac ? `.${Math.round(frac * 100)}` : '');
+      if (entero === 0 && glifo) return glifo;
+      return `${entero}${glifo}`;
+    }
 
     function authHeaders() {
       const token = localStorage.getItem('raiz_token');
@@ -246,6 +276,7 @@
 
         NEGOCIO_ID = negocio.id;
         NEGOCIO_SLUG = negocio.slug;
+        NEGOCIO_TIPO = negocio.tipo_negocio || 'general';
         document.getElementById('posSubtitulo').textContent = negocio.nombre || 'Mi negocio';
 
         productos = (data.productos || [])
@@ -256,7 +287,8 @@
             nombre: p.nombre,
             precio: Number(p.precio),
             cat: p.categoria || 'general',
-            activo: p.disponible !== false
+            activo: p.disponible !== false,
+            unidad: p.unidad_venta || 'unidad'
           }))
           .filter(p => p.activo);
 
@@ -300,9 +332,10 @@
       }
       cont.innerHTML = lista.map(p => {
         const enCarrito = carrito.find(i => i.idx === p.idx);
+        const badge = enCarrito ? (p.unidad === 'libra' ? formatCantidad(enCarrito.cantidad) : enCarrito.cantidad) : '';
         return `
           <div class="pos-prod" onclick="posAgregar(${p.idx})">
-            ${enCarrito ? `<div class="pos-prod-badge">${enCarrito.cantidad}</div>` : ''}
+            ${enCarrito ? `<div class="pos-prod-badge">${badge}</div>` : ''}
             <div class="pos-prod-emoji">${p.emoji}</div>
             <div class="pos-prod-nombre">${p.nombre}</div>
             <div class="pos-prod-precio">RD$${p.precio.toLocaleString()}</div>
@@ -315,8 +348,13 @@
       const p = productos.find(x => x.idx === idx);
       if (!p) return;
       const existente = carrito.find(i => i.idx === idx);
-      if (existente) existente.cantidad += 1;
-      else carrito.push({ idx, nombre: p.nombre, emoji: p.emoji, precio: p.precio, cantidad: 1 });
+      if (existente) {
+        // Si ya está en el carrito y es un producto por libra, un toque más en la
+        // tarjeta agrega 1 libra adicional (los botones rápidos del carrito cubren el resto)
+        existente.cantidad += 1;
+      } else {
+        carrito.push({ idx, nombre: p.nombre, emoji: p.emoji, precio: p.precio, cantidad: 1, unidad: p.unidad });
+      }
       renderGrid();
       renderCarrito();
     }
@@ -330,32 +368,68 @@
       renderCarrito();
     }
 
+    // Suma una cantidad exacta (usado por los botones rápidos ¼, ½, ¾, 1, 2, 5 lb)
+    function posAgregarCantidad(idx, monto) {
+      const item = carrito.find(i => i.idx === idx);
+      if (!item) return;
+      item.cantidad = Math.round((item.cantidad + monto) * 100) / 100;
+      renderGrid();
+      renderCarrito();
+    }
+
+    function posQuitarItem(idx) {
+      carrito = carrito.filter(i => i.idx !== idx);
+      renderGrid();
+      renderCarrito();
+    }
+
+    function renderItemHTML(item) {
+      const esLibraColmado = NEGOCIO_TIPO === 'colmado' && item.unidad === 'libra';
+
+      if (esLibraColmado) {
+        return `
+          <div class="pos-item">
+            <div class="pos-qty-wrap">
+              <div class="pos-qty-label">${item.emoji} ${item.nombre} — ${formatCantidad(item.cantidad)} lb</div>
+              <div class="pos-qty-btns">
+                ${PRESETS_LIBRA.map(m => `<button class="pos-qty-btn" onclick="posAgregarCantidad(${item.idx}, ${m})">${formatCantidad(m)}</button>`).join('')}
+              </div>
+            </div>
+            <div class="pos-item-total">RD$${(item.cantidad * item.precio).toLocaleString()}</div>
+            <button class="pos-qty-quitar" onclick="posQuitarItem(${item.idx})">🗑️</button>
+          </div>
+        `;
+      }
+
+      return `
+        <div class="pos-item">
+          <div class="pos-item-info">
+            <div class="pos-item-nombre">${item.emoji} ${item.nombre}</div>
+            <div class="pos-item-precio">RD$${item.precio.toLocaleString()} c/u</div>
+          </div>
+          <div class="pos-stepper">
+            <button onclick="posCambiarCantidad(${item.idx}, -1)">−</button>
+            <span>${item.cantidad}</span>
+            <button onclick="posCambiarCantidad(${item.idx}, 1)">+</button>
+          </div>
+          <div class="pos-item-total">RD$${(item.cantidad * item.precio).toLocaleString()}</div>
+        </div>
+      `;
+    }
+
     function renderCarrito() {
       const total = carrito.reduce((s, i) => s + i.cantidad * i.precio, 0);
       const cantidadTotal = carrito.reduce((s, i) => s + i.cantidad, 0);
 
       const filas = !carrito.length
         ? `<p style="color:var(--texto-sec);font-size:.85rem;text-align:center;padding:1.5rem 0;">Toca un producto para agregarlo.</p>`
-        : carrito.map(item => `
-          <div class="pos-item">
-            <div class="pos-item-info">
-              <div class="pos-item-nombre">${item.emoji} ${item.nombre}</div>
-              <div class="pos-item-precio">RD$${item.precio.toLocaleString()} c/u</div>
-            </div>
-            <div class="pos-stepper">
-              <button onclick="posCambiarCantidad(${item.idx}, -1)">−</button>
-              <span>${item.cantidad}</span>
-              <button onclick="posCambiarCantidad(${item.idx}, 1)">+</button>
-            </div>
-            <div class="pos-item-total">RD$${(item.cantidad * item.precio).toLocaleString()}</div>
-          </div>
-        `).join('');
+        : carrito.map(renderItemHTML).join('');
 
       document.getElementById('posCarritoDesktop').innerHTML = filas;
       document.getElementById('posCarritoMobile').innerHTML = filas;
       document.getElementById('posTotalDesktop').textContent = `RD$${total.toLocaleString()}`;
       document.getElementById('posTotalMobile').textContent = `RD$${total.toLocaleString()}`;
-      document.getElementById('posMobileCount').textContent = cantidadTotal;
+      document.getElementById('posMobileCount').textContent = Math.round(cantidadTotal * 100) / 100;
     }
 
     function posToggleMobile() {
