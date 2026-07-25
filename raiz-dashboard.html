@@ -1105,7 +1105,7 @@
     document.getElementById('prodUnidad').value = p.unidad || 'unidad';
     productoSelEmoji = p.emoji;
     document.querySelectorAll('.emoji-opt').forEach(e => e.classList.remove('sel'));
-    document.querySelector('.modal-overlay').classList.add('open');
+    document.getElementById('modalOverlay').classList.add('open');
   }
 
   async function eliminarProducto(i) {
@@ -1144,14 +1144,14 @@
     document.getElementById('prodUnidad').value = 'unidad';
     productoSelEmoji = '🍗';
     document.querySelectorAll('.emoji-opt').forEach((e,i) => e.classList.toggle('sel', i===0));
-    document.querySelector('.modal-overlay').classList.add('open');
+    document.getElementById('modalOverlay').classList.add('open');
   }
 
   function cerrarModal(e) {
     if (e.target === document.getElementById('modalOverlay')) cerrarModalBtn();
   }
   function cerrarModalBtn() {
-    document.querySelector('.modal-overlay').classList.remove('open');
+    document.getElementById('modalOverlay').classList.remove('open');
   }
 
   function selEmoji(el, emoji) {
