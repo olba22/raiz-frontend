@@ -72,7 +72,7 @@
 
   /* BUSCADOR RAPIDO */
   .search-box {
-    max-width: 520px; margin: 0 auto 1.2rem;
+    max-width: 560px; margin: 0 auto 1.4rem;
     display: flex; gap: .6rem;
     background: var(--gris-card); border: 1px solid var(--gris-brd);
     border-radius: 14px; padding: .5rem .5rem .5rem 1.1rem;
@@ -87,6 +87,15 @@
     padding: .75rem 1.3rem; font-weight: 700; font-size: .9rem;
     cursor: pointer; font-family: 'Inter', sans-serif; white-space: nowrap;
   }
+
+  .btn-publicar-hero {
+    display: inline-flex; align-items: center; gap: .5rem;
+    background: transparent; color: var(--verde); border: 1px solid rgba(29,185,84,.4);
+    border-radius: 100px; padding: .6rem 1.2rem; font-size: .85rem; font-weight: 700;
+    cursor: pointer; font-family: 'Inter', sans-serif; margin-bottom: 2.5rem;
+    transition: background .2s;
+  }
+  .btn-publicar-hero:hover { background: rgba(29,185,84,.1); }
 
   .rutas-rapidas {
     display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem;
@@ -222,6 +231,14 @@
   }
   .section { position: relative; }
 
+  /* PUBLICACIONES (vitrina de la comunidad: cualquiera vende cualquier cosa) */
+  .pub-precio-tag {
+    position: absolute; bottom: .55rem; right: .55rem;
+    background: var(--verde); color: #000; font-weight: 800; font-size: .78rem;
+    padding: .3rem .6rem; border-radius: 100px;
+  }
+  .pub-vendedor { color: var(--texto-sec); font-size: .75rem; margin-bottom: .3rem; }
+
   /* CTA NEGOCIOS */
   .cta-negocio {
     max-width: 1100px; margin: 2rem auto 5rem; padding: 3rem 2.5rem;
@@ -271,6 +288,66 @@
     padding: .8rem 0; border-bottom: 1px solid var(--gris-brd);
   }
   .menu-movil a:last-child { border-bottom: none; }
+
+  /* ── MODAL PUBLICAR ARTÍCULO ── */
+  .modal-overlay {
+    position: fixed; inset: 0; z-index: 300;
+    background: rgba(0,0,0,.85); backdrop-filter: blur(4px);
+    display: flex; align-items: center; justify-content: center;
+    opacity: 0; pointer-events: none; transition: opacity .25s;
+    padding: 1rem;
+  }
+  .modal-overlay.open { opacity: 1; pointer-events: all; }
+  .modal {
+    background: var(--gris-card); border: 1px solid var(--gris-brd);
+    border-radius: 20px; width: 100%; max-width: 480px;
+    max-height: 90vh; overflow-y: auto;
+    transform: scale(.96) translateY(10px); transition: transform .25s;
+  }
+  .modal-overlay.open .modal { transform: scale(1) translateY(0); }
+  .modal-header {
+    padding: 1.25rem 1.5rem; border-bottom: 1px solid var(--gris-brd);
+    display: flex; align-items: center; justify-content: space-between;
+    position: sticky; top: 0; background: var(--gris-card); z-index: 1;
+  }
+  .modal-header h3 { font-family: 'Syne', sans-serif; font-size: 1.1rem; font-weight: 800; }
+  .modal-close {
+    width: 32px; height: 32px; background: var(--negro);
+    border: none; border-radius: 8px; cursor: pointer; color: var(--texto-sec);
+    font-size: 1rem; display: flex; align-items: center; justify-content: center;
+  }
+  .modal-body { padding: 1.5rem; }
+  .campo { margin-bottom: 1.1rem; }
+  .campo label { display: block; font-size: .8rem; font-weight: 600; margin-bottom: .4rem; }
+  .campo label span { color: var(--verde); }
+  .input {
+    width: 100%; background: var(--negro); border: 1px solid var(--gris-brd);
+    border-radius: 10px; padding: .75rem .9rem; font-size: .9rem;
+    color: var(--blanco); font-family: 'Inter', sans-serif; outline: none; transition: border-color .2s;
+  }
+  .input:focus { border-color: var(--verde); }
+  .input::placeholder { color: var(--texto-sec); }
+  textarea.input { resize: vertical; min-height: 70px; }
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+  .upload-zone {
+    border: 2px dashed var(--gris-brd); border-radius: 12px;
+    padding: 1.25rem; text-align: center; cursor: pointer;
+  }
+  .upload-zone p { font-size: .82rem; color: var(--texto-sec); line-height: 1.6; }
+  .upload-zone strong { color: var(--verde); }
+  .modal-footer {
+    padding: 1.1rem 1.5rem; border-top: 1px solid var(--gris-brd);
+    position: sticky; bottom: 0; background: var(--gris-card);
+  }
+  .btn-guardar {
+    width: 100%; background: var(--verde); color: var(--negro);
+    border: none; border-radius: 10px; cursor: pointer;
+    padding: .8rem; font-size: .95rem; font-weight: 700;
+    font-family: 'Inter', sans-serif; transition: background .2s;
+  }
+  .btn-guardar:hover { background: #25e066; }
+  .btn-guardar:disabled { opacity: .6; cursor: not-allowed; }
+  #pubMensaje { font-size: .85rem; color: var(--texto-sec); margin-top: .75rem; text-align: center; }
 </style>
 </head>
 <body>
@@ -292,23 +369,33 @@
   <a href="/raiz-registro.html">🌱 Registra tu negocio</a>
 </div>
 
-<div class="hero" style="padding-bottom:2rem;">
-  <div class="hero-badge"><span class="pulse-dot"></span> Anuncios en vivo</div>
-  <h1>Lo que se vende<br><span>hoy</span> en tu comunidad.</h1>
-  <p>Cada negocio y vendedor independiente publica aquí lo que está ofreciendo. Toca el botón de WhatsApp para escribirle directo.</p>
+<div class="hero" style="padding-bottom:1.5rem;">
+  <div class="hero-badge"><span class="pulse-dot"></span> La vitrina de tu comunidad</div>
+  <h1>Todo lo que se vende<br>en <span>Pedernales</span>, en un solo lugar.</h1>
+  <p>Desde una nevera usada hasta el refresco del colmado. Busca lo que necesitas o publica lo que ofreces — negocios y personas, todos aquí.</p>
+
+  <form class="search-box" id="formBuscar" onsubmit="event.preventDefault(); buscarPublicaciones();">
+    <input type="text" id="inputBuscar" placeholder="🔍 ¿Qué estás buscando? Ej: estufa, celular, arroz..." autocomplete="off" />
+    <button type="submit">Buscar</button>
+  </form>
+
+  <button class="btn-publicar-hero" onclick="abrirModalPublicar()">➕ Publicar algo en venta</button>
 </div>
 
 <div class="section" style="padding-top:0;">
-  <div id="feedCargando" style="text-align:center;padding:3rem 1rem;color:var(--texto-sec);">
-    <div style="font-size:1.6rem;margin-bottom:.5rem;">🌱</div>
-    Cargando anuncios...
+  <div class="section-head">
+    <h2 id="pubTituloSeccion">Se vende en tu comunidad</h2>
   </div>
-  <div class="anuncios-feed" id="anunciosFeed" style="display:none;"></div>
-  <div class="feed-empty" id="feedEmpty" style="display:none;">
+  <div id="pubCargando" style="text-align:center;padding:3rem 1rem;color:var(--texto-sec);">
+    <div style="font-size:1.6rem;margin-bottom:.5rem;">🌱</div>
+    Cargando publicaciones...
+  </div>
+  <div class="anuncios-feed" id="pubFeed" style="display:none;"></div>
+  <div class="feed-empty" id="pubEmpty" style="display:none;">
     <div style="font-size:2rem;margin-bottom:.75rem;">🌱</div>
-    <h3>Aún no hay publicaciones</h3>
-    <p>Sé el primero en anunciar lo que vendes en RAIZ.</p>
-    <a href="/raiz-registro.html">Publicar mi anuncio →</a>
+    <h3 id="pubEmptyTitulo">Aún no hay publicaciones</h3>
+    <p id="pubEmptyTexto">Sé el primero en publicar algo que estés vendiendo.</p>
+    <a href="javascript:void(0)" onclick="abrirModalPublicar()">Publicar algo en venta →</a>
   </div>
 </div>
 
@@ -330,6 +417,23 @@
   </a>
 </div>
 
+<div class="section" style="padding-top:0;">
+  <div class="section-head">
+    <h2><span class="pulse-dot"></span> Anuncios de negocios en vivo</h2>
+  </div>
+  <div id="feedCargando" style="text-align:center;padding:3rem 1rem;color:var(--texto-sec);">
+    <div style="font-size:1.6rem;margin-bottom:.5rem;">🌱</div>
+    Cargando anuncios...
+  </div>
+  <div class="anuncios-feed" id="anunciosFeed" style="display:none;"></div>
+  <div class="feed-empty" id="feedEmpty" style="display:none;">
+    <div style="font-size:2rem;margin-bottom:.75rem;">🌱</div>
+    <h3>Aún no hay publicaciones</h3>
+    <p>Sé el primero en anunciar lo que vendes en RAIZ.</p>
+    <a href="/raiz-registro.html">Publicar mi anuncio →</a>
+  </div>
+</div>
+
 <div class="cta-negocio">
   <div>
     <h2>¿Tienes algo que vender?</h2>
@@ -341,6 +445,58 @@
 <footer>
   <span>RAIZ.</span> — Vitrina digital dominicana · Hecho en República Dominicana 🇩🇴
 </footer>
+
+<!-- MODAL PUBLICAR ARTÍCULO -->
+<div class="modal-overlay" id="modalPublicarOverlay" onclick="if(event.target===this) cerrarModalPublicar()">
+  <div class="modal">
+    <div class="modal-header">
+      <h3>➕ Publicar algo en venta</h3>
+      <button class="modal-close" onclick="cerrarModalPublicar()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="campo">
+        <label>Foto del artículo</label>
+        <input type="file" id="pubFotoInput" accept="image/*" style="display:none;" onchange="manejarFotoPublicacion(this)" />
+        <div class="upload-zone" id="pubUploadZone" onclick="document.getElementById('pubFotoInput').click()">
+          <div style="font-size:1.8rem;margin-bottom:.4rem;">📷</div>
+          <p><strong>Sube una foto</strong><br>JPG, PNG</p>
+        </div>
+      </div>
+      <div class="campo">
+        <label>¿Qué estás vendiendo? <span>*</span></label>
+        <input class="input" id="pubTitulo" type="text" placeholder="Ej: Nevera Whirlpool 14 pies" />
+      </div>
+      <div class="grid2">
+        <div class="campo">
+          <label>Precio (RD$) <span>*</span></label>
+          <input class="input" id="pubPrecio" type="number" placeholder="8500" />
+        </div>
+        <div class="campo">
+          <label>Categoría</label>
+          <input class="input" id="pubCategoria" type="text" placeholder="Ej: Electrodomésticos" />
+        </div>
+      </div>
+      <div class="campo">
+        <label>Descripción</label>
+        <textarea class="input" id="pubDescripcion" placeholder="Cuenta el estado, detalles, por qué la vendes..."></textarea>
+      </div>
+      <div class="grid2">
+        <div class="campo">
+          <label>Tu nombre <span>*</span></label>
+          <input class="input" id="pubNombre" type="text" placeholder="Ej: Yolanda Pérez" />
+        </div>
+        <div class="campo">
+          <label>Tu WhatsApp <span>*</span></label>
+          <input class="input" id="pubWhatsapp" type="tel" placeholder="8095551234" />
+        </div>
+      </div>
+      <div id="pubMensaje"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-guardar" id="btnPublicar" onclick="publicarArticulo()">✓ Publicar</button>
+    </div>
+  </div>
+</div>
 
 <script>
   const API = 'https://raiz-backend.onrender.com';
@@ -422,6 +578,185 @@
 
   cargarFeed();
   setInterval(cargarFeed, 60000); // refresca solo para traer anuncios nuevos, sin interrumpir al usuario
+
+  // ═══════════════════════════════════════════════════════════
+  // PUBLICACIONES (vitrina de la comunidad — cualquiera vende cualquier cosa)
+  // ═══════════════════════════════════════════════════════════
+  const vistasPubRegistradas = new Set();
+  let pubFotoBase64 = null;
+  let queryActual = '';
+
+  function tarjetaPublicacion(p, i) {
+    const titulo = escapeHtml(p.titulo);
+    const descripcion = escapeHtml(p.descripcion);
+    const vendedor = escapeHtml(p.negocio_nombre || p.vendedor_nombre);
+    const whatsapp = (p.vendedor_whatsapp || '').replace(/\D/g, '');
+    const imagen = p.foto_base64
+      ? `<img src="${p.foto_base64}" alt="${titulo}" loading="lazy" />`
+      : `<div class="anuncio-img-fallback">📦</div>`;
+    return `
+      <div class="anuncio-card" style="animation-delay:${Math.min(i * 0.07, 0.6)}s;" data-pub-id="${p.id}">
+        <div class="anuncio-img-wrap">
+          ${imagen}
+          <div class="pub-precio-tag">RD$${Number(p.precio).toLocaleString()}</div>
+        </div>
+        <div class="anuncio-body">
+          <div class="anuncio-titulo">${titulo}</div>
+          <div class="pub-vendedor">👤 ${vendedor}</div>
+          ${descripcion ? `<div class="anuncio-desc">${descripcion}</div>` : ''}
+          <div class="anuncio-footer">
+            <span class="anuncio-vistas">👁️ ${p.vistas}</span>
+            <button class="btn-whatsapp-anuncio" onclick="contactarPublicacion('${p.id}','${whatsapp}','${encodeURIComponent(p.titulo)}')">💬 Contactar</button>
+          </div>
+        </div>
+      </div>
+    `;
+  }
+
+  function contactarPublicacion(id, whatsapp, tituloCodificado) {
+    fetch(`${API}/publicaciones/${id}/clic-whatsapp`, { method: 'POST' }).catch(() => {});
+    const mensaje = encodeURIComponent(`🌱 Vi tu publicación en RAIZ: "${decodeURIComponent(tituloCodificado)}" — ¿todavía está disponible?`);
+    window.location.href = `https://wa.me/${whatsapp}?text=${mensaje}`;
+  }
+
+  function observarVistasPub() {
+    const observer = new IntersectionObserver((entradas) => {
+      entradas.forEach(entrada => {
+        if (!entrada.isIntersecting) return;
+        const id = entrada.target.getAttribute('data-pub-id');
+        if (!id || vistasPubRegistradas.has(id)) return;
+        vistasPubRegistradas.add(id);
+        fetch(`${API}/publicaciones/${id}/vista`, { method: 'POST' }).catch(() => {});
+      });
+    }, { threshold: 0.4 });
+    document.querySelectorAll('[data-pub-id]').forEach(card => observer.observe(card));
+  }
+
+  async function cargarPublicaciones(q) {
+    document.getElementById('pubCargando').style.display = 'block';
+    document.getElementById('pubFeed').style.display = 'none';
+    document.getElementById('pubEmpty').style.display = 'none';
+    try {
+      const url = q ? `${API}/publicaciones?limite=30&q=${encodeURIComponent(q)}` : `${API}/publicaciones?limite=30`;
+      const res = await fetch(url);
+      if (!res.ok) throw new Error('respuesta no ok');
+      const publicaciones = await res.json();
+      document.getElementById('pubCargando').style.display = 'none';
+
+      document.getElementById('pubTituloSeccion').textContent = q ? `Resultados para "${q}"` : 'Se vende en tu comunidad';
+
+      if (!publicaciones.length) {
+        document.getElementById('pubEmptyTitulo').textContent = q ? 'No encontramos nada con eso' : 'Aún no hay publicaciones';
+        document.getElementById('pubEmptyTexto').textContent = q ? 'Prueba con otra palabra, o publica tú lo que buscas.' : 'Sé el primero en publicar algo que estés vendiendo.';
+        document.getElementById('pubEmpty').style.display = 'block';
+        document.getElementById('pubFeed').style.display = 'none';
+        return;
+      }
+
+      document.getElementById('pubEmpty').style.display = 'none';
+      const cont = document.getElementById('pubFeed');
+      cont.style.display = 'block';
+      cont.innerHTML = publicaciones.map((p, i) => tarjetaPublicacion(p, i)).join('');
+      observarVistasPub();
+    } catch (e) {
+      document.getElementById('pubCargando').innerHTML = '<div style="font-size:1.6rem;margin-bottom:.5rem;">⚠️</div>No se pudo cargar la vitrina. Intenta recargar la página.';
+    }
+  }
+
+  function buscarPublicaciones() {
+    queryActual = (document.getElementById('inputBuscar').value || '').trim();
+    cargarPublicaciones(queryActual);
+  }
+
+  cargarPublicaciones('');
+
+  function abrirModalPublicar() {
+    pubFotoBase64 = null;
+    document.getElementById('pubTitulo').value = '';
+    document.getElementById('pubPrecio').value = '';
+    document.getElementById('pubCategoria').value = '';
+    document.getElementById('pubDescripcion').value = '';
+    document.getElementById('pubNombre').value = '';
+    document.getElementById('pubWhatsapp').value = '';
+    document.getElementById('pubMensaje').textContent = '';
+    document.getElementById('pubUploadZone').innerHTML = `<div style="font-size:1.8rem;margin-bottom:.4rem;">📷</div><p><strong>Sube una foto</strong><br>JPG, PNG</p>`;
+    document.getElementById('modalPublicarOverlay').classList.add('open');
+  }
+
+  function cerrarModalPublicar() {
+    document.getElementById('modalPublicarOverlay').classList.remove('open');
+  }
+
+  function manejarFotoPublicacion(input) {
+    const archivo = input.files[0];
+    if (!archivo) return;
+    const mensaje = document.getElementById('pubMensaje');
+    mensaje.textContent = 'Procesando foto...';
+    const lector = new FileReader();
+    lector.onload = (e) => {
+      const img = new Image();
+      img.onload = () => {
+        const anchoMax = 900;
+        const escala = Math.min(1, anchoMax / img.width);
+        const canvas = document.createElement('canvas');
+        canvas.width = img.width * escala;
+        canvas.height = img.height * escala;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+        pubFotoBase64 = canvas.toDataURL('image/jpeg', 0.75);
+        document.getElementById('pubUploadZone').innerHTML = `<img src="${pubFotoBase64}" style="max-width:100%;max-height:140px;border-radius:8px;" />`;
+        mensaje.textContent = '';
+      };
+      img.src = e.target.result;
+    };
+    lector.readAsDataURL(archivo);
+  }
+
+  async function publicarArticulo() {
+    const titulo = document.getElementById('pubTitulo').value.trim();
+    const precio = parseFloat(document.getElementById('pubPrecio').value);
+    const categoria = document.getElementById('pubCategoria').value.trim();
+    const descripcion = document.getElementById('pubDescripcion').value.trim();
+    const nombre = document.getElementById('pubNombre').value.trim();
+    const whatsapp = document.getElementById('pubWhatsapp').value.trim();
+    const mensaje = document.getElementById('pubMensaje');
+
+    if (!titulo || !precio || !nombre || !whatsapp) {
+      mensaje.textContent = '⚠️ Completa qué vendes, precio, tu nombre y tu WhatsApp.';
+      return;
+    }
+
+    const btn = document.getElementById('btnPublicar');
+    btn.disabled = true;
+    btn.textContent = 'Publicando...';
+    mensaje.textContent = '';
+
+    try {
+      const res = await fetch(`${API}/publicaciones`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          vendedor_nombre: nombre,
+          vendedor_whatsapp: whatsapp,
+          titulo, categoria: categoria || null, precio,
+          descripcion: descripcion || null,
+          foto_base64: pubFotoBase64
+        })
+      });
+      if (!res.ok) {
+        const d = await res.json().catch(() => ({}));
+        mensaje.textContent = '⚠️ ' + (d.detail || 'No se pudo publicar. Intenta de nuevo.');
+        return;
+      }
+      cerrarModalPublicar();
+      cargarPublicaciones(queryActual);
+    } catch (e) {
+      mensaje.textContent = '⚠️ No se pudo conectar con el servidor.';
+    } finally {
+      btn.disabled = false;
+      btn.textContent = '✓ Publicar';
+    }
+  }
 </script>
 
 </body>
