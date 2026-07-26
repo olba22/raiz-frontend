@@ -454,6 +454,14 @@
   <div class="tab">⭐ Reseñas</div>
 </div>
 
+<!-- PEDIDO RÁPIDO POR TEXTO -->
+<div style="padding:1rem 1.25rem 0;">
+  <div style="font-family:'Syne',sans-serif;font-weight:800;font-size:.92rem;margin-bottom:.5rem;">✍️ ¿Qué deseas pedir?</div>
+  <textarea id="pedidoTextoInput" placeholder="Ej: 2 presas de pollo, una libra de arroz, un jugo natural" style="width:100%;background:var(--gris-osc);border:1px solid var(--gris-brd);border-radius:10px;padding:.7rem .9rem;color:var(--blanco);font-size:.86rem;font-family:'Inter',sans-serif;min-height:64px;resize:vertical;"></textarea>
+  <button onclick="procesarPedidoTexto()" style="margin-top:.5rem;width:100%;background:var(--verde);color:var(--negro);border:none;border-radius:10px;padding:.7rem;font-weight:700;font-size:.88rem;cursor:pointer;font-family:'Inter',sans-serif;">➕ Agregar al carrito</button>
+  <div id="pedidoTextoResultado" style="margin-top:.5rem;font-size:.78rem;color:var(--texto-sec);line-height:1.6;"></div>
+</div>
+
 <!-- GRID DE PRODUCTOS -->
 <div class="productos-grid" id="productosGrid">
   <!-- se genera con JS -->
@@ -720,6 +728,90 @@
   let modalProducto = null;
   let modalQty = 1;
 
+  // ═══════════════════════════════════════════════════════════
+  // PEDIDO RÁPIDO POR TEXTO — reconoce productos del catálogo en
+  // texto libre; lo que no reconoce lo guarda como "pedido personalizado"
+  // ═══════════════════════════════════════════════════════════
+  function quitarAcentosJS(t) {
+    return (t || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+  }
+
+  const PALABRAS_NUMERO = {
+    'un': 1, 'una': 1, 'uno': 1, 'dos': 2, 'tres': 3, 'cuatro': 4, 'cinco': 5,
+    'seis': 6, 'siete': 7, 'ocho': 8, 'nueve': 9, 'diez': 10,
+    'media': 0.5, 'medio': 0.5, 'docena': 12
+  };
+  const PALABRAS_VACIAS = new Set(['de', 'la', 'el', 'los', 'las', 'un', 'una', 'con', 'para', 'porfa', 'porfavor']);
+
+  function parsearFragmentoPedido(fragmentoOriginal) {
+    let texto = quitarAcentosJS(fragmentoOriginal.trim().toLowerCase());
+    if (!texto) return null;
+
+    let cantidad = 1;
+    const matchDigito = texto.match(/^(\d+(\.\d+)?)(\/(\d+))?\s+/);
+    if (matchDigito) {
+      cantidad = matchDigito[4] ? parseFloat(matchDigito[1]) / parseFloat(matchDigito[4]) : parseFloat(matchDigito[1]);
+      texto = texto.slice(matchDigito[0].length);
+    } else {
+      const primeraPalabra = texto.split(' ')[0];
+      if (PALABRAS_NUMERO[primeraPalabra] !== undefined) {
+        cantidad = PALABRAS_NUMERO[primeraPalabra];
+        texto = texto.slice(primeraPalabra.length).trim();
+      }
+    }
+
+    const palabras = texto.split(/\s+/).filter(p => p && !PALABRAS_VACIAS.has(p));
+    return { cantidad, nombreBuscado: palabras.join(' ').trim(), textoOriginal: fragmentoOriginal.trim() };
+  }
+
+  function buscarProductoCoincidente(nombreBuscado) {
+    if (!nombreBuscado) return null;
+    let mejor = null;
+    for (const p of productos) {
+      const nombreProd = quitarAcentosJS(p.nombre.toLowerCase());
+      if (nombreProd.includes(nombreBuscado) || nombreBuscado.includes(nombreProd)) {
+        if (!mejor || nombreProd.length < quitarAcentosJS(mejor.nombre.toLowerCase()).length) mejor = p;
+      }
+    }
+    if (mejor) return mejor;
+    const palabrasBuscadas = new Set(nombreBuscado.split(/\s+/));
+    for (const p of productos) {
+      const palabrasProd = quitarAcentosJS(p.nombre.toLowerCase()).split(/\s+/);
+      const coincidencias = palabrasProd.filter(w => palabrasBuscadas.has(w)).length;
+      if (coincidencias > 0 && coincidencias >= palabrasProd.length / 2) return p;
+    }
+    return null;
+  }
+
+  function procesarPedidoTexto() {
+    const campo = document.getElementById('pedidoTextoInput');
+    const texto = campo.value.trim();
+    if (!texto) return;
+
+    const fragmentos = texto.split(/,|\by\b|\n/i).map(f => f.trim()).filter(Boolean);
+    const resultados = [];
+
+    fragmentos.forEach(frag => {
+      const parsed = parsearFragmentoPedido(frag);
+      if (!parsed) return;
+      const producto = buscarProductoCoincidente(parsed.nombreBuscado);
+      if (producto) {
+        const item = carrito.find(i => i.nombre === producto.nombre && !i.personalizado);
+        if (item) item.qty += parsed.cantidad;
+        else carrito.push({ emoji: producto.emoji, nombre: producto.nombre, desc: producto.desc, precio: producto.precio, tag: '', qty: parsed.cantidad });
+        resultados.push(`✅ ${parsed.cantidad}× ${producto.nombre} agregado`);
+      } else {
+        carrito.push({ emoji: '📝', nombre: parsed.textoOriginal, desc: '', precio: 0, tag: '', qty: parsed.cantidad, personalizado: true });
+        resultados.push(`✏️ "${parsed.textoOriginal}" — pedido personalizado, precio a confirmar`);
+      }
+    });
+
+    document.getElementById('pedidoTextoResultado').innerHTML = resultados.map(r => `<div>${r}</div>`).join('');
+    campo.value = '';
+    actualizarBar();
+    mostrarToast(`✓ Agregado al carrito`);
+  }
+
   // Render grid
   function renderGrid() {
     const grid = document.getElementById('productosGrid');
@@ -817,9 +909,9 @@
             <div class="drawer-emoji">${item.emoji}</div>
             <div class="drawer-info">
               <p>${item.nombre}</p>
-              <span>${item.qty} × RD$ ${item.precio.toLocaleString()}</span>
+              <span>${item.personalizado ? 'Pedido personalizado · precio a confirmar' : `${item.qty} × RD$ ${item.precio.toLocaleString()}`}</span>
             </div>
-            <div class="drawer-precio">RD$ ${(item.precio * item.qty).toLocaleString()}</div>
+            <div class="drawer-precio">${item.personalizado ? '—' : `RD$ ${(item.precio * item.qty).toLocaleString()}`}</div>
             <button class="drawer-remove" onclick="quitarItem(${idx})">✕</button>
           </div>
         `).join('')}
@@ -862,11 +954,15 @@
     msg += `*🍗 ${NEGOCIO_NOMBRE}*\n`;
     msg += '━━━━━━━━━━━━━━━━\n';
     carrito.forEach(i => {
-      msg += `${i.emoji} ${i.nombre} ×${i.qty} — RD$ ${(i.precio * i.qty).toLocaleString()}\n`;
+      if (i.personalizado) {
+        msg += `📝 ${i.nombre} ×${i.qty} — (a confirmar)\n`;
+      } else {
+        msg += `${i.emoji} ${i.nombre} ×${i.qty} — RD$ ${(i.precio * i.qty).toLocaleString()}\n`;
+      }
     });
     msg += '━━━━━━━━━━━━━━━━\n';
     msg += `🛵 Delivery: RD$ 100\n`;
-    msg += `💰 *Total: RD$ ${(subtotal + 100).toLocaleString()}*\n\n`;
+    msg += `💰 *Total (sin contar lo personalizado): RD$ ${(subtotal + 100).toLocaleString()}*\n\n`;
     const distribuidor = localStorage.getItem('raiz_distribuidor_activo');
     if (distribuidor) {
       msg += `📣 Código de distribuidor: *${distribuidor}*\n\n`;
