@@ -13,13 +13,14 @@
       --texto-sec: #888888; --naranja: #FF6B00; --rojo: #ff4444; --azul: #3b82f6;
     }
     html { scroll-behavior: smooth; }
-    body { font-family: 'Inter', sans-serif; background: var(--negro); color: var(--blanco); min-height: 100vh; overflow: hidden; }
+    body { font-family: 'Inter', sans-serif; background: var(--negro); color: var(--blanco); height: 100vh; overflow: hidden; display: flex; flex-direction: column; }
 
     /* ── ENCABEZADO ── */
     .pos-header {
       display: flex; align-items: center; gap: .85rem;
       padding: .85rem 1rem; border-bottom: 1px solid var(--gris-brd);
       background: var(--gris-osc); position: sticky; top: 0; z-index: 20;
+      flex-shrink: 0;
     }
     .pos-back {
       width: 38px; height: 38px; border-radius: 10px; background: var(--gris-card);
@@ -32,7 +33,7 @@
     .pos-title span { display: block; font-family: 'Inter'; font-weight: 500; font-size: .72rem; color: var(--texto-sec); }
 
     /* ── BUSCADOR ── */
-    .pos-buscar-wrap { padding: .75rem 1rem 0; background: var(--negro); }
+    .pos-buscar-wrap { padding: .75rem 1rem 0; background: var(--negro); flex-shrink: 0; }
     .pos-buscar {
       width: 100%; background: var(--gris-card); border: 1px solid var(--gris-brd);
       border-radius: 12px; padding: .8rem 1rem; color: var(--blanco); font-size: .95rem; font-family: inherit;
@@ -42,7 +43,7 @@
     /* ── CATEGORIAS ── */
     .pos-cats {
       display: flex; gap: .5rem; padding: .85rem 1rem; overflow-x: auto;
-      background: var(--negro); scrollbar-width: none;
+      background: var(--negro); scrollbar-width: none; flex-shrink: 0;
     }
     .pos-cats::-webkit-scrollbar { display: none; }
     .pos-cat-pill {
@@ -53,7 +54,7 @@
     .pos-cat-pill.active { background: var(--verde); border-color: var(--verde); color: var(--negro); }
 
     /* ── LAYOUT PRINCIPAL ── */
-    .pos-body { display: flex; height: calc(100vh - 178px); }
+    .pos-body { display: flex; flex: 1; min-height: 0; }
     .pos-grid-wrap { flex: 1; overflow-y: auto; padding: 0 1rem 1rem; }
     .pos-grid {
       display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: .7rem;
@@ -157,7 +158,6 @@
 
     /* ── RESPONSIVE ── */
     @media (max-width: 860px) {
-      .pos-body { height: calc(100vh - 152px); }
       .pos-carrito { display: none; }
       .pos-mobile-bar { display: block; }
       .pos-grid-wrap { padding-bottom: 1rem; }
@@ -179,11 +179,11 @@
 
   <div class="pos-cats" id="posCats"></div>
 
-  <div id="posFavoritosWrap" style="display:none;padding:0 1rem .5rem;">
+  <div id="posFavoritosWrap" style="display:none;padding:0 1rem .5rem;flex-shrink:0;">
     <div style="font-size:.72rem;font-weight:700;color:var(--texto-sec);text-transform:uppercase;letter-spacing:.06em;margin-bottom:.4rem;">⭐ Favoritos</div>
     <div class="pos-grid" id="posFavoritosGrid" style="grid-template-columns:repeat(auto-fill,minmax(100px,1fr));margin-bottom:.75rem;"></div>
   </div>
-  <div id="posRecientesWrap" style="display:none;padding:0 1rem .5rem;">
+  <div id="posRecientesWrap" style="display:none;padding:0 1rem .5rem;flex-shrink:0;">
     <div style="font-size:.72rem;font-weight:700;color:var(--texto-sec);text-transform:uppercase;letter-spacing:.06em;margin-bottom:.4rem;">🕒 Recientes</div>
     <div class="pos-grid" id="posRecientesGrid" style="grid-template-columns:repeat(auto-fill,minmax(100px,1fr));margin-bottom:.75rem;"></div>
   </div>
