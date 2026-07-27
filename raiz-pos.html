@@ -179,6 +179,15 @@
 
   <div class="pos-cats" id="posCats"></div>
 
+  <div id="posFavoritosWrap" style="display:none;padding:0 1rem .5rem;">
+    <div style="font-size:.72rem;font-weight:700;color:var(--texto-sec);text-transform:uppercase;letter-spacing:.06em;margin-bottom:.4rem;">⭐ Favoritos</div>
+    <div class="pos-grid" id="posFavoritosGrid" style="grid-template-columns:repeat(auto-fill,minmax(100px,1fr));margin-bottom:.75rem;"></div>
+  </div>
+  <div id="posRecientesWrap" style="display:none;padding:0 1rem .5rem;">
+    <div style="font-size:.72rem;font-weight:700;color:var(--texto-sec);text-transform:uppercase;letter-spacing:.06em;margin-bottom:.4rem;">🕒 Recientes</div>
+    <div class="pos-grid" id="posRecientesGrid" style="grid-template-columns:repeat(auto-fill,minmax(100px,1fr));margin-bottom:.75rem;"></div>
+  </div>
+
   <div class="pos-body">
     <div class="pos-grid-wrap">
       <div class="pos-grid" id="posGrid"></div>
@@ -288,11 +297,13 @@
             precio: Number(p.precio),
             cat: p.categoria || 'general',
             activo: p.disponible !== false,
-            unidad: p.unidad_venta || 'unidad'
+            unidad: p.unidad_venta || 'unidad',
+            vendidos: Number(p.total_vendidos || 0)
           }))
           .filter(p => p.activo);
 
         renderCategorias();
+        renderFavoritosYRecientes();
         renderGrid();
       } catch (e) {
         toast('⚠️ No se pudo conectar con el servidor', 'error');
@@ -317,6 +328,61 @@
 
     function posFiltrar() {
       renderGrid();
+    }
+
+    // ── FAVORITOS Y RECIENTES ──
+    function tarjetaMini(p) {
+      const enCarrito = carrito.find(i => i.idx === p.idx);
+      const badge = enCarrito ? (p.unidad === 'libra' ? formatCantidad(enCarrito.cantidad) : enCarrito.cantidad) : '';
+      return `
+        <div class="pos-prod" onclick="posAgregar(${p.idx})" style="padding:.6rem .5rem;">
+          ${enCarrito ? `<div class="pos-prod-badge">${badge}</div>` : ''}
+          <div class="pos-prod-emoji" style="font-size:1.3rem;">${p.emoji}</div>
+          <div class="pos-prod-nombre" style="font-size:.74rem;min-height:1.8em;">${p.nombre}</div>
+          <div class="pos-prod-precio" style="font-size:.76rem;">RD$${p.precio.toLocaleString()}</div>
+        </div>
+      `;
+    }
+
+    function obtenerRecientesGuardados() {
+      try {
+        const clave = `raiz_pos_recientes_${NEGOCIO_SLUG}`;
+        return JSON.parse(localStorage.getItem(clave) || '[]');
+      } catch (e) { return []; }
+    }
+
+    function guardarProductoReciente(productoId) {
+      if (!productoId) return;
+      const clave = `raiz_pos_recientes_${NEGOCIO_SLUG}`;
+      let lista = obtenerRecientesGuardados().filter(id => id !== productoId);
+      lista.unshift(productoId);
+      lista = lista.slice(0, 8);
+      localStorage.setItem(clave, JSON.stringify(lista));
+    }
+
+    function renderFavoritosYRecientes() {
+      const favoritosWrap = document.getElementById('posFavoritosWrap');
+      const recientesWrap = document.getElementById('posRecientesWrap');
+
+      const favoritos = productos.filter(p => p.vendidos > 0).sort((a, b) => b.vendidos - a.vendidos).slice(0, 6);
+      if (favoritos.length) {
+        document.getElementById('posFavoritosGrid').innerHTML = favoritos.map(tarjetaMini).join('');
+        favoritosWrap.style.display = 'block';
+      } else {
+        favoritosWrap.style.display = 'none';
+      }
+
+      const idsRecientes = obtenerRecientesGuardados();
+      const recientes = idsRecientes
+        .map(id => productos.find(p => p.id === id))
+        .filter(Boolean)
+        .slice(0, 6);
+      if (recientes.length) {
+        document.getElementById('posRecientesGrid').innerHTML = recientes.map(tarjetaMini).join('');
+        recientesWrap.style.display = 'block';
+      } else {
+        recientesWrap.style.display = 'none';
+      }
     }
 
     function renderGrid() {
@@ -356,6 +422,7 @@
         carrito.push({ idx, nombre: p.nombre, emoji: p.emoji, precio: p.precio, cantidad: 1, unidad: p.unidad });
       }
       renderGrid();
+      renderFavoritosYRecientes();
       renderCarrito();
     }
 
@@ -365,6 +432,7 @@
       item.cantidad += delta;
       if (item.cantidad <= 0) carrito = carrito.filter(i => i.idx !== idx);
       renderGrid();
+      renderFavoritosYRecientes();
       renderCarrito();
     }
 
@@ -374,12 +442,14 @@
       if (!item) return;
       item.cantidad = Math.round((item.cantidad + monto) * 100) / 100;
       renderGrid();
+      renderFavoritosYRecientes();
       renderCarrito();
     }
 
     function posQuitarItem(idx) {
       carrito = carrito.filter(i => i.idx !== idx);
       renderGrid();
+      renderFavoritosYRecientes();
       renderCarrito();
     }
 
@@ -475,8 +545,13 @@
         }
 
         toast(`✅ Venta facturada — ${data.codigo}`, 'success');
+        carrito.forEach(item => {
+          const p = productos.find(x => x.idx === item.idx);
+          if (p && p.id) guardarProductoReciente(p.id);
+        });
         carrito = [];
         renderGrid();
+        renderFavoritosYRecientes();
         renderCarrito();
         document.getElementById('posMobileBar').classList.remove('open');
       } catch (e) {
