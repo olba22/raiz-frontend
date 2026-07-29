@@ -33,12 +33,54 @@
     .pos-title span { display: block; font-family: 'Inter'; font-weight: 500; font-size: .72rem; color: var(--texto-sec); }
 
     /* ── BUSCADOR ── */
-    .pos-buscar-wrap { padding: .75rem 1rem 0; background: var(--negro); flex-shrink: 0; }
+    .pos-buscar-wrap { padding: .75rem 1rem 0; background: var(--negro); flex-shrink: 0; display: flex; gap: .5rem; }
     .pos-buscar {
       width: 100%; background: var(--gris-card); border: 1px solid var(--gris-brd);
       border-radius: 12px; padding: .8rem 1rem; color: var(--blanco); font-size: .95rem; font-family: inherit;
     }
     .pos-buscar:focus { outline: none; border-color: var(--verde); }
+
+    /* ── MICRÓFONO / FACTURACIÓN POR VOZ ── */
+    .pos-mic-btn {
+      width: 46px; height: 46px; border-radius: 12px; border: 1px solid var(--gris-brd);
+      background: var(--gris-card); color: var(--blanco); font-size: 1.25rem; cursor: pointer;
+      display: flex; align-items: center; justify-content: center; flex-shrink: 0; transition: all .15s;
+    }
+    .pos-mic-btn:hover { border-color: var(--verde); }
+    .pos-mic-btn.escuchando { background: var(--rojo); border-color: var(--rojo); animation: pos-pulso 1s infinite; }
+    @keyframes pos-pulso { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.12); } }
+
+    .voz-overlay {
+      position: fixed; inset: 0; background: rgba(0,0,0,.78); z-index: 600;
+      display: flex; align-items: center; justify-content: center; padding: 1.25rem;
+    }
+    .voz-modal {
+      background: var(--gris-osc); border: 1px solid var(--gris-brd); border-radius: 16px;
+      padding: 1.25rem; max-width: 420px; width: 100%; max-height: 82vh;
+      display: flex; flex-direction: column; gap: .85rem;
+    }
+    .voz-modal-header { font-family: 'Syne', sans-serif; font-weight: 800; font-size: 1.05rem; }
+    .voz-modal-texto {
+      font-size: .82rem; color: var(--texto-sec); font-style: italic;
+      border-left: 2px solid var(--gris-brd); padding-left: .6rem;
+    }
+    .voz-modal-lista { display: flex; flex-direction: column; gap: .5rem; overflow-y: auto; max-height: 38vh; }
+    .voz-item {
+      display: flex; align-items: center; gap: .6rem; padding: .55rem .7rem;
+      background: var(--gris-card); border: 1px solid var(--gris-brd); border-radius: 10px;
+    }
+    .voz-item.personalizado { border-color: var(--naranja); }
+    .voz-item-emoji { font-size: 1.2rem; flex-shrink: 0; }
+    .voz-item-info { flex: 1; font-size: .84rem; font-weight: 600; }
+    .voz-item-info small { display: block; font-weight: 500; color: var(--texto-sec); font-size: .74rem; margin-top: .1rem; }
+    .voz-modal-botones { display: flex; gap: .5rem; flex-wrap: wrap; }
+    .voz-modal-botones button {
+      flex: 1; min-width: 100px; padding: .75rem; border-radius: 10px; border: 1px solid var(--gris-brd);
+      font-weight: 700; font-size: .84rem; cursor: pointer; font-family: inherit;
+    }
+    .voz-btn-cancelar { background: var(--gris-card); color: var(--texto-sec); }
+    .voz-btn-reintentar { background: var(--gris-card); color: var(--blanco); }
+    .voz-btn-confirmar { background: var(--verde); color: var(--negro); border-color: var(--verde); }
 
     /* ── CATEGORIAS ── */
     .pos-cats {
@@ -175,6 +217,7 @@
 
   <div class="pos-buscar-wrap">
     <input class="pos-buscar" id="posBuscar" type="text" placeholder="🔍 Buscar producto..." oninput="posFiltrar()" autocomplete="off" />
+    <button class="pos-mic-btn" id="posMicBtn" onclick="posToggleVoz()" title="Facturar por voz">🎤</button>
   </div>
 
   <div class="pos-cats" id="posCats"></div>
@@ -226,6 +269,20 @@
     </div>
   </div>
 
+  <!-- MODAL DE CONFIRMACIÓN DE VOZ -->
+  <div class="voz-overlay" id="vozOverlay" style="display:none;">
+    <div class="voz-modal">
+      <div class="voz-modal-header">🎙️ Entendí esto:</div>
+      <div class="voz-modal-texto" id="vozTextoOriginal"></div>
+      <div class="voz-modal-lista" id="vozLista"></div>
+      <div class="voz-modal-botones">
+        <button class="voz-btn-cancelar" onclick="cerrarModalVoz()">✕ Cancelar</button>
+        <button class="voz-btn-reintentar" onclick="cerrarModalVoz(); iniciarReconocimientoVoz();">🔄 Repetir</button>
+        <button class="voz-btn-confirmar" onclick="confirmarPedidoVoz()">✓ Agregar al carrito</button>
+      </div>
+    </div>
+  </div>
+
   <div class="toast" id="toast"></div>
 
   <script>
@@ -235,7 +292,7 @@
     let NEGOCIO_TIPO = 'general';
     let productos = [];
     let categoriaActiva = 'todas';
-    let carrito = []; // { idx, nombre, emoji, precio, cantidad, unidad }
+    let carrito = []; // { idx, nombre, emoji, precio, cantidad, unidad, personalizado? }
 
     // Botones rápidos de cantidad para productos que se venden por libra
     const PRESETS_LIBRA = [0.25, 0.5, 0.75, 1, 2, 5];
@@ -426,6 +483,22 @@
       renderCarrito();
     }
 
+    // Agrega (o suma) una cantidad exacta a un producto, creando la fila del carrito si no existía.
+    // Usado por la facturación por voz para agregar directo la cantidad detectada.
+    function posAgregarConCantidad(idx, cantidad) {
+      const p = productos.find(x => x.idx === idx);
+      if (!p) return;
+      const existente = carrito.find(i => i.idx === idx);
+      if (existente) {
+        existente.cantidad = Math.round((existente.cantidad + cantidad) * 100) / 100;
+      } else {
+        carrito.push({ idx, nombre: p.nombre, emoji: p.emoji, precio: p.precio, cantidad, unidad: p.unidad });
+      }
+      renderGrid();
+      renderFavoritosYRecientes();
+      renderCarrito();
+    }
+
     function posCambiarCantidad(idx, delta) {
       const item = carrito.find(i => i.idx === idx);
       if (!item) return;
@@ -454,6 +527,19 @@
     }
 
     function renderItemHTML(item) {
+      // Línea "personalizada" (detectada por voz pero sin coincidir con ningún producto)
+      if (item.personalizado) {
+        return `
+          <div class="pos-item">
+            <div class="pos-item-info">
+              <div class="pos-item-nombre">🎤 ${item.nombre}</div>
+              <div class="pos-item-precio" style="color:var(--naranja);">A confirmar con el cliente</div>
+            </div>
+            <button class="pos-qty-quitar" onclick="posQuitarItem(${item.idx})">🗑️</button>
+          </div>
+        `;
+      }
+
       const esLibraColmado = NEGOCIO_TIPO === 'colmado' && item.unidad === 'libra';
 
       if (esLibraColmado) {
@@ -511,7 +597,12 @@
 
       const items = carrito.map(item => {
         const p = productos.find(x => x.idx === item.idx);
-        return { producto_id: p.id || null, nombre_producto: item.nombre, precio_unitario: item.precio, cantidad: item.cantidad };
+        return {
+          producto_id: p ? p.id : null,
+          nombre_producto: item.personalizado ? `${item.nombre} (a confirmar)` : item.nombre,
+          precio_unitario: item.precio,
+          cantidad: item.cantidad
+        };
       });
 
       const btnD = document.getElementById('posBtnConfirmarDesktop');
@@ -560,6 +651,188 @@
       } finally {
         [btnD, btnM].forEach(b => { b.disabled = false; b.textContent = '✓ Confirmar venta'; });
       }
+    }
+
+    // ══════════════════ FACTURACIÓN POR VOZ ══════════════════
+    const NUMEROS_TEXTO = {
+      'un': 1, 'una': 1, 'uno': 1, 'dos': 2, 'tres': 3, 'cuatro': 4, 'cinco': 5,
+      'seis': 6, 'siete': 7, 'ocho': 8, 'nueve': 9, 'diez': 10
+    };
+    const FRACCIONES_TEXTO = { 'medio': 0.5, 'media': 0.5, 'cuarto': 0.25 };
+    const PALABRAS_UNIDAD = ['libras', 'libra', 'lb', 'fundas', 'funda', 'docenas', 'docena', 'onzas', 'onza', 'unidades', 'unidad'];
+
+    let reconocimientoVoz = null;
+    let escuchandoVoz = false;
+    let resultadosVozActuales = [];
+    const vozDisponible = !!(window.SpeechRecognition || window.webkitSpeechRecognition);
+
+    function quitarAcentos(t) {
+      return t.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+    }
+
+    function extraerCantidadYResto(texto) {
+      let t = texto.trim();
+
+      // Fracciones de dos palabras ("tres cuartos", "un cuarto")
+      if (t.startsWith('tres cuartos')) return { cantidad: 0.75, resto: t.slice('tres cuartos'.length).trim() };
+      if (t.startsWith('un cuarto')) return { cantidad: 0.25, resto: t.slice('un cuarto'.length).trim() };
+
+      const primeraPalabra = t.split(' ')[0];
+
+      // Fracciones de una palabra ("media", "medio", "cuarto")
+      if (FRACCIONES_TEXTO[primeraPalabra] !== undefined) {
+        return { cantidad: FRACCIONES_TEXTO[primeraPalabra], resto: t.slice(primeraPalabra.length).trim() };
+      }
+      // Números en dígitos ("2 libras de arroz", "1.5 libras")
+      const matchDigito = t.match(/^(\d+(\.\d+)?)\s*/);
+      if (matchDigito) {
+        return { cantidad: parseFloat(matchDigito[1]), resto: t.slice(matchDigito[0].length).trim() };
+      }
+      // Números en palabras ("dos fundas de agua")
+      if (NUMEROS_TEXTO[primeraPalabra] !== undefined) {
+        return { cantidad: NUMEROS_TEXTO[primeraPalabra], resto: t.slice(primeraPalabra.length).trim() };
+      }
+      return { cantidad: 1, resto: t };
+    }
+
+    function quitarPalabrasUnidad(texto) {
+      let t = texto.trim();
+      for (const palabra of PALABRAS_UNIDAD) {
+        const regex = new RegExp('^' + palabra + '\\b', 'i');
+        if (regex.test(t)) { t = t.replace(regex, '').trim(); break; }
+      }
+      t = t.replace(/^de\s+/, ''); // quita un "de" sobrante: "libra de arroz" -> "arroz"
+      return t;
+    }
+
+    function buscarProductoPorTexto(texto) {
+      const textoNorm = quitarAcentos(texto.toLowerCase()).trim();
+      if (!textoNorm) return null;
+      let mejor = null;
+      let mejorLargo = 0;
+      for (const p of productos) {
+        const nombreNorm = quitarAcentos(p.nombre.toLowerCase());
+        if (textoNorm.includes(nombreNorm) || nombreNorm.includes(textoNorm)) {
+          if (nombreNorm.length > mejorLargo) { mejor = p; mejorLargo = nombreNorm.length; }
+        }
+      }
+      return mejor;
+    }
+
+    // Convierte el texto dictado (ej: "dos fundas de agua y una libra de arroz")
+    // en una lista de { tipo: 'producto'|'personalizado', ... }
+    function procesarTextoVoz(textoCompleto) {
+      const textoNorm = quitarAcentos(textoCompleto.toLowerCase());
+      const trozos = textoNorm.split(/,| y /).map(s => s.trim()).filter(Boolean);
+      const resultados = [];
+
+      for (const trozo of trozos) {
+        const { cantidad, resto } = extraerCantidadYResto(trozo);
+        const nombreBuscado = quitarPalabrasUnidad(resto);
+        const producto = buscarProductoPorTexto(nombreBuscado);
+
+        if (producto) {
+          const cantidadFinal = producto.unidad === 'libra' ? cantidad : Math.max(1, Math.round(cantidad));
+          resultados.push({
+            tipo: 'producto', idx: producto.idx, nombre: producto.nombre,
+            emoji: producto.emoji, precio: producto.precio, unidad: producto.unidad, cantidad: cantidadFinal
+          });
+        } else {
+          resultados.push({ tipo: 'personalizado', textoOriginal: trozo });
+        }
+      }
+      return resultados;
+    }
+
+    function posToggleVoz() {
+      if (escuchandoVoz) {
+        if (reconocimientoVoz) reconocimientoVoz.stop();
+        return;
+      }
+      iniciarReconocimientoVoz();
+    }
+
+    function iniciarReconocimientoVoz() {
+      if (!vozDisponible) {
+        toast('⚠️ Tu navegador no soporta pedidos por voz, usa Chrome', 'error');
+        return;
+      }
+      const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+      reconocimientoVoz = new SR();
+      reconocimientoVoz.lang = 'es-419';
+      reconocimientoVoz.interimResults = false;
+      reconocimientoVoz.maxAlternatives = 1;
+
+      const btn = document.getElementById('posMicBtn');
+      escuchandoVoz = true;
+      btn.classList.add('escuchando');
+      btn.textContent = '🔴';
+      toast('🎙️ Escuchando... di los productos', '');
+
+      reconocimientoVoz.onresult = (evento) => {
+        const texto = evento.results[0][0].transcript;
+        mostrarConfirmacionVoz(texto);
+      };
+      reconocimientoVoz.onerror = () => {
+        toast('⚠️ No se entendió, intenta de nuevo', 'error');
+      };
+      reconocimientoVoz.onend = () => {
+        escuchandoVoz = false;
+        btn.classList.remove('escuchando');
+        btn.textContent = '🎤';
+      };
+      reconocimientoVoz.start();
+    }
+
+    function mostrarConfirmacionVoz(textoOriginal) {
+      resultadosVozActuales = procesarTextoVoz(textoOriginal);
+      document.getElementById('vozTextoOriginal').textContent = `"${textoOriginal}"`;
+      document.getElementById('vozLista').innerHTML = resultadosVozActuales.map(r => {
+        if (r.tipo === 'producto') {
+          const cantTexto = r.unidad === 'libra' ? `${formatCantidad(r.cantidad)} lb` : `${r.cantidad}x`;
+          return `
+            <div class="voz-item">
+              <div class="voz-item-emoji">${r.emoji}</div>
+              <div class="voz-item-info">${r.nombre}<small>${cantTexto} — RD$${(r.cantidad * r.precio).toLocaleString()}</small></div>
+            </div>
+          `;
+        }
+        return `
+          <div class="voz-item personalizado">
+            <div class="voz-item-emoji">🎤</div>
+            <div class="voz-item-info">${r.textoOriginal}<small>No identificado — se agregará a confirmar</small></div>
+          </div>
+        `;
+      }).join('');
+      document.getElementById('vozOverlay').style.display = 'flex';
+    }
+
+    function cerrarModalVoz() {
+      document.getElementById('vozOverlay').style.display = 'none';
+      resultadosVozActuales = [];
+    }
+
+    function confirmarPedidoVoz() {
+      resultadosVozActuales.forEach(r => {
+        if (r.tipo === 'producto') {
+          posAgregarConCantidad(r.idx, r.cantidad);
+        } else {
+          carrito.push({
+            idx: -(Date.now() + Math.floor(Math.random() * 1000)),
+            nombre: r.textoOriginal,
+            emoji: '🎤',
+            precio: 0,
+            cantidad: 1,
+            unidad: 'unidad',
+            personalizado: true
+          });
+        }
+      });
+      renderGrid();
+      renderFavoritosYRecientes();
+      renderCarrito();
+      cerrarModalVoz();
+      toast('✅ Pedido de voz agregado al carrito', 'success');
     }
 
     cargarDatos();
