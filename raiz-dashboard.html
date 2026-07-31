@@ -320,6 +320,43 @@
     .kanban-monto { font-family: 'Syne', sans-serif; font-weight: 700; font-size: .9rem; color: var(--verde); }
     .kanban-time { font-size: .7rem; color: var(--texto-sec); }
 
+    /* ── ASISTENTE DE IA (chat flotante) ── */
+    .asistente-fab {
+      position: fixed; bottom: 1.5rem; right: 1.5rem; z-index: 300;
+      width: 58px; height: 58px; border-radius: 50%;
+      background: var(--verde); color: var(--negro); border: none;
+      font-size: 1.5rem; cursor: pointer; box-shadow: 0 4px 16px rgba(29,185,84,.4);
+      display: flex; align-items: center; justify-content: center; transition: transform .15s;
+    }
+    .asistente-fab:hover { transform: scale(1.06); }
+    .asistente-panel {
+      position: fixed; bottom: 5.5rem; right: 1.5rem; z-index: 300;
+      width: 360px; max-width: calc(100vw - 2rem); height: 480px; max-height: 70vh;
+      background: var(--gris-card); border: 1px solid var(--gris-brd); border-radius: 16px;
+      display: none; flex-direction: column; overflow: hidden;
+      box-shadow: 0 8px 32px rgba(0,0,0,.5);
+    }
+    .asistente-panel.open { display: flex; }
+    .asistente-header {
+      padding: .9rem 1.1rem; background: var(--gris-osc); border-bottom: 1px solid var(--gris-brd);
+      display: flex; align-items: center; justify-content: space-between; font-weight: 800; font-family: 'Syne', sans-serif;
+    }
+    .asistente-mensajes { flex: 1; overflow-y: auto; padding: 1rem; display: flex; flex-direction: column; gap: .6rem; }
+    .asistente-msg { max-width: 85%; padding: .6rem .85rem; border-radius: 12px; font-size: .85rem; line-height: 1.4; white-space: pre-wrap; }
+    .asistente-msg-bot { background: var(--gris-osc); align-self: flex-start; border-bottom-left-radius: 3px; }
+    .asistente-msg-user { background: var(--verde); color: var(--negro); align-self: flex-end; border-bottom-right-radius: 3px; }
+    .asistente-msg-cargando { background: var(--gris-osc); align-self: flex-start; color: var(--texto-sec); font-style: italic; }
+    .asistente-input-row { display: flex; gap: .5rem; padding: .85rem; border-top: 1px solid var(--gris-brd); }
+    .asistente-input {
+      flex: 1; background: var(--negro); border: 1px solid var(--gris-brd); border-radius: 10px;
+      padding: .6rem .8rem; color: var(--blanco); font-family: 'Inter', sans-serif; font-size: .85rem; outline: none;
+    }
+    .asistente-input:focus { border-color: var(--verde); }
+    .asistente-send {
+      width: 40px; height: 40px; border-radius: 10px; border: none; background: var(--verde); color: var(--negro);
+      font-size: 1.1rem; cursor: pointer; flex-shrink: 0;
+    }
+
     /* RESPONSIVE */
     @media (max-width: 1100px) {
       .kpi-grid { grid-template-columns: repeat(2,1fr); }
@@ -337,6 +374,10 @@
       .mobile-topbar { display: flex; }
       .mobile-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.5); z-index: 150; }
       .mobile-overlay.show { display: block; }
+    }
+    @media (max-width: 480px) {
+      .asistente-panel { width: calc(100vw - 2rem); right: 1rem; bottom: 5rem; }
+      .asistente-fab { right: 1rem; bottom: 1rem; }
     }
     .mobile-topbar {
       display: none; align-items: center; gap: .9rem;
@@ -776,6 +817,22 @@
       <button class="btn-cancel" onclick="cerrarCargaMasiva()">Cancelar</button>
       <button class="btn-guardar" id="masivaBtnPrincipal" onclick="interpretarFacturaMasiva()">🔍 Interpretar texto</button>
     </div>
+  </div>
+</div>
+
+<!-- ASISTENTE DE IA (chat flotante) -->
+<button class="asistente-fab" id="asistenteFab" onclick="toggleAsistente()" title="Asistente RAIZ">🤖</button>
+<div class="asistente-panel" id="asistentePanel">
+  <div class="asistente-header">
+    <span>🤖 Asistente RAIZ</span>
+    <button class="modal-close" onclick="toggleAsistente()">✕</button>
+  </div>
+  <div class="asistente-mensajes" id="asistenteMensajes">
+    <div class="asistente-msg asistente-msg-bot">¡Hola! Soy tu asistente. Puedo agregar productos, cambiar precios o stock, y contarte cómo van tus ventas de hoy. ¿Qué necesitas?</div>
+  </div>
+  <div class="asistente-input-row">
+    <input class="asistente-input" id="asistenteInput" type="text" placeholder="Escribe aquí..." autocomplete="off" />
+    <button class="asistente-send" onclick="enviarMensajeAsistente()">➤</button>
   </div>
 </div>
 
@@ -1857,6 +1914,74 @@
       toast('⚠️ No se pudo conectar con el servidor', 'error');
     }
   }
+
+  // ═══════════════════════════════════════════════════════════
+  // ASISTENTE DE IA — chat flotante conectado a /asistente/chat
+  // ═══════════════════════════════════════════════════════════
+  let asistenteHistorial = [];
+  let asistenteAbierto = false;
+
+  function toggleAsistente() {
+    asistenteAbierto = !asistenteAbierto;
+    document.getElementById('asistentePanel').classList.toggle('open', asistenteAbierto);
+    if (asistenteAbierto) setTimeout(() => document.getElementById('asistenteInput').focus(), 100);
+  }
+
+  function agregarMensajeAsistenteUI(texto, tipo) {
+    const cont = document.getElementById('asistenteMensajes');
+    const div = document.createElement('div');
+    div.className = 'asistente-msg ' + (tipo === 'user' ? 'asistente-msg-user' : 'asistente-msg-bot');
+    div.textContent = texto;
+    cont.appendChild(div);
+    cont.scrollTop = cont.scrollHeight;
+    return div;
+  }
+
+  async function enviarMensajeAsistente() {
+    const input = document.getElementById('asistenteInput');
+    const mensaje = input.value.trim();
+    if (!mensaje) return;
+    if (!NEGOCIO_ID) { toast('⚠️ Espera a que cargue tu negocio e intenta de nuevo', 'error'); return; }
+
+    agregarMensajeAsistenteUI(mensaje, 'user');
+    input.value = '';
+
+    const cont = document.getElementById('asistenteMensajes');
+    const cargando = document.createElement('div');
+    cargando.className = 'asistente-msg asistente-msg-bot asistente-msg-cargando';
+    cargando.textContent = 'Escribiendo...';
+    cont.appendChild(cargando);
+    cont.scrollTop = cont.scrollHeight;
+
+    try {
+      const res = await fetch(`${API}/asistente/chat`, {
+        method: 'POST',
+        headers: authHeaders(),
+        body: JSON.stringify({ negocio_id: NEGOCIO_ID, mensaje, historial: asistenteHistorial })
+      });
+      if (manejarRespuestaAuth(res)) { cargando.remove(); return; }
+      const data = await res.json();
+      cargando.remove();
+      if (!res.ok) {
+        agregarMensajeAsistenteUI('⚠️ ' + (data.detail || 'No se pudo procesar tu mensaje.'), 'bot');
+        return;
+      }
+      agregarMensajeAsistenteUI(data.respuesta || '(sin respuesta)', 'bot');
+      asistenteHistorial = data.historial || asistenteHistorial;
+
+      // Si el asistente hizo cambios reales (productos, precios, stock), refresca lo que se ve en pantalla
+      if (data.acciones && data.acciones.length) {
+        await cargarNegocio();
+      }
+    } catch (e) {
+      cargando.remove();
+      agregarMensajeAsistenteUI('⚠️ No se pudo conectar con el servidor.', 'bot');
+    }
+  }
+
+  document.getElementById('asistenteInput').addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') { e.preventDefault(); enviarMensajeAsistente(); }
+  });
 
   let pantallaActual = 'resumen';
 
