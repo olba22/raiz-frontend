@@ -440,7 +440,7 @@
         🔔
       </button>
       <button class="btn-primary" onclick="accionTopbar()" id="btnTopbar">+ Agregar producto</button>
-      <button class="btn-primary" onclick="abrirCargaMasiva()" id="btnCargaMasiva" style="background:transparent;border:1px solid var(--gris-brd);color:var(--blanco);margin-left:.6rem;">📦 Cargar factura</button>
+      <button class="btn-primary" onclick="abrirCargaMasiva()" id="btnCargaMasiva" style="background:transparent;border:1px solid var(--gris-brd);color:var(--blanco);margin-left:.6rem;">📦 Subir inventario</button>
     </div>
   </div>
 
@@ -751,39 +751,18 @@
   </div>
 </div>
 
-<!-- MODAL CARGAR FACTURA (lector inteligente) -->
+<!-- MODAL SUBIR INVENTARIO (texto natural o por voz) -->
 <div class="modal-overlay" id="masivaOverlay" onclick="if(event.target===this) cerrarCargaMasiva()">
   <div class="modal">
     <div class="modal-header">
-      <h3>📦 Cargar factura</h3>
+      <h3>📦 Subir inventario</h3>
       <button class="modal-close" onclick="cerrarCargaMasiva()">✕</button>
     </div>
     <div class="modal-body">
 
       <div id="masivaPaso1">
         <div class="campo">
-          <label>¿Qué tipo de texto vas a pegar?</label>
-          <div class="select-wrap">
-            <select id="masivaTipo" onchange="cambiarTipoMasiva()">
-              <option value="venta">📋 Lista de precios de venta</option>
-              <option value="compra">🛒 Factura de compra a proveedor</option>
-            </select>
-          </div>
-        </div>
-
-        <div class="campo" id="masivaCampoProveedor" style="display:none;">
-          <label>Proveedor (opcional)</label>
-          <input class="input" id="masivaProveedor" type="text" placeholder="Ej: Distribuidora Nacional" />
-        </div>
-
-        <div class="campo" id="masivaCampoMargen" style="display:none;">
-          <label>Margen de ganancia (%) <span>*</span></label>
-          <input class="input" id="masivaMargen" type="number" value="40" placeholder="Ej: 40" />
-          <div class="hint" style="font-size:.78rem;color:var(--texto-sec);margin-top:.4rem;">El precio de venta se calcula automático con este margen. Lo puedes editar producto por producto antes de guardar.</div>
-        </div>
-
-        <div class="campo">
-          <label>Categoría para todos estos productos</label>
+          <label>Categoría para estos productos</label>
           <div class="select-wrap">
             <select id="masivaCategoria" onchange="onCambioMasivaCategoria()">
               <option value="general">📦 General</option>
@@ -795,12 +774,21 @@
             </select>
           </div>
           <input class="input" id="masivaCategoriaOtra" type="text" placeholder="Escribe el nombre de la categoría" style="display:none;margin-top:.5rem;" />
-          <div class="hint" style="font-size:.78rem;color:var(--texto-sec);margin-top:.4rem;">Si esta lista mezcla varios tipos de producto, cárgala en tandas por categoría para mantener tu inventario organizado.</div>
+          <div class="hint" style="font-size:.78rem;color:var(--texto-sec);margin-top:.4rem;">Si vas a subir varios tipos de producto, cárgalos en tandas por categoría para mantener tu inventario organizado.</div>
         </div>
 
         <div class="campo">
-          <label>Pega el texto tal cual (lista, tabla o factura de compra)</label>
-          <textarea id="masivaTexto" rows="8" placeholder="Pega aquí tu lista de precios o tu factura de compra, sin reformatear nada..." style="width:100%;background:var(--gris-osc);border:1px solid var(--gris-brd);border-radius:10px;padding:.8rem;color:var(--blanco);font-family:'Inter',sans-serif;font-size:.88rem;resize:vertical;"></textarea>
+          <label>Proveedor (opcional, solo si le compraste a alguien)</label>
+          <input class="input" id="masivaProveedor" type="text" placeholder="Ej: Distribuidora Nacional" />
+        </div>
+
+        <div class="campo">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.4rem;">
+            <label style="margin-bottom:0;">Escribe o dicta tu inventario, un producto por línea</label>
+            <button type="button" class="asistente-send" id="masivaMicBtn" onclick="toggleVozInventario()" title="Dictar por voz" style="width:36px;height:36px;font-size:1.1rem;">🎤</button>
+          </div>
+          <textarea id="masivaTexto" rows="8" placeholder="Ejemplos:&#10;12 galones de agua, lo compré a 60 para venderlo a 80&#10;20 libras de arroz gritalino, compré a 50 para venderlo a 60&#10;Refresco Coca-Cola 2L a 120" style="width:100%;background:var(--gris-osc);border:1px solid var(--gris-brd);border-radius:10px;padding:.8rem;color:var(--blanco);font-family:'Inter',sans-serif;font-size:.88rem;resize:vertical;"></textarea>
+          <div class="hint" style="font-size:.78rem;color:var(--texto-sec);margin-top:.4rem;">Si dices "lo compré a X para venderlo a Y", el sistema guarda ambos precios. Si solo das un precio, lo toma como el precio de venta.</div>
         </div>
       </div>
 
@@ -1374,7 +1362,6 @@
     actualizarTotalFacturar();
   }
 
-  let masivaTipoActual = 'venta';
   let masivaItemsPreview = [];
 
   function onCambioMasivaCategoria() {
@@ -1391,23 +1378,13 @@
     return val;
   }
 
-  function cambiarTipoMasiva() {
-    masivaTipoActual = document.getElementById('masivaTipo').value;
-    const esCompra = masivaTipoActual === 'compra';
-    document.getElementById('masivaCampoMargen').style.display = esCompra ? 'block' : 'none';
-    document.getElementById('masivaCampoProveedor').style.display = esCompra ? 'block' : 'none';
-  }
-
   function abrirCargaMasiva() {
     document.getElementById('masivaTexto').value = '';
     document.getElementById('masivaMensaje').textContent = '';
-    document.getElementById('masivaTipo').value = 'venta';
     document.getElementById('masivaProveedor').value = '';
-    document.getElementById('masivaMargen').value = 40;
     document.getElementById('masivaCategoria').value = 'general';
     document.getElementById('masivaCategoriaOtra').value = '';
     document.getElementById('masivaCategoriaOtra').style.display = 'none';
-    cambiarTipoMasiva();
     document.getElementById('masivaPaso1').style.display = 'block';
     document.getElementById('masivaPaso2').style.display = 'none';
     const btn = document.getElementById('masivaBtnPrincipal');
@@ -1420,49 +1397,138 @@
     document.getElementById('masivaOverlay').classList.remove('open');
   }
 
-  async function interpretarFacturaMasiva() {
+  // ══════════════ PARSER DE INVENTARIO EN TEXTO NATURAL (sin IA de pago) ══════════════
+  const INV_NUMEROS_TEXTO = { 'un':1,'una':1,'uno':1,'dos':2,'tres':3,'cuatro':4,'cinco':5,'seis':6,'siete':7,'ocho':8,'nueve':9,'diez':10,'once':11,'doce':12,'trece':13,'catorce':14,'quince':15,'veinte':20,'veinticinco':25,'treinta':30,'cuarenta':40,'cincuenta':50,'cien':100 };
+  const INV_FRACCIONES_TEXTO = { 'medio':0.5,'media':0.5,'cuarto':0.25 };
+  const INV_PALABRAS_UNIDAD = ['galones','galon','libras','libra','lb','fundas','funda','docenas','docena','onzas','onza','unidades','unidad','cajas','caja','paquetes','paquete','botellas','botella','latas','lata'];
+
+  function invQuitarAcentos(t) { return t.normalize('NFD').replace(/[\u0300-\u036f]/g, ''); }
+
+  function invExtraerCantidadYResto(texto) {
+    let t = texto.trim();
+    const primeraPalabra = t.split(' ')[0] || '';
+    const primeraPalabraNorm = invQuitarAcentos(primeraPalabra.toLowerCase());
+    if (INV_FRACCIONES_TEXTO[primeraPalabraNorm] !== undefined) {
+      return { cantidad: INV_FRACCIONES_TEXTO[primeraPalabraNorm], resto: t.slice(primeraPalabra.length).trim() };
+    }
+    const matchDigito = t.match(/^(\d+(\.\d+)?)\s*/);
+    if (matchDigito) {
+      return { cantidad: parseFloat(matchDigito[1]), resto: t.slice(matchDigito[0].length).trim() };
+    }
+    if (INV_NUMEROS_TEXTO[primeraPalabraNorm] !== undefined) {
+      return { cantidad: INV_NUMEROS_TEXTO[primeraPalabraNorm], resto: t.slice(primeraPalabra.length).trim() };
+    }
+    return { cantidad: null, resto: t };
+  }
+
+  function invQuitarPalabraUnidad(texto) {
+    let t = texto.trim();
+    for (const palabra of INV_PALABRAS_UNIDAD) {
+      const regex = new RegExp('^(de\\s+)?' + palabra + '\\b\\s*(de)?', 'i');
+      if (regex.test(t)) { t = t.replace(regex, '').trim(); break; }
+    }
+    return t;
+  }
+
+  // Convierte una línea como "20 libras de arroz gritalino, compré a 50 para venderlo a 60"
+  // en { nombre, cantidad, costo, precio }. Si solo hay un precio, lo toma como precio de venta.
+  function parsearLineaInventario(lineaOriginal) {
+    let texto = lineaOriginal.trim().replace(/^[-•*]\s*/, '');
+    if (!texto) return null;
+
+    const { cantidad, resto } = invExtraerCantidadYResto(texto);
+    let restante = invQuitarPalabraUnidad(resto);
+
+    let costo = null;
+    const matchCosto = restante.match(/compr\w*\s*(?:lo|la|los|las)?\s*(?:a|en)?\s*\$?\s*(\d+(?:[.,]\d+)?)/i);
+    if (matchCosto) {
+      costo = parseFloat(matchCosto[1].replace(',', '.'));
+      restante = restante.replace(matchCosto[0], ' ');
+    }
+
+    let precio = null;
+    const matchVenta = restante.match(/vend\w*\s*(?:lo|la|los|las)?\s*(?:a|en)?\s*\$?\s*(\d+(?:[.,]\d+)?)/i);
+    if (matchVenta) {
+      precio = parseFloat(matchVenta[1].replace(',', '.'));
+      restante = restante.replace(matchVenta[0], ' ');
+    } else {
+      const matchSuelto = restante.match(/(?:^|\s)(?:a|en)\s*\$?\s*(\d+(?:[.,]\d+)?)\s*$/i) || restante.match(/\$\s*(\d+(?:[.,]\d+)?)/);
+      if (matchSuelto) {
+        precio = parseFloat(matchSuelto[1].replace(',', '.'));
+        restante = restante.replace(matchSuelto[0], ' ');
+      }
+    }
+
+    let nombre = restante
+      .replace(/\bpara\b/gi, ' ')
+      .replace(/,/g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim()
+      .replace(/^(de|del|el|la|los|las)\s+/i, '');
+
+    if (!nombre) return null;
+    if (precio === null && costo !== null) precio = costo;
+    return { nombre, cantidad: cantidad === null ? 1 : cantidad, costo, precio };
+  }
+
+  function parsearInventarioNatural(textoCompleto) {
+    const lineas = textoCompleto.split('\n').map(l => l.trim()).filter(Boolean);
+    return lineas.map(parsearLineaInventario).filter(Boolean);
+  }
+
+  // ── Dictado por voz para el inventario (reconocimiento del navegador, sin costo) ──
+  let reconocimientoInventario = null;
+  let escuchandoInventario = false;
+
+  function toggleVozInventario() {
+    if (escuchandoInventario) {
+      if (reconocimientoInventario) reconocimientoInventario.stop();
+      return;
+    }
+    const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SR) { toast('⚠️ Tu navegador no soporta dictado por voz, usa Chrome', 'error'); return; }
+    reconocimientoInventario = new SR();
+    reconocimientoInventario.lang = 'es-419';
+    reconocimientoInventario.interimResults = false;
+    reconocimientoInventario.maxAlternatives = 1;
+
+    const btn = document.getElementById('masivaMicBtn');
+    escuchandoInventario = true;
+    btn.style.background = 'var(--rojo)';
+    toast('🎙️ Escuchando... dicta un producto', '');
+
+    reconocimientoInventario.onresult = (evento) => {
+      const texto = evento.results[0][0].transcript;
+      const textarea = document.getElementById('masivaTexto');
+      textarea.value = textarea.value.trim() ? textarea.value.trim() + '\n' + texto : texto;
+    };
+    reconocimientoInventario.onerror = () => { toast('⚠️ No se entendió, intenta de nuevo', 'error'); };
+    reconocimientoInventario.onend = () => {
+      escuchandoInventario = false;
+      btn.style.background = 'var(--verde)';
+    };
+    reconocimientoInventario.start();
+  }
+
+  function interpretarFacturaMasiva() {
     const texto = document.getElementById('masivaTexto').value.trim();
     const mensaje = document.getElementById('masivaMensaje');
-    if (!texto) { mensaje.textContent = '⚠️ Pega el texto primero.'; return; }
-    mensaje.textContent = 'Interpretando texto...';
-    try {
-      const res = await fetch(`${API}/productos/interpretar-texto`, {
-        method: 'POST',
-        headers: authHeaders(),
-        body: JSON.stringify({ texto })
-      });
-      if (manejarRespuestaAuth(res)) return;
-      const data = await res.json();
-      if (!res.ok) { mensaje.textContent = '⚠️ ' + (data.detail || 'No se pudo interpretar el texto.'); return; }
+    if (!texto) { mensaje.textContent = '⚠️ Escribe o dicta tu inventario primero.'; return; }
 
-      const margen = parseFloat(document.getElementById('masivaMargen').value) || 0;
-
-      masivaItemsPreview = data.productos.map(p => {
-        if (masivaTipoActual === 'compra') {
-          const cantidad = (p.stock && p.stock > 0) ? p.stock : 1;
-          const costoUnitario = cantidad > 0 ? (p.precio / cantidad) : p.precio;
-          const precioSugerido = Math.round(costoUnitario * (1 + margen / 100));
-          return {
-            nombre: p.nombre,
-            costo_unitario: Math.round(costoUnitario * 100) / 100,
-            cantidad,
-            precio_venta_sugerido: precioSugerido
-          };
-        }
-        return { nombre: p.nombre, precio: p.precio, stock: p.stock };
-      });
-
-      mensaje.textContent = '';
-      document.getElementById('masivaPaso1').style.display = 'none';
-      document.getElementById('masivaPaso2').style.display = 'block';
-      renderPreviewMasiva();
-
-      const btn = document.getElementById('masivaBtnPrincipal');
-      btn.textContent = '✓ Guardar todo';
-      btn.onclick = confirmarCargaMasiva;
-    } catch (e) {
-      mensaje.textContent = '⚠️ No se pudo conectar con el servidor.';
+    masivaItemsPreview = parsearInventarioNatural(texto);
+    if (!masivaItemsPreview.length) {
+      mensaje.textContent = '⚠️ No se entendió ningún producto. Revisa el ejemplo de formato.';
+      return;
     }
+
+    mensaje.textContent = '';
+    document.getElementById('masivaPaso1').style.display = 'none';
+    document.getElementById('masivaPaso2').style.display = 'block';
+    renderPreviewMasiva();
+
+    const btn = document.getElementById('masivaBtnPrincipal');
+    btn.textContent = '✓ Guardar todo';
+    btn.onclick = confirmarCargaMasiva;
   }
 
   function renderPreviewMasiva() {
@@ -1471,41 +1537,25 @@
       cont.innerHTML = `<p style="color:var(--texto-sec);font-size:.85rem;">No se encontró ningún producto en ese texto. Vuelve atrás y revisa el formato.</p>`;
       return;
     }
-    if (masivaTipoActual === 'compra') {
-      cont.innerHTML = masivaItemsPreview.map((item, i) => `
-        <div style="border:1px solid var(--gris-brd);border-radius:10px;padding:.7rem;">
-          <input class="input" style="margin-bottom:.5rem;" value="${item.nombre}" onchange="masivaItemsPreview[${i}].nombre=this.value" />
-          <div class="grid2" style="margin-bottom:.5rem;">
-            <div>
-              <label style="font-size:.72rem;color:var(--texto-sec);">Cantidad comprada</label>
-              <input class="input" type="number" value="${item.cantidad}" onchange="masivaItemsPreview[${i}].cantidad=parseInt(this.value)||1" />
-            </div>
-            <div>
-              <label style="font-size:.72rem;color:var(--texto-sec);">Costo unitario</label>
-              <input class="input" type="number" step="0.01" value="${item.costo_unitario}" onchange="masivaItemsPreview[${i}].costo_unitario=parseFloat(this.value)||0" />
-            </div>
+    cont.innerHTML = masivaItemsPreview.map((item, i) => `
+      <div style="border:1px solid var(--gris-brd);border-radius:10px;padding:.7rem;">
+        <input class="input" style="margin-bottom:.5rem;" value="${item.nombre}" onchange="masivaItemsPreview[${i}].nombre=this.value" />
+        <div class="grid2" style="grid-template-columns:1fr 1fr 1fr;gap:.5rem;">
+          <div>
+            <label style="font-size:.72rem;color:var(--texto-sec);">Cantidad</label>
+            <input class="input" type="number" step="0.01" value="${item.cantidad}" onchange="masivaItemsPreview[${i}].cantidad=parseFloat(this.value)||1" />
           </div>
-          <label style="font-size:.72rem;color:var(--verde);">Precio de venta sugerido (editable)</label>
-          <input class="input" type="number" value="${item.precio_venta_sugerido}" onchange="masivaItemsPreview[${i}].precio_venta_sugerido=parseFloat(this.value)||0" />
-        </div>
-      `).join('');
-    } else {
-      cont.innerHTML = masivaItemsPreview.map((item, i) => `
-        <div style="border:1px solid var(--gris-brd);border-radius:10px;padding:.7rem;">
-          <input class="input" style="margin-bottom:.5rem;" value="${item.nombre}" onchange="masivaItemsPreview[${i}].nombre=this.value" />
-          <div class="grid2">
-            <div>
-              <label style="font-size:.72rem;color:var(--texto-sec);">Precio de venta</label>
-              <input class="input" type="number" value="${item.precio}" onchange="masivaItemsPreview[${i}].precio=parseFloat(this.value)||0" />
-            </div>
-            <div>
-              <label style="font-size:.72rem;color:var(--texto-sec);">Cantidad (opcional)</label>
-              <input class="input" type="number" value="${item.stock ?? ''}" placeholder="—" onchange="masivaItemsPreview[${i}].stock=this.value?parseInt(this.value):null" />
-            </div>
+          <div>
+            <label style="font-size:.72rem;color:var(--texto-sec);">Costo (opcional)</label>
+            <input class="input" type="number" step="0.01" value="${item.costo ?? ''}" placeholder="—" onchange="masivaItemsPreview[${i}].costo=this.value?parseFloat(this.value):null" />
+          </div>
+          <div>
+            <label style="font-size:.72rem;color:var(--verde);">Precio de venta</label>
+            <input class="input" type="number" step="0.01" value="${item.precio ?? ''}" onchange="masivaItemsPreview[${i}].precio=parseFloat(this.value)||0" />
           </div>
         </div>
-      `).join('');
-    }
+      </div>
+    `).join('');
   }
 
   async function confirmarCargaMasiva() {
@@ -1514,18 +1564,29 @@
     if (!NEGOCIO_ID) { mensaje.textContent = '⚠️ No se pudo identificar tu negocio. Recarga la página e intenta de nuevo.'; return; }
     mensaje.textContent = 'Guardando...';
 
+    const categoria = obtenerCategoriaMasivaSeleccionada();
+    const conCosto = masivaItemsPreview.filter(i => i.costo !== null && i.costo !== undefined);
+    const sinCosto = masivaItemsPreview.filter(i => i.costo === null || i.costo === undefined);
+    let totalGuardados = 0;
+    let totalCompra = 0;
+
     try {
-      if (masivaTipoActual === 'compra') {
+      if (conCosto.length) {
         const proveedor = document.getElementById('masivaProveedor').value.trim() || null;
         const res = await fetch(`${API}/compras`, {
           method: 'POST',
           headers: authHeaders(),
-          body: JSON.stringify({ negocio_id: NEGOCIO_ID, proveedor, items: masivaItemsPreview })
+          body: JSON.stringify({
+            negocio_id: NEGOCIO_ID,
+            proveedor,
+            items: conCosto.map(i => ({ nombre: i.nombre, costo_unitario: i.costo, cantidad: i.cantidad, precio_venta_sugerido: i.precio }))
+          })
         });
         if (manejarRespuestaAuth(res)) return;
         const data = await res.json();
         if (!res.ok) { mensaje.textContent = '⚠️ ' + (data.detail || 'No se pudo registrar la compra.'); return; }
-
+        totalGuardados += data.productos.length;
+        totalCompra += Number(data.total_compra);
         data.productos.forEach(actualizado => {
           const existente = productos.find(p => p.id === actualizado.id);
           if (existente) {
@@ -1534,36 +1595,38 @@
           } else {
             productos.unshift({
               id: actualizado.id, emoji: '📦', nombre: actualizado.nombre,
-              desc: '', precio: Number(actualizado.precio), cat: obtenerCategoriaMasivaSeleccionada(),
+              desc: '', precio: Number(actualizado.precio), cat: categoria,
               vendidos: 0, activo: true, stock: actualizado.stock, unidad: 'unidad'
             });
           }
         });
-        renderTabla();
-        toast(`✅ Compra registrada — RD$${Number(data.total_compra).toLocaleString()} en ${data.productos.length} productos`, 'success');
-      } else {
+      }
+
+      if (sinCosto.length) {
         const res = await fetch(`${API}/productos/masivo`, {
           method: 'POST',
           headers: authHeaders(),
           body: JSON.stringify({
             negocio_id: NEGOCIO_ID,
-            productos: masivaItemsPreview.map(i => ({ nombre: i.nombre, precio: i.precio, stock: i.stock, categoria: obtenerCategoriaMasivaSeleccionada(), emoji: '📦' }))
+            productos: sinCosto.map(i => ({ nombre: i.nombre, precio: i.precio, stock: i.cantidad, categoria, emoji: '📦' }))
           })
         });
         if (manejarRespuestaAuth(res)) return;
         const data = await res.json();
         if (!res.ok) { mensaje.textContent = '⚠️ ' + (data.detail || 'No se pudo completar la carga.'); return; }
         const creados = data.productos || data;
+        totalGuardados += creados.length;
         creados.forEach(p => {
           productos.unshift({
             id: p.id, emoji: p.emoji || '📦', nombre: p.nombre,
-            desc: '', precio: Number(p.precio), cat: p.categoria || 'general',
+            desc: '', precio: Number(p.precio), cat: p.categoria || categoria,
             vendidos: 0, activo: true, stock: p.stock, unidad: p.unidad_venta || 'unidad'
           });
         });
-        renderTabla();
-        toast(`✅ ${creados.length} productos cargados`, 'success');
       }
+
+      renderTabla();
+      toast(`✅ ${totalGuardados} productos guardados${totalCompra ? ` — RD$${totalCompra.toLocaleString()} en compras` : ''}`, 'success');
       cerrarCargaMasiva();
     } catch (e) {
       mensaje.textContent = '⚠️ No se pudo conectar con el servidor.';
