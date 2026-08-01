@@ -582,6 +582,7 @@
   let NEGOCIO_NOMBRE = 'Pollo Frito Doña Carmen';
   let NEGOCIO_SLUG = 'donacarmensantiago';
   let NEGOCIO_ID = null;
+  let NEGOCIO_TIENE_DELIVERY = false;
 
   async function cargarNegocio() {
     const params = new URLSearchParams(window.location.search);
@@ -605,6 +606,7 @@
       NEGOCIO_NOMBRE = nombre;
       NEGOCIO_SLUG = slug;
       NEGOCIO_ID = negocio.id || null;
+      NEGOCIO_TIENE_DELIVERY = negocio.tiene_delivery === true;
 
       // Mostrar botón "Ir a mi panel" solo si este navegador es el que registró el negocio
       if (localStorage.getItem('raiz_negocio_slug') === slug) {
@@ -960,9 +962,15 @@
         msg += `${i.emoji} ${i.nombre} ×${i.qty} — RD$ ${(i.precio * i.qty).toLocaleString()}\n`;
       }
     });
+    const costoDelivery = NEGOCIO_TIENE_DELIVERY ? 100 : 0;
+
     msg += '━━━━━━━━━━━━━━━━\n';
-    msg += `🛵 Delivery: RD$ 100\n`;
-    msg += `💰 *Total (sin contar lo personalizado): RD$ ${(subtotal + 100).toLocaleString()}*\n\n`;
+    if (NEGOCIO_TIENE_DELIVERY) {
+      msg += `🛵 Delivery: RD$ 100\n`;
+    } else {
+      msg += `🏪 A recoger en el negocio (sin delivery)\n`;
+    }
+    msg += `💰 *Total (sin contar lo personalizado): RD$ ${(subtotal + costoDelivery).toLocaleString()}*\n\n`;
     const distribuidor = localStorage.getItem('raiz_distribuidor_activo');
     if (distribuidor) {
       msg += `📣 Código de distribuidor: *${distribuidor}*\n\n`;
@@ -990,7 +998,7 @@
             precio_unitario: i.precio,
             cantidad: i.qty
           })),
-          costo_delivery: 100,
+          costo_delivery: costoDelivery,
           promotor_codigo: distribuidor || null
         })
       }).catch(e => console.log('No se pudo guardar el pedido en el servidor', e));
