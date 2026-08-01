@@ -364,7 +364,11 @@
     <div id="formRegistro" style="display:none;">
       <input class="auth-input" id="regNombre" type="text" placeholder="Tu nombre completo" />
       <input class="auth-input" id="regWhatsapp" type="tel" placeholder="Tu WhatsApp" />
-      <input class="auth-input" id="regVehiculo" type="text" placeholder="Vehículo (ej: Honda Wave 2022)" />
+      <select class="auth-input" id="regTipoVehiculo" style="cursor:pointer;">
+        <option value="🛵 Motoconcho">🛵 Motoconcho</option>
+        <option value="🚕 Taxi">🚕 Taxi</option>
+      </select>
+      <input class="auth-input" id="regVehiculo" type="text" placeholder="Modelo (ej: Honda Wave 2022)" />
       <input class="auth-input" id="regMunicipio" type="text" placeholder="Municipio" />
       <input class="auth-input" id="regProvincia" type="text" placeholder="Provincia" />
       <input class="auth-input" id="regEmail" type="email" placeholder="Correo" />
@@ -627,7 +631,9 @@
   async function hacerRegistro() {
     const nombre = document.getElementById('regNombre').value.trim();
     const whatsapp = document.getElementById('regWhatsapp').value.trim();
-    const vehiculo = document.getElementById('regVehiculo').value.trim();
+    const tipoVehiculo = document.getElementById('regTipoVehiculo').value;
+    const modeloVehiculo = document.getElementById('regVehiculo').value.trim();
+    const vehiculo = modeloVehiculo ? `${tipoVehiculo} — ${modeloVehiculo}` : tipoVehiculo;
     const municipio = document.getElementById('regMunicipio').value.trim();
     const provincia = document.getElementById('regProvincia').value.trim();
     const email = document.getElementById('regEmail').value.trim();
