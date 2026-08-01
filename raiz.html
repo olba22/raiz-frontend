@@ -116,6 +116,30 @@
   .ruta-rapida strong { font-family: 'Syne', sans-serif; font-size: .95rem; font-weight: 800; }
   .ruta-rapida span { font-size: .78rem; color: var(--texto-sec); line-height: 1.4; }
 
+  /* ACCESOS RÁPIDOS: fila de botones arriba, más visual que las tarjetas anteriores */
+  .accesos-rapidos {
+    display: flex; gap: 1.1rem; flex-wrap: wrap; justify-content: center;
+    max-width: 720px; margin: 0 auto 3.5rem; padding: 0 1.5rem;
+  }
+  .acceso-rapido {
+    display: flex; flex-direction: column; align-items: center; gap: .55rem;
+    width: 100px; text-decoration: none; color: var(--blanco);
+  }
+  .acceso-rapido-icon {
+    width: 62px; height: 62px; border-radius: 20px;
+    background: var(--gris-card); border: 1px solid var(--gris-brd);
+    display: flex; align-items: center; justify-content: center; font-size: 1.7rem;
+    transition: border-color .2s, transform .2s, background .2s;
+  }
+  .acceso-rapido:hover .acceso-rapido-icon {
+    border-color: var(--verde); transform: translateY(-3px); background: rgba(29,185,84,.1);
+  }
+  .acceso-rapido span {
+    font-size: .74rem; font-weight: 600; text-align: center; line-height: 1.25;
+  }
+  .acceso-rapido.destacado .acceso-rapido-icon { background: rgba(29,185,84,.14); border-color: rgba(29,185,84,.4); }
+  @media (max-width: 560px) { .acceso-rapido { width: 78px; } .acceso-rapido-icon { width: 54px; height: 54px; font-size: 1.4rem; } }
+
   /* STATS */
   .stats {
     display: flex; justify-content: center; gap: clamp(1.5rem, 5vw, 4rem);
@@ -230,6 +254,18 @@
     padding: .75rem 1.4rem; border-radius: 10px; text-decoration: none; display: inline-block;
   }
   .section { position: relative; }
+
+  /* FRANJA NEGOCIOS: separa visualmente los anuncios de negocios (en vivo)
+     de la vitrina de la comunidad, para que no se vean como un solo feed */
+  .franja-negocios {
+    background: var(--gris-osc);
+    border-top: 1px solid var(--gris-brd);
+    border-bottom: 1px solid var(--gris-brd);
+    padding: .5rem 0 1rem;
+  }
+  .section-subtitulo {
+    color: var(--texto-sec); font-size: .85rem; margin-top: -1.2rem; margin-bottom: 1.8rem;
+  }
 
   /* PUBLICACIONES (vitrina de la comunidad: cualquiera vende cualquier cosa) */
   .pub-precio-tag {
@@ -371,56 +407,39 @@
 
 <div class="hero" style="padding-bottom:1.5rem;">
   <div class="hero-badge"><span class="pulse-dot"></span> La vitrina de tu comunidad</div>
-  <h1>Todo lo que se vende<br>en <span>Pedernales</span>, en un solo lugar.</h1>
-  <p>Desde una nevera usada hasta el refresco del colmado. Busca lo que necesitas o publica lo que ofreces — negocios y personas, todos aquí.</p>
-
-  <form class="search-box" id="formBuscar" onsubmit="event.preventDefault(); buscarPublicaciones();">
-    <input type="text" id="inputBuscar" placeholder="🔍 ¿Qué estás buscando? Ej: estufa, celular, arroz..." autocomplete="off" />
-    <button type="submit">Buscar</button>
-  </form>
-
-  <button class="btn-publicar-hero" onclick="abrirModalPublicar()">➕ Publicar algo en venta</button>
+  <h1>Todo lo que se vende<br>en <span>tu comunidad</span>, en un solo lugar.</h1>
+  <p>Desde una nevera usada hasta el refresco del colmado. Encuentra los negocios de tu zona, todos aquí.</p>
 </div>
 
-<div class="section" style="padding-top:0;">
-  <div class="section-head">
-    <h2 id="pubTituloSeccion">Se vende en tu comunidad</h2>
-  </div>
-  <div id="pubCargando" style="text-align:center;padding:3rem 1rem;color:var(--texto-sec);">
-    <div style="font-size:1.6rem;margin-bottom:.5rem;">🌱</div>
-    Cargando publicaciones...
-  </div>
-  <div class="anuncios-feed" id="pubFeed" style="display:none;"></div>
-  <div class="feed-empty" id="pubEmpty" style="display:none;">
-    <div style="font-size:2rem;margin-bottom:.75rem;">🌱</div>
-    <h3 id="pubEmptyTitulo">Aún no hay publicaciones</h3>
-    <p id="pubEmptyTexto">Sé el primero en publicar algo que estés vendiendo.</p>
-    <a href="javascript:void(0)" onclick="abrirModalPublicar()">Publicar algo en venta →</a>
-  </div>
-</div>
-
-<div class="rutas-rapidas" style="margin-top:-1rem;">
-  <a href="/raiz-busqueda.html" class="ruta-rapida">
-    <div class="ruta-rapida-icon">📍</div>
-    <strong>Buscar por pueblo</strong>
-    <span>Encuentra negocios cerca de ti en toda República Dominicana.</span>
+<div class="accesos-rapidos">
+  <a href="/raiz-busqueda.html" class="acceso-rapido">
+    <div class="acceso-rapido-icon">📍</div>
+    <span>Buscar por pueblo</span>
   </a>
-  <a href="/raiz-registro.html" class="ruta-rapida">
-    <div class="ruta-rapida-icon">🏪</div>
-    <strong>Soy dueño de un negocio</strong>
-    <span>Publica tu vitrina digital gratis en minutos.</span>
+  <a href="/raiz-registro.html" class="acceso-rapido">
+    <div class="acceso-rapido-icon">🏪</div>
+    <span>Soy dueño de un negocio</span>
   </a>
-  <a href="/raiz-delivery.html" class="ruta-rapida">
-    <div class="ruta-rapida-icon">🛵</div>
-    <strong>Quiero ser conductor</strong>
-    <span>Genera ingresos entregando pedidos en tu zona.</span>
+  <a href="/raiz-delivery.html" class="acceso-rapido">
+    <div class="acceso-rapido-icon">🛵</div>
+    <span>Quiero ser repartidor</span>
+  </a>
+  <a href="/raiz-comunidad.html?publicar=servicio" class="acceso-rapido">
+    <div class="acceso-rapido-icon">🧰</div>
+    <span>Ofrezco un servicio</span>
+  </a>
+  <a href="/raiz-comunidad.html" class="acceso-rapido destacado">
+    <div class="acceso-rapido-icon">🛍️</div>
+    <span>Vender o ver lo que se vende</span>
   </a>
 </div>
 
-<div class="section" style="padding-top:0;">
+<div class="franja-negocios">
+<div class="section" style="padding-top:1.5rem;padding-bottom:2.5rem;">
   <div class="section-head">
     <h2><span class="pulse-dot"></span> Anuncios de negocios en vivo</h2>
   </div>
+  <p class="section-subtitulo">Promociones activas de negocios registrados en RAIZ.</p>
   <div id="feedCargando" style="text-align:center;padding:3rem 1rem;color:var(--texto-sec);">
     <div style="font-size:1.6rem;margin-bottom:.5rem;">🌱</div>
     Cargando anuncios...
@@ -432,6 +451,7 @@
     <p>Sé el primero en anunciar lo que vendes en RAIZ.</p>
     <a href="/raiz-registro.html">Publicar mi anuncio →</a>
   </div>
+</div>
 </div>
 
 <div class="cta-negocio">
@@ -445,58 +465,6 @@
 <footer>
   <span>RAIZ.</span> — Vitrina digital dominicana · Hecho en República Dominicana 🇩🇴
 </footer>
-
-<!-- MODAL PUBLICAR ARTÍCULO -->
-<div class="modal-overlay" id="modalPublicarOverlay" onclick="if(event.target===this) cerrarModalPublicar()">
-  <div class="modal">
-    <div class="modal-header">
-      <h3>➕ Publicar algo en venta</h3>
-      <button class="modal-close" onclick="cerrarModalPublicar()">✕</button>
-    </div>
-    <div class="modal-body">
-      <div class="campo">
-        <label>Foto del artículo</label>
-        <input type="file" id="pubFotoInput" accept="image/*" style="display:none;" onchange="manejarFotoPublicacion(this)" />
-        <div class="upload-zone" id="pubUploadZone" onclick="document.getElementById('pubFotoInput').click()">
-          <div style="font-size:1.8rem;margin-bottom:.4rem;">📷</div>
-          <p><strong>Sube una foto</strong><br>JPG, PNG</p>
-        </div>
-      </div>
-      <div class="campo">
-        <label>¿Qué estás vendiendo? <span>*</span></label>
-        <input class="input" id="pubTitulo" type="text" placeholder="Ej: Nevera Whirlpool 14 pies" />
-      </div>
-      <div class="grid2">
-        <div class="campo">
-          <label>Precio (RD$) <span>*</span></label>
-          <input class="input" id="pubPrecio" type="number" placeholder="8500" />
-        </div>
-        <div class="campo">
-          <label>Categoría</label>
-          <input class="input" id="pubCategoria" type="text" placeholder="Ej: Electrodomésticos" />
-        </div>
-      </div>
-      <div class="campo">
-        <label>Descripción</label>
-        <textarea class="input" id="pubDescripcion" placeholder="Cuenta el estado, detalles, por qué la vendes..."></textarea>
-      </div>
-      <div class="grid2">
-        <div class="campo">
-          <label>Tu nombre <span>*</span></label>
-          <input class="input" id="pubNombre" type="text" placeholder="Ej: Yolanda Pérez" />
-        </div>
-        <div class="campo">
-          <label>Tu WhatsApp <span>*</span></label>
-          <input class="input" id="pubWhatsapp" type="tel" placeholder="8095551234" />
-        </div>
-      </div>
-      <div id="pubMensaje"></div>
-    </div>
-    <div class="modal-footer">
-      <button class="btn-guardar" id="btnPublicar" onclick="publicarArticulo()">✓ Publicar</button>
-    </div>
-  </div>
-</div>
 
 <script>
   const API = 'https://raiz-backend.onrender.com';
@@ -579,184 +547,6 @@
   cargarFeed();
   setInterval(cargarFeed, 60000); // refresca solo para traer anuncios nuevos, sin interrumpir al usuario
 
-  // ═══════════════════════════════════════════════════════════
-  // PUBLICACIONES (vitrina de la comunidad — cualquiera vende cualquier cosa)
-  // ═══════════════════════════════════════════════════════════
-  const vistasPubRegistradas = new Set();
-  let pubFotoBase64 = null;
-  let queryActual = '';
-
-  function tarjetaPublicacion(p, i) {
-    const titulo = escapeHtml(p.titulo);
-    const descripcion = escapeHtml(p.descripcion);
-    const vendedor = escapeHtml(p.negocio_nombre || p.vendedor_nombre);
-    const whatsapp = (p.vendedor_whatsapp || '').replace(/\D/g, '');
-    const imagen = p.foto_base64
-      ? `<img src="${p.foto_base64}" alt="${titulo}" loading="lazy" />`
-      : `<div class="anuncio-img-fallback">📦</div>`;
-    return `
-      <div class="anuncio-card" style="animation-delay:${Math.min(i * 0.07, 0.6)}s;" data-pub-id="${p.id}">
-        <div class="anuncio-img-wrap">
-          ${imagen}
-          <div class="pub-precio-tag">RD$${Number(p.precio).toLocaleString()}</div>
-        </div>
-        <div class="anuncio-body">
-          <div class="anuncio-titulo">${titulo}</div>
-          <div class="pub-vendedor">👤 ${vendedor}</div>
-          ${descripcion ? `<div class="anuncio-desc">${descripcion}</div>` : ''}
-          <div class="anuncio-footer">
-            <span class="anuncio-vistas">👁️ ${p.vistas}</span>
-            <button class="btn-whatsapp-anuncio" onclick="contactarPublicacion('${p.id}','${whatsapp}','${encodeURIComponent(p.titulo)}')">💬 Contactar</button>
-          </div>
-        </div>
-      </div>
-    `;
-  }
-
-  function contactarPublicacion(id, whatsapp, tituloCodificado) {
-    fetch(`${API}/publicaciones/${id}/clic-whatsapp`, { method: 'POST' }).catch(() => {});
-    const mensaje = encodeURIComponent(`🌱 Vi tu publicación en RAIZ: "${decodeURIComponent(tituloCodificado)}" — ¿todavía está disponible?`);
-    window.location.href = `https://wa.me/${whatsapp}?text=${mensaje}`;
-  }
-
-  function observarVistasPub() {
-    const observer = new IntersectionObserver((entradas) => {
-      entradas.forEach(entrada => {
-        if (!entrada.isIntersecting) return;
-        const id = entrada.target.getAttribute('data-pub-id');
-        if (!id || vistasPubRegistradas.has(id)) return;
-        vistasPubRegistradas.add(id);
-        fetch(`${API}/publicaciones/${id}/vista`, { method: 'POST' }).catch(() => {});
-      });
-    }, { threshold: 0.4 });
-    document.querySelectorAll('[data-pub-id]').forEach(card => observer.observe(card));
-  }
-
-  async function cargarPublicaciones(q) {
-    document.getElementById('pubCargando').style.display = 'block';
-    document.getElementById('pubFeed').style.display = 'none';
-    document.getElementById('pubEmpty').style.display = 'none';
-    try {
-      const url = q ? `${API}/publicaciones?limite=30&q=${encodeURIComponent(q)}` : `${API}/publicaciones?limite=30`;
-      const res = await fetch(url);
-      if (!res.ok) throw new Error('respuesta no ok');
-      const publicaciones = await res.json();
-      document.getElementById('pubCargando').style.display = 'none';
-
-      document.getElementById('pubTituloSeccion').textContent = q ? `Resultados para "${q}"` : 'Se vende en tu comunidad';
-
-      if (!publicaciones.length) {
-        document.getElementById('pubEmptyTitulo').textContent = q ? 'No encontramos nada con eso' : 'Aún no hay publicaciones';
-        document.getElementById('pubEmptyTexto').textContent = q ? 'Prueba con otra palabra, o publica tú lo que buscas.' : 'Sé el primero en publicar algo que estés vendiendo.';
-        document.getElementById('pubEmpty').style.display = 'block';
-        document.getElementById('pubFeed').style.display = 'none';
-        return;
-      }
-
-      document.getElementById('pubEmpty').style.display = 'none';
-      const cont = document.getElementById('pubFeed');
-      cont.style.display = 'block';
-      cont.innerHTML = publicaciones.map((p, i) => tarjetaPublicacion(p, i)).join('');
-      observarVistasPub();
-    } catch (e) {
-      document.getElementById('pubCargando').innerHTML = '<div style="font-size:1.6rem;margin-bottom:.5rem;">⚠️</div>No se pudo cargar la vitrina. Intenta recargar la página.';
-    }
-  }
-
-  function buscarPublicaciones() {
-    queryActual = (document.getElementById('inputBuscar').value || '').trim();
-    cargarPublicaciones(queryActual);
-  }
-
-  cargarPublicaciones('');
-
-  function abrirModalPublicar() {
-    pubFotoBase64 = null;
-    document.getElementById('pubTitulo').value = '';
-    document.getElementById('pubPrecio').value = '';
-    document.getElementById('pubCategoria').value = '';
-    document.getElementById('pubDescripcion').value = '';
-    document.getElementById('pubNombre').value = '';
-    document.getElementById('pubWhatsapp').value = '';
-    document.getElementById('pubMensaje').textContent = '';
-    document.getElementById('pubUploadZone').innerHTML = `<div style="font-size:1.8rem;margin-bottom:.4rem;">📷</div><p><strong>Sube una foto</strong><br>JPG, PNG</p>`;
-    document.getElementById('modalPublicarOverlay').classList.add('open');
-  }
-
-  function cerrarModalPublicar() {
-    document.getElementById('modalPublicarOverlay').classList.remove('open');
-  }
-
-  function manejarFotoPublicacion(input) {
-    const archivo = input.files[0];
-    if (!archivo) return;
-    const mensaje = document.getElementById('pubMensaje');
-    mensaje.textContent = 'Procesando foto...';
-    const lector = new FileReader();
-    lector.onload = (e) => {
-      const img = new Image();
-      img.onload = () => {
-        const anchoMax = 900;
-        const escala = Math.min(1, anchoMax / img.width);
-        const canvas = document.createElement('canvas');
-        canvas.width = img.width * escala;
-        canvas.height = img.height * escala;
-        const ctx = canvas.getContext('2d');
-        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-        pubFotoBase64 = canvas.toDataURL('image/jpeg', 0.75);
-        document.getElementById('pubUploadZone').innerHTML = `<img src="${pubFotoBase64}" style="max-width:100%;max-height:140px;border-radius:8px;" />`;
-        mensaje.textContent = '';
-      };
-      img.src = e.target.result;
-    };
-    lector.readAsDataURL(archivo);
-  }
-
-  async function publicarArticulo() {
-    const titulo = document.getElementById('pubTitulo').value.trim();
-    const precio = parseFloat(document.getElementById('pubPrecio').value);
-    const categoria = document.getElementById('pubCategoria').value.trim();
-    const descripcion = document.getElementById('pubDescripcion').value.trim();
-    const nombre = document.getElementById('pubNombre').value.trim();
-    const whatsapp = document.getElementById('pubWhatsapp').value.trim();
-    const mensaje = document.getElementById('pubMensaje');
-
-    if (!titulo || !precio || !nombre || !whatsapp) {
-      mensaje.textContent = '⚠️ Completa qué vendes, precio, tu nombre y tu WhatsApp.';
-      return;
-    }
-
-    const btn = document.getElementById('btnPublicar');
-    btn.disabled = true;
-    btn.textContent = 'Publicando...';
-    mensaje.textContent = '';
-
-    try {
-      const res = await fetch(`${API}/publicaciones`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          vendedor_nombre: nombre,
-          vendedor_whatsapp: whatsapp,
-          titulo, categoria: categoria || null, precio,
-          descripcion: descripcion || null,
-          foto_base64: pubFotoBase64
-        })
-      });
-      if (!res.ok) {
-        const d = await res.json().catch(() => ({}));
-        mensaje.textContent = '⚠️ ' + (d.detail || 'No se pudo publicar. Intenta de nuevo.');
-        return;
-      }
-      cerrarModalPublicar();
-      cargarPublicaciones(queryActual);
-    } catch (e) {
-      mensaje.textContent = '⚠️ No se pudo conectar con el servidor.';
-    } finally {
-      btn.disabled = false;
-      btn.textContent = '✓ Publicar';
-    }
-  }
 </script>
 
 </body>
