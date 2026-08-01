@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RAIZ — Pide un motoconcho o un taxi</title>
+<meta name="description" content="Pide un motoconcho o un taxi para una diligencia, un mandado o un viaje. Se conecta al instante con los conductores disponibles de tu zona." />
+<meta name="theme-color" content="#0A0A0A" />
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🌱</text></svg>" />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  :root {
+    --verde: #1DB954; --negro: #0A0A0A; --gris-osc: #111111;
+    --gris-card: #161616; --gris-brd: #222222; --blanco: #F5F5F5;
+    --texto-sec: #888888; --azul: #3b82f6;
+  }
+  body { font-family: 'Inter', sans-serif; background: var(--negro); color: var(--blanco); min-height: 100vh; }
+
+  nav {
+    position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+    display: flex; align-items: center; justify-content: space-between;
+    padding: .85rem 2rem;
+    background: rgba(10,10,10,.92); backdrop-filter: blur(14px);
+    border-bottom: 1px solid var(--gris-brd);
+  }
+  .logo { font-family: 'Syne', sans-serif; font-size: 1.6rem; font-weight: 800; color: var(--verde); letter-spacing: -1px; text-decoration: none; }
+  .logo span { color: var(--blanco); }
+  .nav-link { font-size: .85rem; color: var(--texto-sec); text-decoration: none; }
+  .nav-link:hover { color: var(--blanco); }
+
+  .wrap { max-width: 520px; margin: 0 auto; padding: 6.5rem 1.25rem 3rem; }
+  .hero-badge {
+    display: inline-flex; align-items: center; gap: .4rem;
+    background: rgba(29,185,84,.1); border: 1px solid rgba(29,185,84,.3);
+    color: var(--verde); font-size: .8rem; font-weight: 600;
+    padding: .4rem .9rem; border-radius: 100px; margin-bottom: 1.2rem;
+  }
+  .pulse-dot {
+    display: inline-block; width: 7px; height: 7px; border-radius: 50%;
+    background: var(--verde); animation: pulse 1.6s ease-in-out infinite;
+  }
+  @keyframes pulse { 0%,100% { box-shadow: 0 0 0 0 rgba(29,185,84,.55); } 70% { box-shadow: 0 0 0 6px rgba(29,185,84,0); } }
+  h1 { font-family: 'Syne', sans-serif; font-weight: 800; font-size: clamp(1.6rem, 5vw, 2.2rem); letter-spacing: -1px; margin-bottom: .5rem; }
+  .sub { color: var(--texto-sec); font-size: .9rem; margin-bottom: 1.8rem; line-height: 1.5; }
+
+  .toggle-vehiculo { display: flex; gap: .7rem; margin-bottom: 1.5rem; }
+  .toggle-vehiculo button {
+    flex: 1; background: var(--gris-card); border: 1px solid var(--gris-brd); color: var(--texto-sec);
+    border-radius: 14px; padding: 1rem .5rem; font-size: .9rem; font-weight: 700; cursor: pointer;
+    font-family: 'Inter', sans-serif; transition: .2s; display: flex; flex-direction: column; align-items: center; gap: .35rem;
+  }
+  .toggle-vehiculo .icono { font-size: 1.6rem; }
+  .toggle-vehiculo button.activo { background: rgba(29,185,84,.12); border-color: var(--verde); color: var(--verde); }
+
+  .campo { margin-bottom: 1.1rem; }
+  .campo label { display: block; font-size: .8rem; font-weight: 600; margin-bottom: .4rem; }
+  .campo label span { color: var(--verde); }
+  .input {
+    width: 100%; background: var(--gris-card); border: 1px solid var(--gris-brd);
+    border-radius: 10px; padding: .8rem .9rem; font-size: .9rem;
+    color: var(--blanco); font-family: 'Inter', sans-serif; outline: none; transition: border-color .2s;
+  }
+  .input:focus { border-color: var(--verde); }
+  .input::placeholder { color: var(--texto-sec); }
+  textarea.input { resize: vertical; min-height: 70px; }
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+
+  .btn-enviar {
+    width: 100%; background: var(--verde); color: var(--negro);
+    border: none; border-radius: 12px; cursor: pointer;
+    padding: .95rem; font-size: 1rem; font-weight: 700;
+    font-family: 'Inter', sans-serif; margin-top: .5rem;
+    transition: filter .15s, transform .15s;
+  }
+  .btn-enviar:hover { filter: brightness(1.08); transform: translateY(-1px); }
+  .btn-enviar:disabled { opacity: .6; cursor: not-allowed; }
+  #mensajeForm { font-size: .85rem; color: #ff6b6b; margin-top: .8rem; text-align: center; }
+
+  .estado-pantalla { display: none; text-align: center; padding: 2rem 0; }
+  .estado-pantalla.activo { display: block; }
+  .spinner {
+    width: 46px; height: 46px; border: 3px solid var(--gris-brd); border-top-color: var(--verde);
+    border-radius: 50%; margin: 0 auto 1.4rem; animation: girar 1s linear infinite;
+  }
+  @keyframes girar { to { transform: rotate(360deg); } }
+  .estado-pantalla h2 { font-family: 'Syne', sans-serif; font-size: 1.3rem; margin-bottom: .5rem; }
+  .estado-pantalla p { color: var(--texto-sec); font-size: .9rem; line-height: 1.5; }
+
+  .tarjeta-conductor {
+    background: var(--gris-card); border: 1px solid var(--verde); border-radius: 16px;
+    padding: 1.5rem; margin-top: 1.2rem; text-align: left;
+  }
+  .tarjeta-conductor .fila { display: flex; align-items: center; gap: .9rem; margin-bottom: 1.2rem; }
+  .tarjeta-conductor .emoji { font-size: 2.2rem; }
+  .tarjeta-conductor .nombre { font-family: 'Syne', sans-serif; font-weight: 800; font-size: 1.05rem; }
+  .tarjeta-conductor .detalle { color: var(--texto-sec); font-size: .8rem; }
+  .btn-whatsapp {
+    display: block; width: 100%; text-align: center; background: var(--verde); color: var(--negro);
+    font-weight: 700; padding: .9rem; border-radius: 10px; text-decoration: none; font-size: .95rem;
+  }
+</style>
+</head>
+<body>
+
+<nav>
+  <a href="/raiz.html" class="logo">RAIZ<span>.</span></a>
+  <a href="/raiz.html" class="nav-link">← Inicio</a>
+</nav>
+
+<div class="wrap">
+  <div id="pantallaForm">
+    <div class="hero-badge"><span class="pulse-dot"></span> RAIZ Motoconcho &amp; Taxi</div>
+    <h1>Pide un motoconcho o un taxi</h1>
+    <p class="sub">Cuéntanos qué necesitas y en segundos se lo mandamos a todos los conductores disponibles de tu zona — el primero que acepte te contacta directo.</p>
+
+    <div class="toggle-vehiculo">
+      <button type="button" id="btnMotoconcho" class="activo" onclick="elegirVehiculo('motoconcho')">
+        <span class="icono">🛵</span> Motoconcho
+      </button>
+      <button type="button" id="btnTaxi" onclick="elegirVehiculo('taxi')">
+        <span class="icono">🚕</span> Taxi
+      </button>
+    </div>
+
+    <div class="campo">
+      <label>¿Qué necesitas? <span>*</span></label>
+      <textarea class="input" id="descripcion" placeholder="Ej: Recoger un paquete en el colmado y llevarlo a mi casa, o llevarme al hospital"></textarea>
+    </div>
+    <div class="grid2">
+      <div class="campo">
+        <label>Desde dónde <span>*</span></label>
+        <input class="input" id="origen" type="text" placeholder="Ej: Calle Duarte #12" />
+      </div>
+      <div class="campo">
+        <label>Hacia dónde</label>
+        <input class="input" id="destino" type="text" placeholder="Ej: Barrio Los Robles" />
+      </div>
+    </div>
+    <div class="grid2">
+      <div class="campo">
+        <label>Municipio <span>*</span></label>
+        <input class="input" id="municipio" type="text" placeholder="Ej: Pedernales" />
+      </div>
+      <div class="campo">
+        <label>Provincia <span>*</span></label>
+        <input class="input" id="provincia" type="text" placeholder="Ej: Pedernales" />
+      </div>
+    </div>
+    <div class="grid2">
+      <div class="campo">
+        <label>Tu nombre <span>*</span></label>
+        <input class="input" id="nombre" type="text" placeholder="Ej: Juan Pérez" />
+      </div>
+      <div class="campo">
+        <label>Tu WhatsApp <span>*</span></label>
+        <input class="input" id="whatsapp" type="tel" placeholder="8095551234" />
+      </div>
+    </div>
+    <div class="campo">
+      <label>¿Cuánto ofreces pagar? (RD$) <span>*</span></label>
+      <input class="input" id="oferta" type="number" placeholder="150" />
+    </div>
+
+    <button class="btn-enviar" id="btnEnviar" onclick="enviarSolicitud()">🔍 Buscar conductor</button>
+    <div id="mensajeForm"></div>
+  </div>
+
+  <div class="estado-pantalla" id="pantallaBuscando">
+    <div class="spinner"></div>
+    <h2>Buscando un conductor cerca de ti...</h2>
+    <p>Le avisamos a todos los conductores disponibles de tu zona. En cuanto uno acepte, te mostramos aquí sus datos para contactarlo.</p>
+  </div>
+
+  <div class="estado-pantalla" id="pantallaAceptado">
+    <div style="font-size:2.4rem;margin-bottom:.5rem;">✅</div>
+    <h2>¡Un conductor aceptó tu solicitud!</h2>
+    <div class="tarjeta-conductor">
+      <div class="fila">
+        <div class="emoji" id="conductorEmoji">🛵</div>
+        <div>
+          <div class="nombre" id="conductorNombre">—</div>
+          <div class="detalle">Va en camino</div>
+        </div>
+      </div>
+      <a href="#" class="btn-whatsapp" id="btnContactarConductor" target="_blank">💬 Contactar por WhatsApp</a>
+    </div>
+  </div>
+</div>
+
+<script>
+  const API = 'https://raiz-backend.onrender.com';
+  let vehiculoElegido = 'motoconcho';
+  let intervaloConsulta = null;
+
+  function elegirVehiculo(tipo) {
+    vehiculoElegido = tipo;
+    document.getElementById('btnMotoconcho').classList.toggle('activo', tipo === 'motoconcho');
+    document.getElementById('btnTaxi').classList.toggle('activo', tipo === 'taxi');
+  }
+
+  async function enviarSolicitud() {
+    const descripcion = document.getElementById('descripcion').value.trim();
+    const origen = document.getElementById('origen').value.trim();
+    const destino = document.getElementById('destino').value.trim();
+    const municipio = document.getElementById('municipio').value.trim();
+    const provincia = document.getElementById('provincia').value.trim();
+    const nombre = document.getElementById('nombre').value.trim();
+    const whatsapp = document.getElementById('whatsapp').value.trim();
+    const oferta = parseFloat(document.getElementById('oferta').value);
+    const mensaje = document.getElementById('mensajeForm');
+
+    if (!descripcion || !origen || !municipio || !provincia || !nombre || !whatsapp || !oferta) {
+      mensaje.textContent = '⚠️ Completa qué necesitas, desde dónde, municipio, provincia, tu nombre, WhatsApp y cuánto ofreces.';
+      return;
+    }
+
+    const btn = document.getElementById('btnEnviar');
+    btn.disabled = true;
+    btn.textContent = 'Enviando...';
+    mensaje.textContent = '';
+
+    const etiquetaVehiculo = vehiculoElegido === 'taxi' ? '🚕 Taxi' : '🛵 Motoconcho';
+
+    try {
+      const res = await fetch(`${API}/solicitudes-delivery`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          tipo: 'diligencia',
+          municipio, provincia,
+          cliente_nombre: nombre,
+          cliente_whatsapp: whatsapp,
+          origen_texto: origen,
+          destino_texto: destino || null,
+          descripcion: `[${etiquetaVehiculo}] ${descripcion}`,
+          costo_delivery: oferta
+        })
+      });
+      if (!res.ok) {
+        const d = await res.json().catch(() => ({}));
+        mensaje.textContent = '⚠️ ' + (d.detail || 'No se pudo enviar la solicitud. Intenta de nuevo.');
+        btn.disabled = false;
+        btn.textContent = '🔍 Buscar conductor';
+        return;
+      }
+      const nueva = await res.json();
+      document.getElementById('pantallaForm').style.display = 'none';
+      document.getElementById('pantallaBuscando').classList.add('activo');
+      consultarEstado(nueva.id);
+    } catch (e) {
+      mensaje.textContent = '⚠️ No se pudo conectar con el servidor. Intenta de nuevo.';
+      btn.disabled = false;
+      btn.textContent = '🔍 Buscar conductor';
+    }
+  }
+
+  function consultarEstado(solicitudId) {
+    intervaloConsulta = setInterval(async () => {
+      try {
+        const res = await fetch(`${API}/solicitudes-delivery/${solicitudId}`);
+        if (!res.ok) return;
+        const s = await res.json();
+        if (s.estado && s.estado !== 'buscando' && s.conductor_nombre) {
+          clearInterval(intervaloConsulta);
+          document.getElementById('pantallaBuscando').classList.remove('activo');
+          document.getElementById('conductorNombre').textContent = s.conductor_nombre;
+          document.getElementById('conductorEmoji').textContent = s.conductor_emoji || (vehiculoElegido === 'taxi' ? '🚕' : '🛵');
+          const numero = (s.conductor_whatsapp || '').replace(/\D/g, '');
+          const msj = encodeURIComponent('🌱 Hola, te contacto por la solicitud que acepté en RAIZ.');
+          document.getElementById('btnContactarConductor').href = `https://wa.me/${numero}?text=${msj}`;
+          document.getElementById('pantallaAceptado').classList.add('activo');
+        }
+      } catch (e) { /* silencioso, se reintenta en el siguiente ciclo */ }
+    }, 4000);
+  }
+</script>
+</body>
+</html>
