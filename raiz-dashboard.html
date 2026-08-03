@@ -452,9 +452,6 @@
       <button class="btn-primary" onclick="abrirCargaMasiva()" id="btnCargaMasiva" style="background:transparent;border:1px solid var(--gris-brd);color:var(--blanco);margin-left:.6rem;">📦 Subir inventario</button>
     </div>
   </div>
-reproducirSonidoNotif();
-    preload="auto">
-  <source src="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjU4LjI5LjEwMAAAAAAAAAAAAAAA//tQxAADwAABpAAAACAAADSAAAAETEFN" type="audio/mpeg">
 <script>
   function reproducirSonidoNotif() {
     try {
@@ -2176,7 +2173,7 @@ reproducirSonidoNotif();
       if (data.notificaciones.length > 0) {
         const masReciente = data.notificaciones[0];
         if (!PRIMERA_CARGA_NOTIF && masReciente.id !== ULTIMA_NOTIF_VISTA_ID) {
-          document.getElementById('sonidoNotif').play().catch(() => {});
+          reproducirSonidoNotif();
           if (Notification && Notification.permission === 'granted' && document.hidden) {
             new Notification('RAIZ — Nueva notificación', { body: masReciente.mensaje });
           }
