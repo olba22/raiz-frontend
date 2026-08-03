@@ -399,9 +399,9 @@
     </div>
   </div>
 
-  <audio id="sonidoNotif" preload="auto">
-    <source src="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjU4LjI5LjEwMAAAAAAAAAAAAAAA//tQxAADwAABpAAAACAAADSAAAAETEFN" type="audio/mpeg">
-  </audio>
+<audio id="sonidoNotif" preload="auto">
+  <source src="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjU4LjI5LjEwMAAAAAAAAAAAAAAA//tQxAADwAABpAAAACAAADSAAAAETEFN" type="audio/mpeg">
+</audio>
 
   <div class="perfil-strip">
     <div class="moto-avatar">🛵</div>
@@ -632,7 +632,7 @@
       if (data.notificaciones.length > 0) {
         const masReciente = data.notificaciones[0];
         if (!PRIMERA_CARGA_NOTIF && masReciente.id !== ULTIMA_NOTIF_VISTA_ID) {
-          document.getElementById('sonidoNotif').play().catch(() => {});
+          document.getElementById('sonidoNotif').play(reproducirSonidoNotif();.catch(() => {});
           if (Notification && Notification.permission === 'granted' && document.hidden) {
             new Notification('RAIZ Delivery', { body: masReciente.mensaje });
           }
