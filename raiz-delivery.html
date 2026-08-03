@@ -385,10 +385,23 @@
 
   <div class="top-nav">
     <div class="nav-logo" onclick="window.location.href='/raiz.html'" style="cursor:pointer;">RAIZ<span> Delivery</span></div>
-    <button class="notif-btn" onclick="toast('🔔 Sin notificaciones nuevas')">
-      🔔<div class="notif-dot"></div>
-    </button>
+    <div style="position:relative;">
+      <button class="notif-btn" onclick="alternarPanelNotif()">
+        🔔<div class="notif-dot" id="notifDot" style="display:none;"></div>
+      </button>
+      <div id="panelNotif" style="display:none;position:absolute;top:calc(100% + 10px);right:0;width:290px;max-height:380px;overflow-y:auto;background:var(--gris-card);border:1px solid var(--gris-brd);border-radius:14px;z-index:200;box-shadow:0 10px 30px rgba(0,0,0,.4);">
+        <div style="padding:.9rem 1rem;border-bottom:1px solid var(--gris-brd);display:flex;justify-content:space-between;align-items:center;">
+          <strong style="font-family:'Syne',sans-serif;font-size:.9rem;">Notificaciones</strong>
+          <a style="font-size:.75rem;color:var(--naranja);cursor:pointer;" onclick="marcarTodasLeidas()">Marcar leídas</a>
+        </div>
+        <div id="listaNotif" style="padding:.5rem;"></div>
+      </div>
+    </div>
   </div>
+
+  <audio id="sonidoNotif" preload="auto">
+    <source src="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjU4LjI5LjEwMAAAAAAAAAAAAAAA//tQxAADwAABpAAAACAAADSAAAAETEFN" type="audio/mpeg">
+  </audio>
 
   <div class="perfil-strip">
     <div class="moto-avatar">🛵</div>
@@ -586,6 +599,75 @@
     setTimeout(() => t.classList.remove('show'), 2800);
   }
 
+  // ═══════════════════════════════════════════════════════════
+  // NOTIFICACIONES (solicitud nueva, etc.)
+  // ═══════════════════════════════════════════════════════════
+  let ULTIMA_NOTIF_VISTA_ID = null;
+  let PRIMERA_CARGA_NOTIF = true;
+
+  if (Notification && Notification.permission === 'default') {
+    Notification.requestPermission();
+  }
+
+  async function cargarNotificaciones() {
+    if (!CONDUCTOR) return;
+    try {
+      const res = await fetch(`${API}/notificaciones?conductor_id=${CONDUCTOR.id}&limite=20`);
+      if (!res.ok) return;
+      const data = await res.json();
+      document.getElementById('notifDot').style.display = data.no_leidas > 0 ? 'block' : 'none';
+
+      const lista = document.getElementById('listaNotif');
+      if (!data.notificaciones.length) {
+        lista.innerHTML = '<div style="padding:1.5rem;text-align:center;color:var(--texto-sec);font-size:.85rem;">Sin notificaciones todavía</div>';
+      } else {
+        lista.innerHTML = data.notificaciones.map(n => `
+          <div style="padding:.7rem .6rem;border-radius:8px;${n.leida ? '' : 'background:rgba(255,107,0,.08);'}margin-bottom:.2rem;">
+            <div style="font-size:.83rem;line-height:1.4;">${n.mensaje}</div>
+            <div style="font-size:.7rem;color:var(--texto-sec);margin-top:.2rem;">${new Date(n.created_at).toLocaleString('es-DO', {day:'numeric', month:'short', hour:'2-digit', minute:'2-digit'})}</div>
+          </div>
+        `).join('');
+      }
+
+      if (data.notificaciones.length > 0) {
+        const masReciente = data.notificaciones[0];
+        if (!PRIMERA_CARGA_NOTIF && masReciente.id !== ULTIMA_NOTIF_VISTA_ID) {
+          document.getElementById('sonidoNotif').play().catch(() => {});
+          if (Notification && Notification.permission === 'granted' && document.hidden) {
+            new Notification('RAIZ Delivery', { body: masReciente.mensaje });
+          }
+        }
+        ULTIMA_NOTIF_VISTA_ID = masReciente.id;
+        PRIMERA_CARGA_NOTIF = false;
+      }
+    } catch (e) { /* silencioso, se reintenta en el siguiente ciclo */ }
+  }
+
+  function alternarPanelNotif() {
+    const panel = document.getElementById('panelNotif');
+    panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
+  }
+
+  document.addEventListener('click', (e) => {
+    const panel = document.getElementById('panelNotif');
+    const boton = document.querySelector('.notif-btn');
+    if (panel && panel.style.display === 'block' && !panel.contains(e.target) && !boton.contains(e.target)) {
+      panel.style.display = 'none';
+    }
+  });
+
+  async function marcarTodasLeidas() {
+    if (!CONDUCTOR) return;
+    try {
+      await fetch(`${API}/notificaciones/leer-todas`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ conductor_id: CONDUCTOR.id })
+      });
+      cargarNotificaciones();
+    } catch (e) {}
+  }
+
   function authHeaders() {
     const token = localStorage.getItem('raiz_conductor_token');
     return { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token };
@@ -677,6 +759,8 @@
       document.getElementById('bottomNav').style.display = 'flex';
       pintarPerfil();
       cargarHistorial();
+      cargarNotificaciones();
+      setInterval(cargarNotificaciones, 6000);
       if (disponible) iniciarPolling();
     } catch (e) {
       toast('⚠️ No se pudo conectar con el servidor');
