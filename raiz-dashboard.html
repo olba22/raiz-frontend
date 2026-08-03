@@ -436,13 +436,26 @@
   <div class="topbar">
     <h1 id="topbarTitle">Resumen del negocio</h1>
     <div class="topbar-right">
-      <button class="notif-btn" onclick="toast('🔔 Sin notificaciones nuevas','')">
-        🔔
-      </button>
+      <div style="position:relative;">
+        <button class="notif-btn" onclick="alternarPanelNotif()">
+          🔔<span id="notifBadge" style="display:none;position:absolute;top:-4px;right:-4px;background:var(--verde);color:#000;font-size:.65rem;font-weight:800;min-width:16px;height:16px;border-radius:100px;display:flex;align-items:center;justify-content:center;padding:0 3px;">0</span>
+        </button>
+        <div id="panelNotif" style="display:none;position:absolute;top:calc(100% + 10px);right:0;width:320px;max-height:400px;overflow-y:auto;background:var(--gris-card);border:1px solid var(--gris-brd);border-radius:14px;z-index:200;box-shadow:0 10px 30px rgba(0,0,0,.4);">
+          <div style="padding:.9rem 1rem;border-bottom:1px solid var(--gris-brd);display:flex;justify-content:space-between;align-items:center;">
+            <strong style="font-family:'Syne',sans-serif;font-size:.9rem;">Notificaciones</strong>
+            <a style="font-size:.75rem;color:var(--verde);cursor:pointer;" onclick="marcarTodasLeidas()">Marcar todas leídas</a>
+          </div>
+          <div id="listaNotif" style="padding:.5rem;"></div>
+        </div>
+      </div>
       <button class="btn-primary" onclick="accionTopbar()" id="btnTopbar">+ Agregar producto</button>
       <button class="btn-primary" onclick="abrirCargaMasiva()" id="btnCargaMasiva" style="background:transparent;border:1px solid var(--gris-brd);color:var(--blanco);margin-left:.6rem;">📦 Subir inventario</button>
     </div>
   </div>
+
+  <audio id="sonidoNotif" preload="auto">
+    <source src="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjU4LjI5LjEwMAAAAAAAAAAAAAAA//tQxAADwAABpAAAACAAADSAAAAETEFN" type="audio/mpeg">
+  </audio>
 
   <div class="content">
 
@@ -2106,6 +2119,85 @@
     t.className = 'toast show ' + (tipo||'');
     setTimeout(() => t.classList.remove('show'), 3000);
   }
+
+  // ═══════════════════════════════════════════════════════════
+  // NOTIFICACIONES (pedido nuevo, delivery aceptado, stock bajo)
+  // ═══════════════════════════════════════════════════════════
+  let ULTIMA_NOTIF_VISTA_ID = null;
+  let PRIMERA_CARGA_NOTIF = true;
+
+  if (Notification && Notification.permission === 'default') {
+    Notification.requestPermission();
+  }
+
+  async function cargarNotificaciones() {
+    if (!NEGOCIO_ID) return;
+    try {
+      const res = await fetch(`${API}/notificaciones?negocio_id=${NEGOCIO_ID}&limite=20`);
+      if (!res.ok) return;
+      const data = await res.json();
+      const badge = document.getElementById('notifBadge');
+      if (data.no_leidas > 0) {
+        badge.style.display = 'flex';
+        badge.textContent = data.no_leidas > 9 ? '9+' : data.no_leidas;
+      } else {
+        badge.style.display = 'none';
+      }
+
+      const lista = document.getElementById('listaNotif');
+      if (!data.notificaciones.length) {
+        lista.innerHTML = '<div style="padding:1.5rem;text-align:center;color:var(--texto-sec);font-size:.85rem;">Sin notificaciones todavía</div>';
+      } else {
+        lista.innerHTML = data.notificaciones.map(n => `
+          <div style="padding:.7rem .6rem;border-radius:8px;${n.leida ? '' : 'background:rgba(29,185,84,.07);'}margin-bottom:.2rem;">
+            <div style="font-size:.83rem;line-height:1.4;">${n.mensaje}</div>
+            <div style="font-size:.7rem;color:var(--texto-sec);margin-top:.2rem;">${new Date(n.created_at).toLocaleString('es-DO', {day:'numeric', month:'short', hour:'2-digit', minute:'2-digit'})}</div>
+          </div>
+        `).join('');
+      }
+
+      // Si hay una notificación más nueva que la última que vimos, sonar y avisar
+      if (data.notificaciones.length > 0) {
+        const masReciente = data.notificaciones[0];
+        if (!PRIMERA_CARGA_NOTIF && masReciente.id !== ULTIMA_NOTIF_VISTA_ID) {
+          document.getElementById('sonidoNotif').play().catch(() => {});
+          if (Notification && Notification.permission === 'granted' && document.hidden) {
+            new Notification('RAIZ — Nueva notificación', { body: masReciente.mensaje });
+          }
+        }
+        ULTIMA_NOTIF_VISTA_ID = masReciente.id;
+        PRIMERA_CARGA_NOTIF = false;
+      }
+    } catch (e) { /* silencioso, se reintenta en el siguiente ciclo */ }
+  }
+
+  function alternarPanelNotif() {
+    const panel = document.getElementById('panelNotif');
+    panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
+  }
+
+  document.addEventListener('click', (e) => {
+    const panel = document.getElementById('panelNotif');
+    const boton = document.querySelector('.notif-btn');
+    if (panel && panel.style.display === 'block' && !panel.contains(e.target) && !boton.contains(e.target)) {
+      panel.style.display = 'none';
+    }
+  });
+
+  async function marcarTodasLeidas() {
+    if (!NEGOCIO_ID) return;
+    try {
+      await fetch(`${API}/notificaciones/leer-todas`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ negocio_id: NEGOCIO_ID })
+      });
+      cargarNotificaciones();
+    } catch (e) {}
+  }
+
+  setInterval(cargarNotificaciones, 6000);
+  setTimeout(cargarNotificaciones, 1500); // deja que cargarNegocio() traiga el NEGOCIO_ID primero
 
   renderTabla();
 </script>
