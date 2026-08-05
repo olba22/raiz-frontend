@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RAIZ — Panel Admin</title>
+<style>
+  :root{
+    --verde:#16a34a; --verde-dark:#15803d; --bg:#f4f6f5; --card:#ffffff;
+    --text:#1f2937; --muted:#6b7280; --border:#e5e7eb;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{font-family:-apple-system,Segoe UI,Roboto,Arial,sans-serif;background:var(--bg);color:var(--text);min-height:100vh;}
+  .gate{display:flex;align-items:center;justify-content:center;min-height:100vh;padding:20px;}
+  .gate-box{background:var(--card);padding:32px;border-radius:16px;box-shadow:0 4px 20px rgba(0,0,0,.08);width:100%;max-width:360px;text-align:center;}
+  .gate-box h1{font-size:20px;margin-bottom:6px;}
+  .gate-box p{color:var(--muted);font-size:14px;margin-bottom:20px;}
+  .gate-box input{width:100%;padding:12px 14px;border:1px solid var(--border);border-radius:10px;font-size:15px;margin-bottom:12px;}
+  .gate-box button{width:100%;padding:12px;border:none;border-radius:10px;background:var(--verde);color:#fff;font-size:15px;font-weight:600;cursor:pointer;}
+  .gate-box button:hover{background:var(--verde-dark);}
+  .error{color:#dc2626;font-size:13px;margin-top:8px;min-height:16px;}
+
+  header{background:var(--card);border-bottom:1px solid var(--border);padding:16px 20px;display:flex;justify-content:space-between;align-items:center;}
+  header h1{font-size:18px;}
+  header button{background:none;border:1px solid var(--border);padding:8px 14px;border-radius:8px;cursor:pointer;font-size:13px;color:var(--muted);}
+  main{max-width:1000px;margin:0 auto;padding:20px;}
+  .stats{display:flex;gap:12px;margin-bottom:20px;flex-wrap:wrap;}
+  .stat{background:var(--card);border-radius:12px;padding:14px 18px;flex:1;min-width:120px;border:1px solid var(--border);}
+  .stat .n{font-size:22px;font-weight:700;}
+  .stat .l{font-size:12px;color:var(--muted);}
+
+  table{width:100%;border-collapse:collapse;background:var(--card);border-radius:12px;overflow:hidden;border:1px solid var(--border);}
+  th,td{padding:12px 14px;text-align:left;font-size:14px;border-bottom:1px solid var(--border);}
+  th{background:#f9fafb;color:var(--muted);font-weight:600;font-size:12px;text-transform:uppercase;}
+  tr:last-child td{border-bottom:none;}
+  select{padding:6px 10px;border-radius:8px;border:1px solid var(--border);font-size:13px;}
+  .badge{display:inline-block;padding:3px 10px;border-radius:20px;font-size:12px;font-weight:600;}
+  .b-vitrina{background:#e5e7eb;color:#374151;}
+  .b-plus{background:#dbeafe;color:#1d4ed8;}
+  .b-premium{background:#fef3c7;color:#b45309;}
+  .b-enterprise{background:#ede9fe;color:#6d28d9;}
+  .vence{font-size:12px;color:var(--muted);}
+  .vence.venc{color:#dc2626;font-weight:600;}
+  .save-msg{font-size:12px;color:var(--verde);margin-left:6px;}
+  .loading,.empty{text-align:center;padding:40px;color:var(--muted);}
+  input.fecha{padding:6px 8px;border:1px solid var(--border);border-radius:8px;font-size:13px;width:130px;}
+</style>
+</head>
+<body>
+
+<div class="gate" id="gate">
+  <div class="gate-box">
+    <h1>🔒 Panel Admin RAIZ</h1>
+    <p>Ingresa la clave de administrador</p>
+    <input type="password" id="clave" placeholder="Clave" onkeydown="if(event.key==='Enter')entrar()">
+    <button onclick="entrar()">Entrar</button>
+    <div class="error" id="err"></div>
+  </div>
+</div>
+
+<div id="panel" style="display:none;">
+  <header>
+    <h1>🌿 RAIZ — Panel de Planes</h1>
+    <button onclick="salir()">Cerrar sesión</button>
+  </header>
+  <main>
+    <div class="stats" id="stats"></div>
+    <div id="tablaWrap">
+      <div class="loading">Cargando negocios...</div>
+    </div>
+  </main>
+</div>
+
+<script>
+const API = 'https://raiz-backend.onrender.com';
+let ADMIN_KEY = '';
+
+const PLANES = {
+  vitrina:    {label:'Básico',     clase:'b-vitrina'},
+  plus:       {label:'Plus',       clase:'b-plus'},
+  premium:    {label:'Premium',    clase:'b-premium'},
+  enterprise: {label:'Enterprise', clase:'b-enterprise'}
+};
+
+function entrar(){
+  const clave = document.getElementById('clave').value.trim();
+  if(!clave){ return; }
+  ADMIN_KEY = clave;
+  fetch(API + '/admin/negocios', { headers: { 'X-Admin-Key': ADMIN_KEY } })
+    .then(r => {
+      if(!r.ok) throw new Error('clave incorrecta');
+      return r.json();
+    })
+    .then(data => {
+      sessionStorage.setItem('raiz_admin_key', ADMIN_KEY);
+      document.getElementById('gate').style.display = 'none';
+      document.getElementById('panel').style.display = 'block';
+      render(data);
+    })
+    .catch(() => {
+      document.getElementById('err').textContent = 'Clave incorrecta o error de conexión';
+    });
+}
+
+function salir(){
+  sessionStorage.removeItem('raiz_admin_key');
+  location.reload();
+}
+
+function render(negocios){
+  const hoy = new Date();
+  const stats = { total: negocios.length, plus:0, premium:0, enterprise:0, vitrina:0 };
+  negocios.forEach(n => { stats[n.plan] = (stats[n.plan]||0) + 1; });
+
+  document.getElementById('stats').innerHTML = `
+    <div class="stat"><div class="n">${stats.total}</div><div class="l">Negocios totales</div></div>
+    <div class="stat"><div class="n">${stats.plus||0}</div><div class="l">Plan Plus</div></div>
+    <div class="stat"><div class="n">${stats.premium||0}</div><div class="l">Plan Premium</div></div>
+    <div class="stat"><div class="n">${stats.enterprise||0}</div><div class="l">Plan Enterprise</div></div>
+  `;
+
+  if(negocios.length === 0){
+    document.getElementById('tablaWrap').innerHTML = '<div class="empty">No hay negocios registrados aún.</div>';
+    return;
+  }
+
+  let rows = negocios.map(n => {
+    const p = PLANES[n.plan] || PLANES.vitrina;
+    let venceTxt = '—';
+    let venceClase = 'vence';
+    if(n.plan_vence){
+      const v = new Date(n.plan_vence + 'T00:00:00');
+      venceTxt = v.toLocaleDateString('es-DO');
+      if(v < hoy){ venceClase += ' venc'; venceTxt += ' (vencido)'; }
+    }
+    return `
+      <tr data-id="${n.id}">
+        <td><strong>${n.nombre}</strong><br><span style="font-size:12px;color:var(--muted)">${n.slug||''}</span></td>
+        <td><span class="badge ${p.clase}">${p.label}</span></td>
+        <td>
+          <select onchange="cambiarPlan(${n.id}, this.value)">
+            ${Object.keys(PLANES).map(k => `<option value="${k}" ${k===n.plan?'selected':''}>${PLANES[k].label}</option>`).join('')}
+          </select>
+        </td>
+        <td>
+          <input type="date" class="fecha" value="${n.plan_vence||''}" onchange="cambiarVencimiento(${n.id}, this.value)">
+          <div class="${venceClase}">${venceTxt}</div>
+        </td>
+        <td><span class="save-msg" id="msg-${n.id}"></span></td>
+      </tr>`;
+  }).join('');
+
+  document.getElementById('tablaWrap').innerHTML = `
+    <table>
+      <thead><tr><th>Negocio</th><th>Plan actual</th><th>Cambiar plan</th><th>Vencimiento</th><th></th></tr></thead>
+      <tbody>${rows}</tbody>
+    </table>`;
+}
+
+function cambiarPlan(id, nuevoPlan){
+  guardar(id, { plan: nuevoPlan });
+}
+function cambiarVencimiento(id, nuevaFecha){
+  guardar(id, { plan_vence: nuevaFecha || null });
+}
+
+function guardar(id, body){
+  fetch(API + '/negocios/' + id + '/plan', {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json', 'X-Admin-Key': ADMIN_KEY },
+    body: JSON.stringify(body)
+  })
+  .then(r => { if(!r.ok) throw new Error(); return r.json(); })
+  .then(() => {
+    const msg = document.getElementById('msg-' + id);
+    if(msg){ msg.textContent = '✅ Guardado'; setTimeout(()=>msg.textContent='', 2000); }
+  })
+  .catch(() => alert('Error guardando el cambio. Intenta de nuevo.'));
+}
+
+// Auto-login si ya había sesión abierta
+(function(){
+  const saved = sessionStorage.getItem('raiz_admin_key');
+  if(saved){
+    document.getElementById('clave').value = saved;
+    entrar();
+  }
+})();
+</script>
+</body>
+</html>
