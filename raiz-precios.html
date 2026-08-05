@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Planes RAIZ — Haz crecer tu negocio</title>
+<style>
+  :root{
+    --verde:#16a34a; --verde-dark:#15803d; --bg:#f4f6f5; --card:#ffffff;
+    --text:#1f2937; --muted:#6b7280; --border:#e5e7eb; --naranja:#f59e0b;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{font-family:-apple-system,Segoe UI,Roboto,Arial,sans-serif;background:var(--bg);color:var(--text);}
+  header{text-align:center;padding:50px 20px 30px;}
+  header h1{font-size:32px;margin-bottom:10px;}
+  header p{color:var(--muted);font-size:16px;max-width:500px;margin:0 auto;}
+
+  .planes{
+    max-width:1100px;margin:0 auto;padding:20px 20px 60px;
+    display:grid;grid-template-columns:repeat(auto-fit, minmax(240px,1fr));gap:20px;
+  }
+  .plan{
+    background:var(--card);border-radius:18px;padding:28px 22px;border:1px solid var(--border);
+    display:flex;flex-direction:column;position:relative;
+  }
+  .plan.destacado{
+    border:2px solid var(--verde);transform:scale(1.03);box-shadow:0 8px 30px rgba(22,163,74,.15);
+  }
+  .tag{
+    position:absolute;top:-13px;left:50%;transform:translateX(-50%);
+    background:var(--verde);color:#fff;font-size:12px;font-weight:700;
+    padding:5px 14px;border-radius:20px;white-space:nowrap;
+  }
+  .plan h2{font-size:20px;margin-bottom:6px;}
+  .precio{font-size:34px;font-weight:800;margin:10px 0 2px;}
+  .precio span{font-size:14px;font-weight:400;color:var(--muted);}
+  .plan ul{list-style:none;margin:18px 0;flex:1;}
+  .plan li{padding:7px 0;font-size:14px;color:#374151;display:flex;gap:8px;align-items:flex-start;}
+  .plan li:before{content:"✓";color:var(--verde);font-weight:700;}
+  .btn{
+    display:block;text-align:center;padding:13px;border-radius:10px;font-weight:600;font-size:15px;
+    text-decoration:none;color:#fff;background:var(--text);cursor:pointer;border:none;width:100%;
+  }
+  .plan.destacado .btn{background:var(--verde);}
+  .plan.destacado .btn:hover{background:var(--verde-dark);}
+  .btn.gratis{background:var(--border);color:var(--text);}
+
+  footer{text-align:center;padding:30px;color:var(--muted);font-size:13px;}
+</style>
+</head>
+<body>
+
+<header>
+  <h1>🌿 Planes para tu negocio en RAIZ</h1>
+  <p>Elige el plan que se ajuste a tu negocio y empieza a vender más en tu comunidad.</p>
+</header>
+
+<div class="planes">
+
+  <div class="plan">
+    <h2>Básico</h2>
+    <div class="precio">RD$0<span>/mes</span></div>
+    <ul>
+      <li>Perfil de tu negocio en RAIZ</li>
+      <li>Catálogo de productos</li>
+      <li>Pedidos por WhatsApp</li>
+      <li>Visibilidad estándar en el feed</li>
+    </ul>
+    <a class="btn gratis" href="#" onclick="return false;">Ya lo tienes</a>
+  </div>
+
+  <div class="plan">
+    <h2>Plus</h2>
+    <div class="precio">RD$799<span>/mes</span></div>
+    <ul>
+      <li>Todo lo del plan Básico</li>
+      <li>Mayor prioridad en el feed</li>
+      <li>Estadísticas básicas de tus ventas</li>
+      <li>Soporte prioritario por WhatsApp</li>
+    </ul>
+    <button class="btn" onclick="pedirPlan('Plus', 'RD$799/mes')">Actualizar a Plus</button>
+  </div>
+
+  <div class="plan destacado">
+    <span class="tag">⭐ MÁS POPULAR</span>
+    <h2>Premium</h2>
+    <div class="precio">RD$1,499<span>/mes</span></div>
+    <ul>
+      <li>Todo lo del plan Plus</li>
+      <li>Destacado en la parte superior del feed</li>
+      <li>Anuncios ilimitados</li>
+      <li>Facturación rápida (POS) habilitada</li>
+      <li>Alertas de bajo stock</li>
+    </ul>
+    <button class="btn" onclick="pedirPlan('Premium', 'RD$1,499/mes')">Actualizar a Premium</button>
+  </div>
+
+  <div class="plan">
+    <h2>Enterprise</h2>
+    <div class="precio">RD$2,299<span>/mes</span></div>
+    <ul>
+      <li>Todo lo del plan Premium</li>
+      <li>Múltiples usuarios/empleados</li>
+      <li>Reportes avanzados de ventas</li>
+      <li>Asistencia dedicada para tu negocio</li>
+    </ul>
+    <button class="btn" onclick="pedirPlan('Enterprise', 'RD$2,299/mes')">Actualizar a Enterprise</button>
+  </div>
+
+</div>
+
+<footer>¿Tienes dudas sobre qué plan elegir? Escríbenos por WhatsApp y te ayudamos.</footer>
+
+<script>
+// ⚠️ CAMBIA ESTE NÚMERO por tu WhatsApp real (código de país 1, sin espacios ni +)
+const WHATSAPP_OSCAR = '18095551234';
+
+function pedirPlan(nombrePlan, precio){
+  const negocio = prompt('¿Cuál es el nombre de tu negocio en RAIZ?');
+  if(negocio === null) return;
+  const msg = `Hola, quiero actualizar mi negocio "${negocio}" al plan ${nombrePlan} (${precio}) en RAIZ.`;
+  const url = `https://wa.me/${WHATSAPP_OSCAR}?text=${encodeURIComponent(msg)}`;
+  window.open(url, '_blank');
+}
+</script>
+
+</body>
+</html>
