@@ -821,7 +821,7 @@
             <button type="button" class="asistente-send" id="masivaMicBtn" onclick="toggleVozInventario()" title="Dictar por voz" style="width:36px;height:36px;font-size:1.1rem;">🎤</button>
           </div>
           <textarea id="masivaTexto" rows="8" placeholder="Ejemplos:&#10;12 galones de agua, lo compré a 60 para venderlo a 80&#10;20 libras de arroz gritalino, compré a 50 para venderlo a 60&#10;Refresco Coca-Cola 2L a 120" style="width:100%;background:var(--gris-osc);border:1px solid var(--gris-brd);border-radius:10px;padding:.8rem;color:var(--blanco);font-family:'Inter',sans-serif;font-size:.88rem;resize:vertical;"></textarea>
-          <div class="hint" style="font-size:.78rem;color:var(--texto-sec);margin-top:.4rem;">Si dices "lo compré a X para venderlo a Y", el sistema guarda ambos precios. Si solo das un precio, lo toma como el precio de venta.</div>
+          <div class="hint" style="font-size:.78rem;color:var(--texto-sec);margin-top:.4rem;">Si dices "lo compré a X para venderlo a Y", el sistema guarda ambos precios. Si solo das un precio, lo toma como el precio de venta. Si el producto se vende por libra, funda, onza o docena, agrégalo al final, ej: "salami Estelar, lo compré a 420 lo vendo a 150 la libra". Igual puedes ajustar todo antes de guardar.</div>
         </div>
       </div>
 
@@ -1475,25 +1475,43 @@
     const { cantidad, resto } = invExtraerCantidadYResto(texto);
     let restante = invQuitarPalabraUnidad(resto);
 
+    // Detecta si el producto se vende por libra/funda/onza/docena (ej. "lo vendo a 150 la libra")
+    let unidad = 'unidad';
+    const MAPA_UNIDAD_VENTA = { libra: 'libra', libras: 'libra', lb: 'libra', funda: 'funda', fundas: 'funda', onza: 'onza', onzas: 'onza', docena: 'docena', docenas: 'docena' };
+    const matchUnidadVenta = invQuitarAcentos(restante).match(/\b(?:la|por|el|un|una)\s+(libras?|lb|fundas?|onzas?|docenas?)\b/i);
+    if (matchUnidadVenta) {
+      unidad = MAPA_UNIDAD_VENTA[matchUnidadVenta[1].toLowerCase()] || 'unidad';
+    }
+
+    // NOTA: los matches de costo/venta se buscan sobre una versión sin acentos (restanteSA),
+    // porque \w no reconoce letras acentuadas (á é í ó ú) y "compré"/"vendí" no eran detectados.
+    // Los índices se reutilizan sobre "restante" (con acentos) porque invQuitarAcentos conserva
+    // el mismo largo de cadena.
     let costo = null;
-    const matchCosto = restante.match(/compr\w*\s*(?:lo|la|los|las)?\s*(?:a|en)?\s*\$?\s*(\d+(?:[.,]\d+)?)/i);
+    let restanteSA = invQuitarAcentos(restante);
+    const matchCosto = restanteSA.match(/,?\s*(?:lo|la|los|las)?\s*compr\w*\s*(?:lo|la|los|las)?\s*(?:a|en)?\s*\$?\s*(\d+(?:[.,]\d+)?)/i);
     if (matchCosto) {
       costo = parseFloat(matchCosto[1].replace(',', '.'));
-      restante = restante.replace(matchCosto[0], ' ');
+      restante = restante.slice(0, matchCosto.index) + ' ' + restante.slice(matchCosto.index + matchCosto[0].length);
+      restanteSA = invQuitarAcentos(restante);
     }
 
     let precio = null;
-    const matchVenta = restante.match(/vend\w*\s*(?:lo|la|los|las)?\s*(?:a|en)?\s*\$?\s*(\d+(?:[.,]\d+)?)/i);
+    const matchVenta = restanteSA.match(/,?\s*(?:lo|la|los|las|para)?\s*vend\w*\s*(?:lo|la|los|las)?\s*(?:a|en)?\s*\$?\s*(\d+(?:[.,]\d+)?)/i);
     if (matchVenta) {
       precio = parseFloat(matchVenta[1].replace(',', '.'));
-      restante = restante.replace(matchVenta[0], ' ');
+      restante = restante.slice(0, matchVenta.index) + ' ' + restante.slice(matchVenta.index + matchVenta[0].length);
+      restanteSA = invQuitarAcentos(restante);
     } else {
-      const matchSuelto = restante.match(/(?:^|\s)(?:a|en)\s*\$?\s*(\d+(?:[.,]\d+)?)\s*$/i) || restante.match(/\$\s*(\d+(?:[.,]\d+)?)/);
+      const matchSuelto = restanteSA.match(/(?:^|\s)(?:a|en)\s*\$?\s*(\d+(?:[.,]\d+)?)\s*$/i) || restanteSA.match(/\$\s*(\d+(?:[.,]\d+)?)/);
       if (matchSuelto) {
         precio = parseFloat(matchSuelto[1].replace(',', '.'));
-        restante = restante.replace(matchSuelto[0], ' ');
+        restante = restante.slice(0, matchSuelto.index) + ' ' + restante.slice(matchSuelto.index + matchSuelto[0].length);
       }
     }
+
+    // Quita la frase de unidad de venta ("la libra", "por funda", etc.) del nombre final
+    restante = restante.replace(/\b(?:la|por|el|un|una)\s+(?:libras?|lb|fundas?|onzas?|docenas?)\b/i, ' ');
 
     let nombre = restante
       .replace(/\bpara\b/gi, ' ')
@@ -1504,7 +1522,7 @@
 
     if (!nombre) return null;
     if (precio === null && costo !== null) precio = costo;
-    return { nombre, cantidad: cantidad === null ? 1 : cantidad, costo, precio };
+    return { nombre, cantidad: cantidad === null ? 1 : cantidad, costo, precio, unidad };
   }
 
   function parsearInventarioNatural(textoCompleto) {
@@ -1576,7 +1594,7 @@
     cont.innerHTML = masivaItemsPreview.map((item, i) => `
       <div style="border:1px solid var(--gris-brd);border-radius:10px;padding:.7rem;">
         <input class="input" style="margin-bottom:.5rem;" value="${item.nombre}" onchange="masivaItemsPreview[${i}].nombre=this.value" />
-        <div class="grid2" style="grid-template-columns:1fr 1fr 1fr;gap:.5rem;">
+        <div class="grid2" style="grid-template-columns:1fr 1fr 1fr 1fr;gap:.5rem;">
           <div>
             <label style="font-size:.72rem;color:var(--texto-sec);">Cantidad</label>
             <input class="input" type="number" step="0.01" value="${item.cantidad}" onchange="masivaItemsPreview[${i}].cantidad=parseFloat(this.value)||1" />
@@ -1588,6 +1606,16 @@
           <div>
             <label style="font-size:.72rem;color:var(--verde);">Precio de venta</label>
             <input class="input" type="number" step="0.01" value="${item.precio ?? ''}" onchange="masivaItemsPreview[${i}].precio=parseFloat(this.value)||0" />
+          </div>
+          <div>
+            <label style="font-size:.72rem;color:var(--texto-sec);">Se vende por</label>
+            <select class="input" onchange="masivaItemsPreview[${i}].unidad=this.value">
+              <option value="unidad" ${item.unidad==='unidad'?'selected':''}>Unidad</option>
+              <option value="libra" ${item.unidad==='libra'?'selected':''}>Libra</option>
+              <option value="funda" ${item.unidad==='funda'?'selected':''}>Funda</option>
+              <option value="onza" ${item.unidad==='onza'?'selected':''}>Onza</option>
+              <option value="docena" ${item.unidad==='docena'?'selected':''}>Docena</option>
+            </select>
           </div>
         </div>
       </div>
@@ -1615,7 +1643,7 @@
           body: JSON.stringify({
             negocio_id: NEGOCIO_ID,
             proveedor,
-            items: conCosto.map(i => ({ nombre: i.nombre, costo_unitario: i.costo, cantidad: i.cantidad, precio_venta_sugerido: i.precio }))
+            items: conCosto.map(i => ({ nombre: i.nombre, costo_unitario: i.costo, cantidad: i.cantidad, precio_venta_sugerido: i.precio, unidad_venta: i.unidad || 'unidad' }))
           })
         });
         if (manejarRespuestaAuth(res)) return;
@@ -1623,16 +1651,18 @@
         if (!res.ok) { mensaje.textContent = '⚠️ ' + (data.detail || 'No se pudo registrar la compra.'); return; }
         totalGuardados += data.productos.length;
         totalCompra += Number(data.total_compra);
-        data.productos.forEach(actualizado => {
+        data.productos.forEach((actualizado, idx) => {
           const existente = productos.find(p => p.id === actualizado.id);
+          const unidadItem = (conCosto[idx] && conCosto[idx].unidad) || 'unidad';
           if (existente) {
             existente.stock = actualizado.stock;
             existente.precio = Number(actualizado.precio);
+            existente.unidad = actualizado.unidad_venta || unidadItem;
           } else {
             productos.unshift({
               id: actualizado.id, emoji: '📦', nombre: actualizado.nombre,
               desc: '', precio: Number(actualizado.precio), cat: categoria,
-              vendidos: 0, activo: true, stock: actualizado.stock, unidad: 'unidad'
+              vendidos: 0, activo: true, stock: actualizado.stock, unidad: actualizado.unidad_venta || unidadItem
             });
           }
         });
@@ -1644,7 +1674,7 @@
           headers: authHeaders(),
           body: JSON.stringify({
             negocio_id: NEGOCIO_ID,
-            productos: sinCosto.map(i => ({ nombre: i.nombre, precio: i.precio, stock: i.cantidad, categoria, emoji: '📦' }))
+            productos: sinCosto.map(i => ({ nombre: i.nombre, precio: i.precio, stock: i.cantidad, categoria, emoji: '📦', unidad_venta: i.unidad || 'unidad' }))
           })
         });
         if (manejarRespuestaAuth(res)) return;
