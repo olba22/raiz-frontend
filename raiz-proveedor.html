@@ -203,6 +203,9 @@
   </header>
 
   <div style="padding: 16px 16px 0 16px;">
+    <div style="display:flex;justify-content:flex-end;margin-bottom:10px;">
+      <button onclick="abrirModalCarga()" style="background:var(--verde);color:white;border:none;border-radius:10px;padding:9px 14px;font-size:13px;font-weight:600;cursor:pointer;">+ Agregar productos</button>
+    </div>
     <div class="resumen" id="resumenCategorias"></div>
 
     <div class="controles">
@@ -213,6 +216,34 @@
     </div>
 
     <div id="listaProductos"></div>
+  </div>
+</div>
+
+<div id="modalCargaOverlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:100;align-items:center;justify-content:center;padding:16px;">
+  <div style="background:white;border-radius:16px;max-width:520px;width:100%;max-height:88vh;overflow-y:auto;padding:22px;">
+    <h3 style="margin:0 0 4px 0;font-size:18px;">📦 Agregar productos</h3>
+    <p style="color:var(--gris);font-size:13px;margin:0 0 14px 0;">Un producto por línea. Formato: <b>Nombre, Costo, Mayorista, Sugerido</b> — solo el nombre es obligatorio, deja los precios en blanco si no los sabes todavía.</p>
+
+    <label style="display:block;font-size:12px;color:var(--gris);margin-bottom:4px;">Categoría para todos estos productos</label>
+    <select id="cargaCategoria" style="width:100%;padding:10px;border:1px solid var(--borde);border-radius:8px;margin-bottom:12px;font-size:14px;">
+      <option>Granos y Especias</option>
+      <option>Bebidas Líquidas y Leches</option>
+      <option>Detergente, Utilitarios y Desechables</option>
+      <option>Confitería y Más</option>
+      <option>Alimentos</option>
+      <option>Enlatados</option>
+      <option value="__otra">✏️ Otra categoría...</option>
+    </select>
+    <input type="text" id="cargaCategoriaOtra" placeholder="Escribe el nombre de la categoría" style="display:none;width:100%;padding:10px;border:1px solid var(--borde);border-radius:8px;margin-bottom:12px;font-size:14px;">
+
+    <textarea id="cargaTexto" rows="8" placeholder="Ejemplos:&#10;Arroz Selecto saco 100 libras, 2200, 2350, 2500&#10;Aceite Capullo galón, 320&#10;Café Santo Domingo 1lb" style="width:100%;padding:10px;border:1px solid var(--borde);border-radius:8px;font-size:14px;resize:vertical;"></textarea>
+
+    <div id="cargaMensaje" style="font-size:13px;color:var(--gris);margin-top:10px;"></div>
+
+    <div style="display:flex;gap:10px;margin-top:14px;">
+      <button onclick="cerrarModalCarga()" style="flex:1;padding:11px;border:1px solid var(--borde);background:white;border-radius:9px;cursor:pointer;font-size:14px;">Cancelar</button>
+      <button id="btnConfirmarCarga" onclick="confirmarCargaProductos()" style="flex:1;padding:11px;border:none;background:var(--verde);color:white;border-radius:9px;cursor:pointer;font-size:14px;font-weight:600;">✓ Guardar productos</button>
+    </div>
   </div>
 </div>
 
@@ -375,6 +406,75 @@ async function cargarResumenSilencioso() {
   const resp = await fetch(`${API}/proveedores/${SLUG_PROVEEDOR}/productos`);
   const data = await resp.json();
   renderizarResumen(data.categorias);
+}
+
+// ── Carga masiva de productos (auto-servicio del proveedor) ──
+function abrirModalCarga() {
+  document.getElementById('cargaTexto').value = '';
+  document.getElementById('cargaMensaje').textContent = '';
+  document.getElementById('cargaCategoriaOtra').style.display = 'none';
+  document.getElementById('cargaCategoriaOtra').value = '';
+  document.getElementById('modalCargaOverlay').style.display = 'flex';
+}
+function cerrarModalCarga() {
+  document.getElementById('modalCargaOverlay').style.display = 'none';
+}
+document.getElementById('cargaCategoria').addEventListener('change', function() {
+  document.getElementById('cargaCategoriaOtra').style.display = this.value === '__otra' ? 'block' : 'none';
+});
+
+function parsearLineaProducto(linea) {
+  const partes = linea.split(',').map(p => p.trim());
+  const nombre = partes[0];
+  if (!nombre) return null;
+  const aNumero = (v) => (v === undefined || v === '') ? null : (isNaN(parseFloat(v)) ? null : parseFloat(v));
+  return {
+    nombre,
+    precio_costo_proveedor: aNumero(partes[1]),
+    precio_mayorista: aNumero(partes[2]),
+    precio_sugerido_venta: aNumero(partes[3]),
+  };
+}
+
+async function confirmarCargaProductos() {
+  const mensaje = document.getElementById('cargaMensaje');
+  const texto = document.getElementById('cargaTexto').value.trim();
+  if (!texto) { mensaje.textContent = '⚠️ Escribe al menos un producto.'; return; }
+
+  const catSelect = document.getElementById('cargaCategoria');
+  const categoria = catSelect.value === '__otra'
+    ? document.getElementById('cargaCategoriaOtra').value.trim()
+    : catSelect.value;
+  if (!categoria) { mensaje.textContent = '⚠️ Indica la categoría.'; return; }
+
+  const lineas = texto.split('\n').map(l => l.trim()).filter(Boolean);
+  const productos = lineas.map(parsearLineaProducto).filter(Boolean).map(p => ({...p, categoria, unidad_venta: 'unidad'}));
+
+  if (!productos.length) { mensaje.textContent = '⚠️ No se entendió ningún producto.'; return; }
+
+  const btn = document.getElementById('btnConfirmarCarga');
+  btn.disabled = true;
+  mensaje.textContent = 'Guardando...';
+
+  try {
+    const resp = await fetch(`${API}/proveedores/${SLUG_PROVEEDOR}/productos/masivo`, {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json', 'Authorization': `Bearer ${TOKEN}`},
+      body: JSON.stringify({productos})
+    });
+    const data = await resp.json();
+    if (!resp.ok) throw new Error(data.detail || 'No se pudo guardar');
+
+    mensaje.style.color = 'var(--verde)';
+    mensaje.textContent = `✓ ${data.creados} productos agregados`;
+    await cargarProductos();
+    setTimeout(cerrarModalCarga, 900);
+  } catch (err) {
+    mensaje.style.color = '#dc2626';
+    mensaje.textContent = err.message;
+  } finally {
+    btn.disabled = false;
+  }
 }
 
 // Si ya había sesión guardada, entra directo
