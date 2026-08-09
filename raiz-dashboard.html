@@ -390,6 +390,30 @@
     .pp-qty button { width: 26px; height: 26px; border-radius: 7px; border: 1px solid var(--gris-brd); background: var(--negro); color: var(--blanco); cursor: pointer; }
     .pp-qty span { min-width: 18px; text-align: center; font-size: .85rem; font-weight: 700; }
     .btn-agregar-pedido { flex: 1; background: rgba(29,185,84,.12); border: 1px solid var(--verde); color: var(--verde); border-radius: 8px; padding: .5rem; font-size: .78rem; font-weight: 700; cursor: pointer; font-family: 'Inter', sans-serif; }
+    .btn-agregar-pedido.en-carrito { background: var(--verde); color: var(--negro); }
+
+    .carrito-prov-fab {
+      position: fixed; bottom: 1.5rem; left: 1.5rem; z-index: 250;
+      background: var(--verde); color: var(--negro); border: none; border-radius: 999px;
+      padding: .8rem 1.3rem; font-size: .9rem; font-weight: 800; cursor: pointer;
+      box-shadow: 0 4px 16px rgba(29,185,84,.4); display: none; align-items: center; gap: .5rem;
+      font-family: 'Inter', sans-serif;
+    }
+    .carrito-prov-fab.show { display: flex; }
+    .carrito-prov-drawer {
+      position: fixed; inset: 0; z-index: 260; background: rgba(0,0,0,.85); backdrop-filter: blur(4px);
+      display: none; align-items: flex-end; justify-content: center;
+    }
+    .carrito-prov-drawer.open { display: flex; }
+    .carrito-prov-panel {
+      background: var(--gris-card); border: 1px solid var(--gris-brd); border-radius: 20px 20px 0 0;
+      width: 100%; max-width: 560px; max-height: 85vh; overflow-y: auto; padding: 1.5rem;
+    }
+    .carrito-prov-item { display: flex; align-items: center; gap: .7rem; padding: .7rem 0; border-bottom: 1px solid var(--gris-brd); }
+    .carrito-prov-item:last-child { border-bottom: none; }
+    .carrito-prov-item-info { flex: 1; }
+    .carrito-prov-item-info strong { display: block; font-size: .85rem; }
+    .carrito-prov-item-info span { font-size: .75rem; color: var(--texto-sec); }
 
     /* RESPONSIVE */
     @media (max-width: 1100px) {
@@ -910,6 +934,23 @@
 
 <!-- TOAST -->
 <div class="toast" id="toast"></div>
+
+<!-- CARRITO B2B (compra a proveedores) -->
+<button class="carrito-prov-fab" id="carritoProvFab" onclick="abrirCarritoProveedor()">🛒 <span id="carritoProvContador">0</span> productos — RD$<span id="carritoProvTotal">0</span></button>
+<div class="carrito-prov-drawer" id="carritoProvDrawer" onclick="if(event.target===this) cerrarCarritoProveedor()">
+  <div class="carrito-prov-panel">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;">
+      <h3 style="font-family:'Syne',sans-serif;font-size:1.05rem;">🛒 Pedido a proveedor</h3>
+      <button class="modal-close" onclick="cerrarCarritoProveedor()">✕</button>
+    </div>
+    <div id="carritoProvLista"></div>
+    <div style="text-align:right;font-family:'Syne',sans-serif;font-weight:800;font-size:1.15rem;margin:1rem 0;">
+      Total: <span style="color:var(--verde);">RD$<span id="carritoProvTotalPanel">0</span></span>
+    </div>
+    <button class="btn-guardar" id="btnEnviarPedidoProveedor" onclick="enviarPedidoProveedor()">✓ Enviar pedido al proveedor</button>
+  </div>
+</div>
+
 
 <script>
   const API = 'https://raiz-backend.onrender.com';
@@ -1848,6 +1889,11 @@
   }
 
   async function abrirCatalogoProveedor(slug, nombre) {
+    if (carritoProveedor.length && proveedorSlugActual && proveedorSlugActual !== slug) {
+      carritoProveedor = [];
+      actualizarFabCarritoProveedor();
+      toast('🛒 El carrito se vació al cambiar de proveedor (un pedido es por proveedor)', '');
+    }
     proveedorSlugActual = slug;
     document.getElementById('catalogoProveedorNombre').textContent = nombre;
     document.getElementById('proveedoresListView').style.display = 'none';
@@ -1898,7 +1944,9 @@
       return;
     }
 
-    cont.innerHTML = lista.map(p => `
+    cont.innerHTML = lista.map(p => {
+      const enCarrito = carritoProveedor.some(item => item.producto_id === p.id);
+      return `
       <div class="prov-prod-card">
         <strong>${p.nombre}</strong>
         <span class="pp-cat">${p.categoria}</span>
@@ -1909,13 +1957,15 @@
             <span id="pp-qty-${p.id}">1</span>
             <button onclick="cambiarCantidadPedidoProveedor('${p.id}', 1)">+</button>
           </div>
-          <button class="btn-agregar-pedido" onclick="agregarAlPedidoProveedor('${p.id}')">+ Agregar</button>
+          <button class="btn-agregar-pedido ${enCarrito ? 'en-carrito' : ''}" id="pp-btn-${p.id}" onclick="agregarAlPedidoProveedor('${p.id}')">${enCarrito ? '✓ En el carrito' : '+ Agregar'}</button>
         </div>
       </div>
-    `).join('');
+    `;
+    }).join('');
   }
 
   const cantidadesPedidoProveedor = {};
+  let carritoProveedor = []; // { producto_id, nombre, precio, unidad, cantidad }
 
   function cambiarCantidadPedidoProveedor(id, delta) {
     const actual = cantidadesPedidoProveedor[id] || 1;
@@ -1926,8 +1976,129 @@
   }
 
   function agregarAlPedidoProveedor(id) {
-    // El carrito de compra a proveedores (Fase 5) todavía no está construido.
-    toast('🚀 Próximamente: carrito de compra a proveedores', '');
+    const producto = catalogoProveedorActual.find(p => p.id === id);
+    if (!producto) return;
+    const cantidad = cantidadesPedidoProveedor[id] || 1;
+
+    const existente = carritoProveedor.find(item => item.producto_id === id);
+    if (existente) {
+      existente.cantidad += cantidad;
+    } else {
+      carritoProveedor.push({
+        producto_id: id,
+        nombre: producto.nombre,
+        precio: Number(producto.precio_mayorista),
+        unidad: producto.unidad_venta,
+        cantidad
+      });
+    }
+    cantidadesPedidoProveedor[id] = 1;
+    const qtyEl = document.getElementById(`pp-qty-${id}`);
+    if (qtyEl) qtyEl.textContent = 1;
+    const btnEl = document.getElementById(`pp-btn-${id}`);
+    if (btnEl) { btnEl.textContent = '✓ En el carrito'; btnEl.classList.add('en-carrito'); }
+
+    toast(`✅ ${producto.nombre} agregado al pedido`, 'success');
+    actualizarFabCarritoProveedor();
+  }
+
+  function actualizarFabCarritoProveedor() {
+    const fab = document.getElementById('carritoProvFab');
+    const total = carritoProveedor.reduce((s, i) => s + i.precio * i.cantidad, 0);
+    const cantidadTotal = carritoProveedor.reduce((s, i) => s + i.cantidad, 0);
+    document.getElementById('carritoProvContador').textContent = carritoProveedor.length;
+    document.getElementById('carritoProvTotal').textContent = total.toLocaleString();
+    fab.classList.toggle('show', carritoProveedor.length > 0);
+  }
+
+  function abrirCarritoProveedor() {
+    renderCarritoProveedorPanel();
+    document.getElementById('carritoProvDrawer').classList.add('open');
+  }
+  function cerrarCarritoProveedor() {
+    document.getElementById('carritoProvDrawer').classList.remove('open');
+  }
+
+  function renderCarritoProveedorPanel() {
+    const cont = document.getElementById('carritoProvLista');
+    if (!carritoProveedor.length) {
+      cont.innerHTML = `<p style="color:var(--texto-sec);font-size:.85rem;text-align:center;padding:1.5rem 0;">Aún no has agregado productos.</p>`;
+    } else {
+      cont.innerHTML = carritoProveedor.map((item, i) => `
+        <div class="carrito-prov-item">
+          <div class="carrito-prov-item-info">
+            <strong>${item.nombre}</strong>
+            <span>RD$${item.precio.toLocaleString()} / ${item.unidad}</span>
+          </div>
+          <div class="pp-qty">
+            <button onclick="ajustarCantidadCarritoProveedor(${i}, -1)">−</button>
+            <span>${item.cantidad}</span>
+            <button onclick="ajustarCantidadCarritoProveedor(${i}, 1)">+</button>
+          </div>
+          <strong style="min-width:70px;text-align:right;color:var(--verde);">RD$${(item.cantidad * item.precio).toLocaleString()}</strong>
+          <button class="action-btn del" onclick="quitarDelCarritoProveedor(${i})">🗑️</button>
+        </div>
+      `).join('');
+    }
+    const total = carritoProveedor.reduce((s, i) => s + i.precio * i.cantidad, 0);
+    document.getElementById('carritoProvTotalPanel').textContent = total.toLocaleString();
+  }
+
+  function ajustarCantidadCarritoProveedor(i, delta) {
+    carritoProveedor[i].cantidad += delta;
+    if (carritoProveedor[i].cantidad <= 0) carritoProveedor.splice(i, 1);
+    renderCarritoProveedorPanel();
+    actualizarFabCarritoProveedor();
+  }
+
+  function quitarDelCarritoProveedor(i) {
+    const item = carritoProveedor[i];
+    carritoProveedor.splice(i, 1);
+    renderCarritoProveedorPanel();
+    actualizarFabCarritoProveedor();
+    const btnEl = document.getElementById(`pp-btn-${item.producto_id}`);
+    if (btnEl) { btnEl.textContent = '+ Agregar'; btnEl.classList.remove('en-carrito'); }
+  }
+
+  async function enviarPedidoProveedor() {
+    if (!carritoProveedor.length) { toast('⚠️ Agrega al menos un producto', 'error'); return; }
+    if (!NEGOCIO_ID || !proveedorSlugActual) { toast('⚠️ Espera a que cargue el negocio e intenta de nuevo', 'error'); return; }
+
+    const proveedor = proveedoresCache.find(p => p.slug === proveedorSlugActual);
+    if (!proveedor) { toast('⚠️ No se pudo identificar el proveedor', 'error'); return; }
+
+    const btn = document.getElementById('btnEnviarPedidoProveedor');
+    btn.disabled = true;
+    btn.textContent = 'Enviando...';
+
+    try {
+      const res = await fetch(`${API}/pedidos-proveedor`, {
+        method: 'POST',
+        headers: authHeaders(),
+        body: JSON.stringify({
+          negocio_id: NEGOCIO_ID,
+          proveedor_id: proveedor.id,
+          items: carritoProveedor.map(i => ({
+            producto_id: i.producto_id, nombre_producto: i.nombre,
+            precio_unitario: i.precio, cantidad: i.cantidad
+          }))
+        })
+      });
+      if (manejarRespuestaAuth(res)) return;
+      const data = await res.json();
+      if (!res.ok) { toast('⚠️ ' + (data.detail || 'No se pudo enviar el pedido'), 'error'); return; }
+
+      toast(`✅ Pedido ${data.codigo} enviado al proveedor`, 'success');
+      carritoProveedor = [];
+      cerrarCarritoProveedor();
+      actualizarFabCarritoProveedor();
+      document.querySelectorAll('[id^="pp-btn-"]').forEach(b => { b.textContent = '+ Agregar'; b.classList.remove('en-carrito'); });
+    } catch (e) {
+      toast('⚠️ No se pudo conectar con el servidor', 'error');
+    } finally {
+      btn.disabled = false;
+      btn.textContent = '✓ Enviar pedido al proveedor';
+    }
   }
 
   function volverAProveedores() {
@@ -2337,6 +2508,9 @@
     if (screen === 'proveedores') {
       volverAProveedores();
       cargarProveedores();
+      actualizarFabCarritoProveedor();
+    } else {
+      document.getElementById('carritoProvFab').classList.remove('show');
     }
   }
 
