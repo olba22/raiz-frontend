@@ -357,6 +357,40 @@
       font-size: 1.1rem; cursor: pointer; flex-shrink: 0;
     }
 
+    /* ── PROVEEDORES / COMPRAR MERCANCÍA ── */
+    .proveedor-card {
+      background: var(--gris-card); border: 1px solid var(--gris-brd);
+      border-radius: 16px; padding: 1.5rem; display: flex; align-items: center; gap: 1rem;
+      margin-bottom: 1rem;
+    }
+    .proveedor-avatar { width: 52px; height: 52px; background: var(--negro); border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 1.6rem; flex-shrink: 0; }
+    .proveedor-info { flex: 1; }
+    .proveedor-info strong { display: block; font-size: 1rem; margin-bottom: .2rem; }
+    .proveedor-info span { font-size: .78rem; color: var(--texto-sec); }
+    .badge-verificado { display: inline-flex; align-items: center; gap: .25rem; font-size: .68rem; color: var(--verde); font-weight: 700; margin-top: .3rem; }
+    .btn-ver-catalogo {
+      background: var(--verde); color: var(--negro); border: none; border-radius: 10px;
+      padding: .6rem 1.1rem; font-size: .82rem; font-weight: 700; cursor: pointer; white-space: nowrap;
+      font-family: 'Inter', sans-serif;
+    }
+    .catalogo-header { display: flex; align-items: center; gap: .85rem; margin-bottom: 1.25rem; }
+    .btn-volver { background: var(--gris-card); border: 1px solid var(--gris-brd); color: var(--blanco); border-radius: 9px; width: 36px; height: 36px; cursor: pointer; font-size: 1rem; }
+    .catalogo-header h2 { font-family: 'Syne', sans-serif; font-size: 1.05rem; font-weight: 800; }
+    .cat-chips { display: flex; gap: .5rem; overflow-x: auto; padding-bottom: .5rem; margin-bottom: 1rem; }
+    .cat-chip { flex-shrink: 0; background: var(--gris-card); border: 1px solid var(--gris-brd); border-radius: 999px; padding: .5rem 1rem; font-size: .8rem; color: var(--texto-sec); cursor: pointer; white-space: nowrap; }
+    .cat-chip.active { border-color: var(--verde); color: var(--verde); background: rgba(29,185,84,.08); }
+    .prov-prod-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px,1fr)); gap: .9rem; }
+    .prov-prod-card { background: var(--gris-card); border: 1px solid var(--gris-brd); border-radius: 14px; padding: 1rem; }
+    .prov-prod-card strong { display: block; font-size: .88rem; margin-bottom: .2rem; line-height: 1.3; }
+    .prov-prod-card .pp-cat { font-size: .72rem; color: var(--texto-sec); margin-bottom: .6rem; display: block; }
+    .prov-prod-card .pp-precio { font-family: 'Syne', sans-serif; font-weight: 800; color: var(--verde); font-size: 1.05rem; margin-bottom: .7rem; }
+    .prov-prod-card .pp-unidad { font-size: .72rem; color: var(--texto-sec); font-weight: 400; }
+    .pp-footer { display: flex; align-items: center; gap: .5rem; }
+    .pp-qty { display: flex; align-items: center; gap: .4rem; }
+    .pp-qty button { width: 26px; height: 26px; border-radius: 7px; border: 1px solid var(--gris-brd); background: var(--negro); color: var(--blanco); cursor: pointer; }
+    .pp-qty span { min-width: 18px; text-align: center; font-size: .85rem; font-weight: 700; }
+    .btn-agregar-pedido { flex: 1; background: rgba(29,185,84,.12); border: 1px solid var(--verde); color: var(--verde); border-radius: 8px; padding: .5rem; font-size: .78rem; font-weight: 700; cursor: pointer; font-family: 'Inter', sans-serif; }
+
     /* RESPONSIVE */
     @media (max-width: 1100px) {
       .kpi-grid { grid-template-columns: repeat(2,1fr); }
@@ -411,6 +445,7 @@
     <div class="sb-item" onclick="irA('pedidos',this)"><span class="sb-icon">🛒</span> Pedidos</div>
     <div class="sb-item" onclick="irAFacturarRapido()"><span class="sb-icon">🧾</span> Facturar rápido</div>
     <div class="sb-item" id="sbItemProductos" onclick="irA('productos',this)"><span class="sb-icon">📦</span> Productos</div>
+    <div class="sb-item" onclick="irA('proveedores',this)"><span class="sb-icon">🏭</span> Comprar mercancía</div>
     <div class="sb-label">Negocio</div>
     <div class="sb-item" onclick="irAPlanes()"><span class="sb-icon">⭐</span> Planes</div>
     <div class="sb-item" onclick="irA('promotores',this)"><span class="sb-icon">📣</span> Promotores</div>
@@ -552,6 +587,22 @@
           </thead>
           <tbody id="tbodyProductos"></tbody>
         </table>
+      </div>
+    </div>
+
+    <!-- ══ PROVEEDORES / COMPRAR MERCANCÍA ══ -->
+    <div class="screen" id="screenProveedores">
+      <div id="proveedoresListView">
+        <div id="proveedoresGrid"></div>
+      </div>
+      <div id="proveedorCatalogoView" style="display:none;">
+        <div class="catalogo-header">
+          <button class="btn-volver" onclick="volverAProveedores()">←</button>
+          <h2 id="catalogoProveedorNombre">Catálogo</h2>
+        </div>
+        <input class="search-input" style="margin-bottom:1rem;width:100%;" placeholder="🔍 Buscar producto..." oninput="buscarEnCatalogoProveedor(this.value)" />
+        <div class="cat-chips" id="catChipsProveedor"></div>
+        <div class="prov-prod-grid" id="provProdGrid"></div>
       </div>
     </div>
 
@@ -1380,7 +1431,7 @@
       cont.innerHTML = `<p style="color:var(--texto-sec);font-size:.85rem;text-align:center;padding:1.5rem 0;">🔍 Busca arriba y toca un producto para agregarlo.</p>`;
     } else {
       cont.innerHTML = facturaCarrito.map((item, i) => `
-        <div style="display:flex;align-items:center;justify-content:space-between;gap:.6rem;padding:.6rem 0;border-bottom:1px solid var(--gris-brd);">
+        <div style="display:flex;align-items:center;justify-content:between;gap:.6rem;padding:.6rem 0;border-bottom:1px solid var(--gris-brd);">
           <div style="flex:1;">
             <div style="font-size:.88rem;">${item.emoji || '📦'} ${item.nombre}</div>
             <div style="font-size:.75rem;color:var(--texto-sec);">RD$${item.precio.toLocaleString()} c/u</div>
@@ -1753,6 +1804,135 @@
       btn.disabled = false;
       btn.textContent = '✓ Confirmar venta';
     }
+  }
+
+  // ═══════════════════════════════════════════════════════════
+  // PROVEEDORES / COMPRAR MERCANCÍA (RAÍZ PROVEEDORES — Fase 4)
+  // ═══════════════════════════════════════════════════════════
+  let proveedoresCache = [];
+  let catalogoProveedorActual = [];
+  let catalogoProveedorCategorias = [];
+  let categoriaProveedorFiltro = 'todas';
+  let proveedorSlugActual = null;
+
+  async function cargarProveedores() {
+    const cont = document.getElementById('proveedoresGrid');
+    cont.innerHTML = `<p style="color:var(--texto-sec);font-size:.85rem;">Cargando proveedores...</p>`;
+    try {
+      const res = await fetch(`${API}/proveedores`);
+      if (!res.ok) throw new Error();
+      proveedoresCache = await res.json();
+      renderProveedores();
+    } catch (e) {
+      cont.innerHTML = `<p style="color:var(--texto-sec);font-size:.85rem;">No se pudieron cargar los proveedores.</p>`;
+    }
+  }
+
+  function renderProveedores() {
+    const cont = document.getElementById('proveedoresGrid');
+    if (!proveedoresCache.length) {
+      cont.innerHTML = `<p style="color:var(--texto-sec);font-size:.85rem;">Todavía no hay proveedores registrados en RAÍZ.</p>`;
+      return;
+    }
+    cont.innerHTML = proveedoresCache.map(p => `
+      <div class="proveedor-card">
+        <div class="proveedor-avatar">🏭</div>
+        <div class="proveedor-info">
+          <strong>${p.nombre}</strong>
+          <span>${p.descripcion || ''}</span>
+          ${p.verificado ? `<div class="badge-verificado">✅ Distribuidor Oficial RAÍZ</div>` : ''}
+        </div>
+        <button class="btn-ver-catalogo" onclick="abrirCatalogoProveedor('${p.slug}','${(p.nombre||'').replace(/'/g,"\\'")}')">Ver catálogo</button>
+      </div>
+    `).join('');
+  }
+
+  async function abrirCatalogoProveedor(slug, nombre) {
+    proveedorSlugActual = slug;
+    document.getElementById('catalogoProveedorNombre').textContent = nombre;
+    document.getElementById('proveedoresListView').style.display = 'none';
+    document.getElementById('proveedorCatalogoView').style.display = 'block';
+    document.getElementById('provProdGrid').innerHTML = `<p style="color:var(--texto-sec);font-size:.85rem;">Cargando catálogo...</p>`;
+
+    try {
+      const res = await fetch(`${API}/proveedores/${encodeURIComponent(slug)}/productos`);
+      if (!res.ok) throw new Error();
+      const data = await res.json();
+      // Solo mostramos productos a los que el proveedor ya les puso precio mayorista
+      catalogoProveedorActual = data.productos.filter(p => p.precio_mayorista !== null && p.disponible !== false);
+      catalogoProveedorCategorias = [...new Set(catalogoProveedorActual.map(p => p.categoria))];
+      categoriaProveedorFiltro = 'todas';
+      renderChipsCategoriaProveedor();
+      renderCatalogoProveedor();
+    } catch (e) {
+      document.getElementById('provProdGrid').innerHTML = `<p style="color:var(--texto-sec);font-size:.85rem;">No se pudo cargar el catálogo.</p>`;
+    }
+  }
+
+  function renderChipsCategoriaProveedor() {
+    const cont = document.getElementById('catChipsProveedor');
+    let html = `<div class="cat-chip ${categoriaProveedorFiltro==='todas'?'active':''}" onclick="filtrarCatProveedor('todas')">Todas</div>`;
+    html += catalogoProveedorCategorias.map(c => `<div class="cat-chip ${categoriaProveedorFiltro===c?'active':''}" onclick="filtrarCatProveedor('${c.replace(/'/g,"\\'")}')">${c}</div>`).join('');
+    cont.innerHTML = html;
+  }
+
+  function filtrarCatProveedor(cat) {
+    categoriaProveedorFiltro = cat;
+    renderChipsCategoriaProveedor();
+    renderCatalogoProveedor();
+  }
+
+  function buscarEnCatalogoProveedor(q) {
+    renderCatalogoProveedor(q);
+  }
+
+  function renderCatalogoProveedor(busqueda) {
+    const cont = document.getElementById('provProdGrid');
+    const texto = (busqueda || '').trim().toLowerCase();
+    let lista = catalogoProveedorActual;
+    if (categoriaProveedorFiltro !== 'todas') lista = lista.filter(p => p.categoria === categoriaProveedorFiltro);
+    if (texto) lista = lista.filter(p => p.nombre.toLowerCase().includes(texto));
+
+    if (!lista.length) {
+      cont.innerHTML = `<p style="color:var(--texto-sec);font-size:.85rem;grid-column:1/-1;">El proveedor todavía no ha puesto precio a productos de esta categoría.</p>`;
+      return;
+    }
+
+    cont.innerHTML = lista.map(p => `
+      <div class="prov-prod-card">
+        <strong>${p.nombre}</strong>
+        <span class="pp-cat">${p.categoria}</span>
+        <div class="pp-precio">RD$${Number(p.precio_mayorista).toLocaleString()} <span class="pp-unidad">/ ${p.unidad_venta}</span></div>
+        <div class="pp-footer">
+          <div class="pp-qty">
+            <button onclick="cambiarCantidadPedidoProveedor('${p.id}', -1)">−</button>
+            <span id="pp-qty-${p.id}">1</span>
+            <button onclick="cambiarCantidadPedidoProveedor('${p.id}', 1)">+</button>
+          </div>
+          <button class="btn-agregar-pedido" onclick="agregarAlPedidoProveedor('${p.id}')">+ Agregar</button>
+        </div>
+      </div>
+    `).join('');
+  }
+
+  const cantidadesPedidoProveedor = {};
+
+  function cambiarCantidadPedidoProveedor(id, delta) {
+    const actual = cantidadesPedidoProveedor[id] || 1;
+    const nueva = Math.max(1, actual + delta);
+    cantidadesPedidoProveedor[id] = nueva;
+    const el = document.getElementById(`pp-qty-${id}`);
+    if (el) el.textContent = nueva;
+  }
+
+  function agregarAlPedidoProveedor(id) {
+    // El carrito de compra a proveedores (Fase 5) todavía no está construido.
+    toast('🚀 Próximamente: carrito de compra a proveedores', '');
+  }
+
+  function volverAProveedores() {
+    document.getElementById('proveedorCatalogoView').style.display = 'none';
+    document.getElementById('proveedoresListView').style.display = 'block';
   }
 
   // ═══════════════════════════════════════════════════════════
@@ -2144,16 +2324,20 @@
     document.querySelectorAll('.sb-item').forEach(i => i.classList.remove('active'));
     if (el) el.classList.add('active');
     cerrarMenuMovil();
-    const titulos = { resumen:'Resumen del negocio', pedidos:'Gestión de pedidos', productos:'Mis productos', promotores:'Mis promotores', anuncios:'Mis anuncios' };
+    const titulos = { resumen:'Resumen del negocio', pedidos:'Gestión de pedidos', productos:'Mis productos', promotores:'Mis promotores', anuncios:'Mis anuncios', proveedores:'Comprar mercancía' };
     document.getElementById('topbarTitle').textContent = titulos[screen] || screen;
     const btnTopbar = document.getElementById('btnTopbar');
     const textosBtnTopbar = { promotores:'+ Invitar promotor', anuncios:'+ Publicar anuncio' };
-    btnTopbar.style.display = 'flex';
+    btnTopbar.style.display = (screen === 'proveedores') ? 'none' : 'flex';
     btnTopbar.textContent = textosBtnTopbar[screen] || '+ Agregar producto';
     const btnMasiva = document.getElementById('btnCargaMasiva');
     if (btnMasiva) btnMasiva.style.display = screen === 'productos' ? 'inline-block' : 'none';
     if (screen === 'productos') renderTabla();
     if (screen === 'anuncios') cargarAnuncios();
+    if (screen === 'proveedores') {
+      volverAProveedores();
+      cargarProveedores();
+    }
   }
 
   function toast(msg, tipo) {
