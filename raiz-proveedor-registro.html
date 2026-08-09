@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RAÍZ Proveedores — Registro de Distribuidor</title>
+<style>
+  :root {
+    --verde: #2e7d32;
+    --gris: #6b7280;
+    --borde: #e5e7eb;
+    --fondo: #f7f8fa;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background: var(--fondo);
+    color: #1f2937;
+    padding: 20px;
+  }
+  .card {
+    max-width: 440px;
+    margin: 40px auto;
+    background: white;
+    padding: 28px;
+    border-radius: 16px;
+    box-shadow: 0 2px 12px rgba(0,0,0,.06);
+  }
+  h2 { margin: 0 0 4px 0; font-size: 21px; }
+  p.sub { color: var(--gris); font-size: 14px; margin: 0 0 20px 0; }
+  label { display: block; font-size: 12.5px; color: var(--gris); margin: 12px 0 4px 0; }
+  input, select {
+    width: 100%;
+    padding: 11px 12px;
+    border: 1px solid var(--borde);
+    border-radius: 10px;
+    font-size: 14.5px;
+    font-family: inherit;
+  }
+  .fila2 { display: flex; gap: 10px; }
+  .fila2 > div { flex: 1; }
+  button {
+    width: 100%;
+    margin-top: 22px;
+    padding: 13px;
+    background: var(--verde);
+    color: white;
+    border: none;
+    border-radius: 10px;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+  }
+  button:disabled { opacity: .6; cursor: default; }
+  #mensaje { font-size: 13.5px; margin-top: 12px; text-align: center; }
+  #mensaje.error { color: #dc2626; }
+  #mensaje.ok { color: var(--verde); }
+  .exito { text-align: center; padding: 20px 0; }
+  .exito h3 { color: var(--verde); }
+</style>
+</head>
+<body>
+
+<div class="card">
+  <div id="vistaForm">
+    <h2>🏭 Registro de Distribuidor</h2>
+    <p class="sub">Únete a RAÍZ Proveedores y vende directo a los comercios de tu zona.</p>
+
+    <label>Nombre del almacén / distribuidor</label>
+    <input type="text" id="nombre" placeholder="Ej: Distribuidora El Sol">
+
+    <label>WhatsApp</label>
+    <input type="text" id="whatsapp" placeholder="Ej: 8091234567">
+
+    <div class="fila2">
+      <div>
+        <label>Provincia</label>
+        <input type="text" id="provincia" placeholder="Ej: Pedernales">
+      </div>
+      <div>
+        <label>Municipio</label>
+        <input type="text" id="municipio" placeholder="Ej: Pedernales">
+      </div>
+    </div>
+
+    <label>Descripción breve (opcional)</label>
+    <input type="text" id="descripcion" placeholder="Qué tipo de productos distribuyes">
+
+    <label>Correo</label>
+    <input type="email" id="email" placeholder="tucorreo@ejemplo.com">
+
+    <label>Contraseña</label>
+    <input type="password" id="password" placeholder="Mínimo 8 caracteres">
+
+    <button id="btnRegistrar" onclick="registrar()">Crear cuenta de distribuidor</button>
+    <div id="mensaje"></div>
+  </div>
+
+  <div id="vistaExito" style="display:none;" class="exito">
+    <h3>✓ Cuenta creada</h3>
+    <p style="color:var(--gris);font-size:14px;">Ya puedes entrar a tu panel para cargar tu catálogo y poner tus precios.</p>
+    <button onclick="window.location.href='raiz-proveedor.html'">Ir a mi panel</button>
+  </div>
+</div>
+
+<script>
+const API = "https://raiz-backend.onrender.com";
+
+function slugificar(texto) {
+  return texto
+    .toLowerCase()
+    .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/(^-|-$)/g, '');
+}
+
+async function registrar() {
+  const nombre = document.getElementById('nombre').value.trim();
+  const whatsapp = document.getElementById('whatsapp').value.trim();
+  const provincia = document.getElementById('provincia').value.trim();
+  const municipio = document.getElementById('municipio').value.trim();
+  const descripcion = document.getElementById('descripcion').value.trim();
+  const email = document.getElementById('email').value.trim();
+  const password = document.getElementById('password').value;
+
+  const mensaje = document.getElementById('mensaje');
+  mensaje.className = '';
+  mensaje.textContent = '';
+
+  if (!nombre || !whatsapp || !provincia || !municipio || !email || !password) {
+    mensaje.className = 'error';
+    mensaje.textContent = 'Completa todos los campos obligatorios.';
+    return;
+  }
+  if (password.length < 8) {
+    mensaje.className = 'error';
+    mensaje.textContent = 'La contraseña debe tener al menos 8 caracteres.';
+    return;
+  }
+
+  const btn = document.getElementById('btnRegistrar');
+  btn.disabled = true;
+  mensaje.textContent = 'Creando cuenta...';
+
+  try {
+    const resp = await fetch(`${API}/proveedores/registro`, {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({
+        nombre,
+        slug: slugificar(nombre),
+        descripcion: descripcion || null,
+        whatsapp,
+        municipio,
+        provincia,
+        email,
+        password
+      })
+    });
+    const data = await resp.json();
+    if (!resp.ok) throw new Error(data.detail || 'No se pudo crear la cuenta');
+
+    document.getElementById('vistaForm').style.display = 'none';
+    document.getElementById('vistaExito').style.display = 'block';
+  } catch (err) {
+    mensaje.className = 'error';
+    mensaje.textContent = err.message;
+  } finally {
+    btn.disabled = false;
+  }
+}
+</script>
+
+</body>
+</html>
