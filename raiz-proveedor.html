@@ -180,6 +180,78 @@
   @media (max-width: 480px) {
     .producto-precios { grid-template-columns: 1fr; }
   }
+
+  /* ── Tabs (Fase 6: catálogo vs pedidos recibidos) ── */
+  .tabs {
+    display: flex;
+    gap: 8px;
+    padding: 12px 16px 0 16px;
+  }
+  .tab-btn {
+    background: white;
+    border: 1px solid var(--borde);
+    border-radius: 10px 10px 0 0;
+    padding: 10px 16px;
+    font-size: 13.5px;
+    font-weight: 600;
+    color: var(--gris);
+    cursor: pointer;
+  }
+  .tab-btn.activo { color: var(--verde); border-bottom: 2px solid var(--verde); }
+  .badge-contador {
+    display: inline-block;
+    background: var(--naranja);
+    color: white;
+    border-radius: 999px;
+    font-size: 11px;
+    padding: 1px 7px;
+    margin-left: 6px;
+  }
+
+  /* ── Pedidos recibidos ── */
+  .pedido-card {
+    background: white;
+    border: 1px solid var(--borde);
+    border-radius: 12px;
+    padding: 16px;
+    margin-bottom: 12px;
+  }
+  .pedido-card-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 8px;
+  }
+  .pedido-codigo { font-weight: 700; font-size: 14px; }
+  .pedido-fecha { font-size: 12px; color: var(--gris); }
+  .pedido-comerciante { font-size: 13.5px; margin-bottom: 8px; }
+  .estado-badge {
+    display: inline-block;
+    font-size: 11.5px;
+    font-weight: 700;
+    padding: 3px 10px;
+    border-radius: 999px;
+  }
+  .estado-pendiente { background: #fff3e0; color: var(--naranja); }
+  .estado-confirmado { background: #e3f2fd; color: #1565c0; }
+  .estado-preparando { background: #fff3e0; color: var(--naranja); }
+  .estado-en_despacho { background: #ede7f6; color: #6a1b9a; }
+  .estado-entregado { background: var(--verde-claro); color: var(--verde); }
+  .estado-rechazado, .estado-cancelado { background: #ffebee; color: #c62828; }
+  .pedido-items { font-size: 13px; color: #374151; margin: 8px 0; line-height: 1.6; }
+  .pedido-total { font-weight: 700; font-size: 14px; margin-bottom: 10px; }
+  .pedido-acciones { display: flex; gap: 8px; flex-wrap: wrap; }
+  .btn-accion-pedido {
+    border: none;
+    border-radius: 8px;
+    padding: 8px 14px;
+    font-size: 12.5px;
+    font-weight: 600;
+    cursor: pointer;
+  }
+  .btn-confirmar { background: var(--verde); color: white; }
+  .btn-rechazar { background: #ffebee; color: #c62828; }
+  .btn-avanzar { background: #e3f2fd; color: #1565c0; }
 </style>
 </head>
 <body>
@@ -202,7 +274,12 @@
     <button id="btnSalir" onclick="cerrarSesion()">Salir</button>
   </header>
 
-  <div style="padding: 16px 16px 0 16px;">
+  <div class="tabs">
+    <div class="tab-btn activo" id="tabCatalogo" onclick="cambiarTab('catalogo')">📋 Catálogo y precios</div>
+    <div class="tab-btn" id="tabPedidos" onclick="cambiarTab('pedidos')">🛒 Pedidos recibidos<span class="badge-contador" id="contadorPendientes" style="display:none;">0</span></div>
+  </div>
+
+  <div id="vistaCatalogo" style="padding: 16px 16px 0 16px;">
     <div style="display:flex;justify-content:flex-end;margin-bottom:10px;">
       <button onclick="abrirModalCarga()" style="background:var(--verde);color:white;border:none;border-radius:10px;padding:9px 14px;font-size:13px;font-weight:600;cursor:pointer;">+ Agregar productos</button>
     </div>
@@ -216,6 +293,10 @@
     </div>
 
     <div id="listaProductos"></div>
+  </div>
+
+  <div id="vistaPedidos" style="display:none;padding:16px;">
+    <div id="listaPedidos"></div>
   </div>
 </div>
 
@@ -280,6 +361,7 @@ async function iniciarSesion() {
     document.getElementById('pantallaLogin').style.display = 'none';
     document.getElementById('app').style.display = 'block';
     await cargarProductos();
+    await cargarPedidosProveedor();
   } catch (err) {
     errorDiv.textContent = err.message;
     errorDiv.style.display = 'block';
@@ -488,8 +570,118 @@ window.addEventListener('DOMContentLoaded', async () => {
     document.getElementById('app').style.display = 'block';
     document.getElementById('nombreProveedor').textContent = 'Panel del Distribuidor';
     await cargarProductos();
+    await cargarPedidosProveedor();
   }
 });
+
+// ══════════════ FASE 6: PEDIDOS RECIBIDOS ══════════════
+let TODOS_LOS_PEDIDOS = [];
+
+function cambiarTab(tab) {
+  document.getElementById('tabCatalogo').classList.toggle('activo', tab === 'catalogo');
+  document.getElementById('tabPedidos').classList.toggle('activo', tab === 'pedidos');
+  document.getElementById('vistaCatalogo').style.display = tab === 'catalogo' ? 'block' : 'none';
+  document.getElementById('vistaPedidos').style.display = tab === 'pedidos' ? 'block' : 'none';
+}
+
+async function cargarPedidosProveedor() {
+  const cont = document.getElementById('listaPedidos');
+  cont.innerHTML = '<div class="cargando">Cargando pedidos...</div>';
+  try {
+    const resp = await fetch(`${API}/proveedores/${SLUG_PROVEEDOR}/pedidos`, {
+      headers: { 'Authorization': `Bearer ${TOKEN}` }
+    });
+    if (!resp.ok) throw new Error();
+    TODOS_LOS_PEDIDOS = await resp.json();
+    renderizarPedidos();
+    actualizarContadorPendientes();
+  } catch (err) {
+    cont.innerHTML = '<div class="vacio">No se pudieron cargar los pedidos.</div>';
+  }
+}
+
+function actualizarContadorPendientes() {
+  const pendientes = TODOS_LOS_PEDIDOS.filter(p => p.estado_actual === 'pendiente').length;
+  const badge = document.getElementById('contadorPendientes');
+  if (pendientes > 0) {
+    badge.textContent = pendientes;
+    badge.style.display = 'inline-block';
+  } else {
+    badge.style.display = 'none';
+  }
+}
+
+const ETIQUETAS_ESTADO = {
+  pendiente: '🟡 Pendiente',
+  confirmado: '🔵 Confirmado',
+  preparando: '🟠 Preparando',
+  en_despacho: '🚚 En despacho',
+  entregado: '🟢 Entregado',
+  rechazado: '🔴 Rechazado',
+  cancelado: '🔴 Cancelado'
+};
+
+function renderizarPedidos() {
+  const cont = document.getElementById('listaPedidos');
+  if (!TODOS_LOS_PEDIDOS.length) {
+    cont.innerHTML = '<div class="vacio">Todavía no te ha llegado ningún pedido 🌱</div>';
+    return;
+  }
+
+  cont.innerHTML = TODOS_LOS_PEDIDOS.map(p => {
+    const fecha = new Date(p.created_at).toLocaleString('es-DO', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
+    const itemsTexto = p.items.map(i => `${i.nombre_producto} ×${i.cantidad}`).join(' · ');
+    const etiqueta = ETIQUETAS_ESTADO[p.estado_actual] || p.estado_actual;
+
+    let acciones = '';
+    if (p.estado_actual === 'pendiente') {
+      acciones = `
+        <button class="btn-accion-pedido btn-confirmar" onclick="cambiarEstadoPedido('${p.id}','confirmado')">✓ Confirmar</button>
+        <button class="btn-accion-pedido btn-rechazar" onclick="cambiarEstadoPedido('${p.id}','rechazado')">✕ Rechazar</button>
+      `;
+    } else if (p.estado_actual === 'confirmado') {
+      acciones = `<button class="btn-accion-pedido btn-avanzar" onclick="cambiarEstadoPedido('${p.id}','preparando')">📦 Marcar preparando</button>`;
+    } else if (p.estado_actual === 'preparando') {
+      acciones = `<button class="btn-accion-pedido btn-avanzar" onclick="cambiarEstadoPedido('${p.id}','en_despacho')">🚚 Marcar en despacho</button>`;
+    } else if (p.estado_actual === 'en_despacho') {
+      acciones = `<button class="btn-accion-pedido btn-avanzar" onclick="cambiarEstadoPedido('${p.id}','entregado')">✅ Marcar entregado</button>`;
+    }
+
+    return `
+      <div class="pedido-card" id="pedido-${p.id}">
+        <div class="pedido-card-top">
+          <div>
+            <div class="pedido-codigo">${p.codigo}</div>
+            <div class="pedido-fecha">${fecha}</div>
+          </div>
+          <span class="estado-badge estado-${p.estado_actual}">${etiqueta}</span>
+        </div>
+        <div class="pedido-comerciante">🏪 ${p.comerciante_nombre}${p.comerciante_whatsapp ? ' · ' + p.comerciante_whatsapp : ''}</div>
+        <div class="pedido-items">${itemsTexto}</div>
+        <div class="pedido-total">Total: RD$${Number(p.total).toLocaleString()}</div>
+        <div class="pedido-acciones">${acciones}</div>
+      </div>
+    `;
+  }).join('');
+}
+
+async function cambiarEstadoPedido(pedidoId, nuevoEstado) {
+  try {
+    const resp = await fetch(`${API}/pedidos-proveedor/${pedidoId}/estado`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${TOKEN}` },
+      body: JSON.stringify({ estado_actual: nuevoEstado })
+    });
+    if (!resp.ok) throw new Error();
+    const pedido = TODOS_LOS_PEDIDOS.find(p => p.id === pedidoId);
+    if (pedido) pedido.estado_actual = nuevoEstado;
+    renderizarPedidos();
+    actualizarContadorPendientes();
+  } catch (err) {
+    alert('No se pudo actualizar el pedido, intenta de nuevo.');
+  }
+}
+
 </script>
 
 </body>
