@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RAÍZ Proveedores — Panel del Distribuidor</title>
+<style>
+  :root {
+    --verde: #2e7d32;
+    --verde-claro: #e8f5e9;
+    --naranja: #ef6c00;
+    --gris: #6b7280;
+    --borde: #e5e7eb;
+    --fondo: #f7f8fa;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background: var(--fondo);
+    color: #1f2937;
+  }
+  header {
+    background: var(--verde);
+    color: white;
+    padding: 16px 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+  }
+  header h1 { font-size: 18px; margin: 0; }
+  header .sub { font-size: 12px; opacity: .85; }
+  #btnSalir {
+    background: rgba(255,255,255,.15);
+    border: none;
+    color: white;
+    padding: 6px 12px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 13px;
+  }
+
+  /* ── Login ── */
+  #pantallaLogin {
+    max-width: 380px;
+    margin: 60px auto;
+    background: white;
+    padding: 28px;
+    border-radius: 16px;
+    box-shadow: 0 2px 12px rgba(0,0,0,.06);
+  }
+  #pantallaLogin h2 { margin-top: 0; font-size: 20px; }
+  #pantallaLogin p { color: var(--gris); font-size: 14px; margin-top: -8px; }
+  #pantallaLogin input {
+    width: 100%;
+    padding: 12px;
+    margin-bottom: 12px;
+    border: 1px solid var(--borde);
+    border-radius: 10px;
+    font-size: 15px;
+  }
+  #pantallaLogin button {
+    width: 100%;
+    padding: 13px;
+    background: var(--verde);
+    color: white;
+    border: none;
+    border-radius: 10px;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+  }
+  #errorLogin { color: #dc2626; font-size: 13px; margin-top: 8px; display: none; }
+
+  /* ── App ── */
+  #app { display: none; padding: 16px; max-width: 900px; margin: 0 auto; }
+
+  .resumen {
+    display: flex;
+    gap: 10px;
+    overflow-x: auto;
+    padding-bottom: 4px;
+    margin-bottom: 14px;
+  }
+  .chip-cat {
+    flex: 0 0 auto;
+    background: white;
+    border: 1px solid var(--borde);
+    border-radius: 12px;
+    padding: 10px 14px;
+    font-size: 13px;
+    cursor: pointer;
+    white-space: nowrap;
+  }
+  .chip-cat.activo { background: var(--verde); color: white; border-color: var(--verde); }
+  .chip-cat b { display: block; font-size: 15px; }
+
+  .controles {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    margin-bottom: 14px;
+    flex-wrap: wrap;
+  }
+  .controles input[type=text] {
+    flex: 1;
+    min-width: 160px;
+    padding: 10px 12px;
+    border: 1px solid var(--borde);
+    border-radius: 10px;
+    font-size: 14px;
+  }
+  .toggle-sin-precio {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 13px;
+    color: var(--gris);
+    background: white;
+    border: 1px solid var(--borde);
+    padding: 8px 12px;
+    border-radius: 10px;
+    cursor: pointer;
+    user-select: none;
+  }
+  .toggle-sin-precio.activo { background: #fff3e0; border-color: var(--naranja); color: var(--naranja); font-weight: 600; }
+
+  .producto {
+    background: white;
+    border: 1px solid var(--borde);
+    border-radius: 12px;
+    padding: 14px;
+    margin-bottom: 10px;
+  }
+  .producto-nombre {
+    font-size: 14.5px;
+    font-weight: 600;
+    margin-bottom: 2px;
+  }
+  .producto-meta { font-size: 12px; color: var(--gris); margin-bottom: 10px; }
+  .producto-precios {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+  }
+  .campo-precio label {
+    display: block;
+    font-size: 11px;
+    color: var(--gris);
+    margin-bottom: 3px;
+  }
+  .campo-precio input {
+    width: 100%;
+    padding: 9px;
+    border: 1px solid var(--borde);
+    border-radius: 8px;
+    font-size: 14px;
+  }
+  .campo-precio input:focus { outline: 2px solid var(--verde); border-color: var(--verde); }
+  .guardado-ok {
+    display: inline-block;
+    font-size: 11px;
+    color: var(--verde);
+    margin-top: 6px;
+    opacity: 0;
+    transition: opacity .3s;
+  }
+  .guardado-ok.mostrar { opacity: 1; }
+
+  .cargando, .vacio {
+    text-align: center;
+    color: var(--gris);
+    padding: 40px 20px;
+    font-size: 14px;
+  }
+
+  @media (max-width: 480px) {
+    .producto-precios { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<div id="pantallaLogin">
+  <h2>🏭 Panel del Distribuidor</h2>
+  <p>Entra con tu cuenta de proveedor RAÍZ</p>
+  <input type="email" id="loginEmail" placeholder="Correo">
+  <input type="password" id="loginPassword" placeholder="Contraseña">
+  <button onclick="iniciarSesion()">Entrar</button>
+  <div id="errorLogin"></div>
+</div>
+
+<div id="app">
+  <header>
+    <div>
+      <h1 id="nombreProveedor">Proveedor</h1>
+      <div class="sub">Panel de precios · RAÍZ</div>
+    </div>
+    <button id="btnSalir" onclick="cerrarSesion()">Salir</button>
+  </header>
+
+  <div style="padding: 16px 16px 0 16px;">
+    <div class="resumen" id="resumenCategorias"></div>
+
+    <div class="controles">
+      <input type="text" id="buscador" placeholder="Buscar producto..." oninput="renderizar()">
+      <div class="toggle-sin-precio" id="toggleSinPrecio" onclick="alternarSinPrecio()">
+        ⚠️ Solo sin precio
+      </div>
+    </div>
+
+    <div id="listaProductos"></div>
+  </div>
+</div>
+
+<script>
+const API = "https://raiz-backend.onrender.com";
+let TOKEN = null;
+let SLUG_PROVEEDOR = null;
+let TODOS_LOS_PRODUCTOS = [];
+let CATEGORIA_ACTIVA = "todas";
+let SOLO_SIN_PRECIO = false;
+
+async function iniciarSesion() {
+  const email = document.getElementById('loginEmail').value.trim();
+  const password = document.getElementById('loginPassword').value;
+  const errorDiv = document.getElementById('errorLogin');
+  errorDiv.style.display = 'none';
+
+  try {
+    const resp = await fetch(`${API}/auth/login`, {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({email, password})
+    });
+    const data = await resp.json();
+    if (!resp.ok) throw new Error(data.detail || 'Error al iniciar sesión');
+    if (!data.proveedor_slug) throw new Error('Esta cuenta no es de un proveedor RAÍZ');
+
+    TOKEN = data.token;
+    SLUG_PROVEEDOR = data.proveedor_slug;
+    localStorage.setItem('raiz_proveedor_token', TOKEN);
+    localStorage.setItem('raiz_proveedor_slug', SLUG_PROVEEDOR);
+    document.getElementById('nombreProveedor').textContent = data.usuario.nombre;
+
+    document.getElementById('pantallaLogin').style.display = 'none';
+    document.getElementById('app').style.display = 'block';
+    await cargarProductos();
+  } catch (err) {
+    errorDiv.textContent = err.message;
+    errorDiv.style.display = 'block';
+  }
+}
+
+function cerrarSesion() {
+  localStorage.removeItem('raiz_proveedor_token');
+  localStorage.removeItem('raiz_proveedor_slug');
+  location.reload();
+}
+
+async function cargarProductos() {
+  document.getElementById('listaProductos').innerHTML = '<div class="cargando">Cargando catálogo...</div>';
+  const resp = await fetch(`${API}/proveedores/${SLUG_PROVEEDOR}/productos`);
+  const data = await resp.json();
+  TODOS_LOS_PRODUCTOS = data.productos;
+  renderizarResumen(data.categorias);
+  renderizar();
+}
+
+function renderizarResumen(categorias) {
+  const totalGeneral = categorias.reduce((a, c) => a + c.total, 0);
+  const conPrecioGeneral = categorias.reduce((a, c) => a + c.con_precio, 0);
+
+  let html = `<div class="chip-cat ${CATEGORIA_ACTIVA === 'todas' ? 'activo' : ''}" onclick="filtrarCategoria('todas')">
+      <b>${conPrecioGeneral}/${totalGeneral}</b>Todas
+  </div>`;
+
+  categorias.forEach(c => {
+    html += `<div class="chip-cat ${CATEGORIA_ACTIVA === c.categoria ? 'activo' : ''}" onclick="filtrarCategoria('${c.categoria.replace(/'/g, "\\'")}')">
+        <b>${c.con_precio}/${c.total}</b>${c.categoria}
+    </div>`;
+  });
+  document.getElementById('resumenCategorias').innerHTML = html;
+}
+
+function filtrarCategoria(cat) {
+  CATEGORIA_ACTIVA = cat;
+  renderizar();
+}
+
+function alternarSinPrecio() {
+  SOLO_SIN_PRECIO = !SOLO_SIN_PRECIO;
+  document.getElementById('toggleSinPrecio').classList.toggle('activo', SOLO_SIN_PRECIO);
+  renderizar();
+}
+
+function renderizar() {
+  const busqueda = document.getElementById('buscador').value.trim().toLowerCase();
+  let productos = TODOS_LOS_PRODUCTOS;
+
+  if (CATEGORIA_ACTIVA !== 'todas') {
+    productos = productos.filter(p => p.categoria === CATEGORIA_ACTIVA);
+  }
+  if (SOLO_SIN_PRECIO) {
+    productos = productos.filter(p => p.precio_costo_proveedor === null);
+  }
+  if (busqueda) {
+    productos = productos.filter(p => p.nombre.toLowerCase().includes(busqueda));
+  }
+
+  const cont = document.getElementById('listaProductos');
+  if (productos.length === 0) {
+    cont.innerHTML = '<div class="vacio">No hay productos que coincidan 🌱</div>';
+    return;
+  }
+
+  cont.innerHTML = productos.map(p => `
+    <div class="producto" id="prod-${p.id}">
+      <div class="producto-nombre">${p.nombre}</div>
+      <div class="producto-meta">${p.categoria} · se vende por ${p.unidad_venta}</div>
+      <div class="producto-precios">
+        <div class="campo-precio">
+          <label>Costo proveedor (RD$)</label>
+          <input type="number" step="0.01" value="${p.precio_costo_proveedor ?? ''}"
+                 onblur="guardarPrecio('${p.id}', 'precio_costo_proveedor', this.value)">
+        </div>
+        <div class="campo-precio">
+          <label>Precio mayorista (RD$)</label>
+          <input type="number" step="0.01" value="${p.precio_mayorista ?? ''}"
+                 onblur="guardarPrecio('${p.id}', 'precio_mayorista', this.value)">
+        </div>
+        <div class="campo-precio">
+          <label>Sugerido al público (RD$)</label>
+          <input type="number" step="0.01" value="${p.precio_sugerido_venta ?? ''}"
+                 onblur="guardarPrecio('${p.id}', 'precio_sugerido_venta', this.value)">
+        </div>
+      </div>
+      <span class="guardado-ok" id="ok-${p.id}">✓ Guardado</span>
+    </div>
+  `).join('');
+}
+
+async function guardarPrecio(productoId, campo, valor) {
+  const producto = TODOS_LOS_PRODUCTOS.find(p => p.id === productoId);
+  const valorNum = valor === '' ? null : parseFloat(valor);
+  if (producto[campo] === valorNum) return; // no cambió, no gastamos una llamada
+
+  const cuerpo = {};
+  cuerpo[campo] = valorNum;
+
+  try {
+    const resp = await fetch(`${API}/proveedor-productos/${productoId}`, {
+      method: 'PUT',
+      headers: {'Content-Type': 'application/json', 'Authorization': `Bearer ${TOKEN}`},
+      body: JSON.stringify(cuerpo)
+    });
+    if (!resp.ok) throw new Error('No se pudo guardar');
+    producto[campo] = valorNum;
+
+    const ok = document.getElementById(`ok-${productoId}`);
+    ok.classList.add('mostrar');
+    setTimeout(() => ok.classList.remove('mostrar'), 1500);
+
+    // refresca los contadores de categoría sin recargar todo
+    cargarResumenSilencioso();
+  } catch (err) {
+    alert('No se pudo guardar ese precio, intenta de nuevo.');
+  }
+}
+
+async function cargarResumenSilencioso() {
+  const resp = await fetch(`${API}/proveedores/${SLUG_PROVEEDOR}/productos`);
+  const data = await resp.json();
+  renderizarResumen(data.categorias);
+}
+
+// Si ya había sesión guardada, entra directo
+window.addEventListener('DOMContentLoaded', async () => {
+  const t = localStorage.getItem('raiz_proveedor_token');
+  const s = localStorage.getItem('raiz_proveedor_slug');
+  if (t && s) {
+    TOKEN = t;
+    SLUG_PROVEEDOR = s;
+    document.getElementById('pantallaLogin').style.display = 'none';
+    document.getElementById('app').style.display = 'block';
+    document.getElementById('nombreProveedor').textContent = 'Panel del Distribuidor';
+    await cargarProductos();
+  }
+});
+</script>
+
+</body>
+</html>
