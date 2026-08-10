@@ -470,6 +470,7 @@
     <div class="sb-item" onclick="irAFacturarRapido()"><span class="sb-icon">🧾</span> Facturar rápido</div>
     <div class="sb-item" id="sbItemProductos" onclick="irA('productos',this)"><span class="sb-icon">📦</span> Productos</div>
     <div class="sb-item" onclick="irA('proveedores',this)"><span class="sb-icon">🏭</span> Comprar mercancía</div>
+    <div class="sb-item" id="sbItemReposicion" onclick="irA('reposicion',this)"><span class="sb-icon">🔁</span> Reposición sugerida <span id="badgeReposicion" style="display:none;background:var(--naranja);color:#fff;border-radius:99px;font-size:.7rem;font-weight:700;padding:.1rem .45rem;margin-left:.3rem;">0</span></div>
     <div class="sb-label">Negocio</div>
     <div class="sb-item" onclick="irAPlanes()"><span class="sb-icon">⭐</span> Planes</div>
     <div class="sb-item" onclick="irA('promotores',this)"><span class="sb-icon">📣</span> Promotores</div>
@@ -627,6 +628,19 @@
         <input class="search-input" style="margin-bottom:1rem;width:100%;" placeholder="🔍 Buscar producto..." oninput="buscarEnCatalogoProveedor(this.value)" />
         <div class="cat-chips" id="catChipsProveedor"></div>
         <div class="prov-prod-grid" id="provProdGrid"></div>
+      </div>
+    </div>
+
+    <!-- ══ REPOSICIÓN SUGERIDA ══ -->
+    <div class="screen" id="screenReposicion">
+      <p style="color:var(--texto-sec);font-size:.85rem;margin-bottom:1rem;">
+        Cuando un producto vinculado a un distribuidor llega a su stock mínimo, RAÍZ arma aquí un pedido sugerido.
+        Revisa las cantidades y confírmalo para enviarlo — nunca se envía solo.
+      </p>
+      <div id="reposicionLista"></div>
+      <div id="reposicionVacio" style="text-align:center;padding:3rem 1rem;color:var(--texto-sec);display:none;">
+        <div style="font-size:2rem;margin-bottom:.5rem;">✅</div>
+        <p>No hay reposiciones sugeridas por ahora. Van a aparecer solas cuando un producto vinculado a un distribuidor llegue a su stock mínimo.</p>
       </div>
     </div>
 
@@ -795,6 +809,16 @@
         <label>Avisarme cuando quede en</label>
         <input class="input" id="prodStockMinimo" type="number" placeholder="Ej: 5 — déjalo vacío para usar el umbral general" />
         <div class="hint" style="font-size:.78rem;color:var(--texto-sec);margin-top:.4rem;">Umbral de "stock bajo" solo para este producto. Si lo dejas vacío, se usa tu configuración general.</div>
+      </div>
+      <div class="campo">
+        <label>Reponer con (opcional)</label>
+        <select class="input" id="vinculoProveedorSelect" onchange="cargarProductosVinculo()">
+          <option value="">— Sin distribuidor vinculado —</option>
+        </select>
+        <select class="input" id="vinculoProductoSelect" style="margin-top:.5rem;display:none;" onchange="productoVinculoActual = this.value">
+          <option value="">Selecciona el producto del distribuidor...</option>
+        </select>
+        <div class="hint" style="font-size:.78rem;color:var(--texto-sec);margin-top:.4rem;">Si vinculas este producto a un distribuidor RAÍZ, cuando llegue a stock bajo se arma solo un pedido borrador para que lo revises en "Reposición sugerida".</div>
       </div>
       <div class="campo">
         <label>Categoría <span>*</span></label>
@@ -1024,6 +1048,9 @@
           cat: p.categoria || 'general',
           stock: p.stock,
           stock_minimo: p.stock_minimo,
+          proveedor_producto_id: p.proveedor_producto_id,
+          vinculo_producto_nombre: p.vinculo_producto_nombre,
+          vinculo_proveedor_nombre: p.vinculo_proveedor_nombre,
           vendidos: p.total_vendidos || 0,
           activo: p.disponible !== false,
           unidad: p.unidad_venta || 'unidad'
@@ -1033,12 +1060,94 @@
 
       // Cargar los pedidos reales de este negocio
       await cargarPedidos(slug);
+      await actualizarBadgeReposicion(slug);
     } catch (e) {
       console.log('No se pudo cargar el negocio real, se mantiene el estado por defecto.', e);
     }
   }
 
   let pedidosReales = [];
+  let borradoresReposicion = [];
+
+  async function actualizarBadgeReposicion(slug) {
+    try {
+      const res = await fetch(`${API}/negocios/${encodeURIComponent(slug)}/pedidos-proveedor`);
+      if (!res.ok) return;
+      const data = await res.json();
+      borradoresReposicion = data.filter(p => p.estado_actual === 'borrador');
+      const badge = document.getElementById('badgeReposicion');
+      if (borradoresReposicion.length > 0) {
+        badge.textContent = borradoresReposicion.length;
+        badge.style.display = 'inline-block';
+      } else {
+        badge.style.display = 'none';
+      }
+    } catch (e) { /* silencioso: la pantalla igual funciona sin el contador */ }
+  }
+
+  async function cargarReposicionSugerida() {
+    await actualizarBadgeReposicion(NEGOCIO_SLUG);
+    renderReposicionSugerida();
+  }
+
+  function renderReposicionSugerida() {
+    const cont = document.getElementById('reposicionLista');
+    const vacio = document.getElementById('reposicionVacio');
+    if (!borradoresReposicion.length) {
+      cont.innerHTML = '';
+      vacio.style.display = 'block';
+      return;
+    }
+    vacio.style.display = 'none';
+    cont.innerHTML = borradoresReposicion.map(p => `
+      <div class="card" style="padding:1.25rem;margin-bottom:1rem;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.75rem;">
+          <strong>🏭 ${p.proveedor_nombre}</strong>
+          <span style="color:var(--texto-sec);font-size:.8rem;">${p.codigo}</span>
+        </div>
+        <div style="border-top:1px solid var(--borde);border-bottom:1px solid var(--borde);padding:.5rem 0;margin-bottom:.75rem;">
+          ${(p.items || []).map(it => `
+            <div style="display:flex;justify-content:space-between;font-size:.85rem;padding:.25rem 0;">
+              <span>${it.cantidad} × ${it.nombre_producto}</span>
+              <span>${it.precio_unitario > 0 ? 'RD$' + Number(it.subtotal).toLocaleString() : 'A confirmar'}</span>
+            </div>
+          `).join('')}
+        </div>
+        <div style="display:flex;justify-content:space-between;align-items:center;">
+          <strong>Total sugerido: RD$${Number(p.subtotal).toLocaleString()}</strong>
+          <div style="display:flex;gap:.5rem;">
+            <button class="btn-cancel" onclick="descartarBorrador('${p.id}')">Descartar</button>
+            <button class="btn-guardar" onclick="confirmarBorrador('${p.id}')">✓ Enviar pedido</button>
+          </div>
+        </div>
+      </div>
+    `).join('');
+  }
+
+  async function confirmarBorrador(id) {
+    try {
+      const res = await fetch(`${API}/pedidos-proveedor/${id}/confirmar-borrador`, { method: 'PUT', headers: authHeaders() });
+      if (manejarRespuestaAuth(res)) return;
+      if (!res.ok) { toast('⚠️ No se pudo enviar el pedido', 'error'); return; }
+      toast('📦 Pedido enviado al distribuidor', 'success');
+      await cargarReposicionSugerida();
+    } catch (e) {
+      toast('⚠️ No se pudo enviar el pedido', 'error');
+    }
+  }
+
+  async function descartarBorrador(id) {
+    if (!confirm('¿Descartar esta reposición sugerida?')) return;
+    try {
+      const res = await fetch(`${API}/pedidos-proveedor/${id}`, { method: 'DELETE', headers: authHeaders() });
+      if (manejarRespuestaAuth(res)) return;
+      if (!res.ok) { toast('⚠️ No se pudo descartar', 'error'); return; }
+      toast('🗑️ Reposición descartada', '');
+      await cargarReposicionSugerida();
+    } catch (e) {
+      toast('⚠️ No se pudo descartar', 'error');
+    }
+  }
 
   async function cargarPedidos(slug) {
     try {
@@ -1286,6 +1395,8 @@
     document.getElementById('prodStock').value = p.stock ?? '';
     document.getElementById('prodStockMinimo').value = p.stock_minimo ?? '';
     document.getElementById('prodCat').value = p.cat;
+    productoVinculoActual = p.proveedor_producto_id || null;
+    prepararSelectVinculo(p.vinculo_proveedor_nombre && p.vinculo_producto_nombre ? `${p.vinculo_proveedor_nombre} — ${p.vinculo_producto_nombre}` : null);
     document.getElementById('campoUnidadVenta').style.display = NEGOCIO_TIPO === 'colmado' ? 'block' : 'none';
     document.getElementById('prodUnidad').value = p.unidad || 'unidad';
     productoSelEmoji = p.emoji;
@@ -1320,6 +1431,8 @@
 
   function abrirModal() {
     editandoIndex = null;
+    productoVinculoActual = null;
+    prepararSelectVinculo(null);
     document.getElementById('modalTitulo').textContent = '➕ Agregar producto';
     document.getElementById('prodNombre').value = '';
     document.getElementById('prodDesc').value = '';
@@ -1371,7 +1484,7 @@
           const res = await fetch(`${API}/productos/${p.id}`, {
             method: 'PUT',
             headers: authHeaders(),
-            body: JSON.stringify({ nombre, descripcion: desc, precio, categoria: cat, emoji, stock, stock_minimo: stockMinimo, unidad_venta: unidad })
+            body: JSON.stringify({ nombre, descripcion: desc, precio, categoria: cat, emoji, stock, stock_minimo: stockMinimo, proveedor_producto_id: productoVinculoActual, unidad_venta: unidad })
           });
           manejarRespuestaAuth(res);
         } catch (e) {
@@ -1382,7 +1495,7 @@
     }
 
     // ── Crear producto nuevo ──
-    const nuevo = { emoji, nombre, precio, desc, cat, stock, stock_minimo: stockMinimo, unidad, vendidos: 0, activo: true, id: null };
+    const nuevo = { emoji, nombre, precio, desc, cat, stock, stock_minimo: stockMinimo, proveedor_producto_id: productoVinculoActual || null, unidad, vendidos: 0, activo: true, id: null };
     productos.unshift(nuevo);
     renderTabla();
     cerrarModalBtn();
@@ -1398,7 +1511,7 @@
         headers: authHeaders(),
         body: JSON.stringify({
           negocio_id: NEGOCIO_ID, nombre, descripcion: desc,
-          precio, categoria: cat, emoji, stock, stock_minimo: stockMinimo, unidad_venta: unidad
+          precio, categoria: cat, emoji, stock, stock_minimo: stockMinimo, proveedor_producto_id: productoVinculoActual || null, unidad_venta: unidad
         })
       });
       if (manejarRespuestaAuth(res)) return;
@@ -1866,6 +1979,43 @@
   // PROVEEDORES / COMPRAR MERCANCÍA (RAÍZ PROVEEDORES — Fase 4)
   // ═══════════════════════════════════════════════════════════
   let proveedoresCache = [];
+  let productoVinculoActual = null;
+
+  async function prepararSelectVinculo(notaActual) {
+    const selProv = document.getElementById('vinculoProveedorSelect');
+    const selProd = document.getElementById('vinculoProductoSelect');
+    selProd.style.display = 'none';
+    selProd.innerHTML = '<option value="">Selecciona el producto del distribuidor...</option>';
+    if (!proveedoresCache.length) {
+      try {
+        const res = await fetch(`${API}/proveedores`);
+        if (res.ok) proveedoresCache = await res.json();
+      } catch (e) { /* silencioso: el picker igual funciona vacío */ }
+    }
+    const opcionInicial = notaActual
+      ? `Vinculado a: ${notaActual} (elige otro para cambiar, o deja esta para quitar)`
+      : '— Sin distribuidor vinculado —';
+    selProv.innerHTML = `<option value="">${opcionInicial}</option>` +
+      proveedoresCache.map(p => `<option value="${p.slug}">${p.nombre}</option>`).join('');
+    selProv.value = '';
+  }
+
+  async function cargarProductosVinculo() {
+    const slug = document.getElementById('vinculoProveedorSelect').value;
+    const selProd = document.getElementById('vinculoProductoSelect');
+    if (!slug) { selProd.style.display = 'none'; productoVinculoActual = ''; return; }
+    selProd.style.display = 'block';
+    selProd.innerHTML = '<option value="">Cargando...</option>';
+    try {
+      const res = await fetch(`${API}/proveedores/${encodeURIComponent(slug)}/productos`);
+      const data = await res.json();
+      const items = (data.productos || []).filter(p => p.disponible !== false);
+      selProd.innerHTML = '<option value="">Selecciona el producto del distribuidor...</option>' +
+        items.map(p => `<option value="${p.id}">${p.nombre}${p.precio_mayorista != null ? ' — RD$' + Number(p.precio_mayorista).toLocaleString() : ' (precio a confirmar)'}</option>`).join('');
+    } catch (e) {
+      selProd.innerHTML = '<option value="">No se pudo cargar</option>';
+    }
+  }
   let catalogoProveedorActual = [];
   let catalogoProveedorCategorias = [];
   let categoriaProveedorFiltro = 'todas';
@@ -2513,16 +2663,17 @@
     document.querySelectorAll('.sb-item').forEach(i => i.classList.remove('active'));
     if (el) el.classList.add('active');
     cerrarMenuMovil();
-    const titulos = { resumen:'Resumen del negocio', pedidos:'Gestión de pedidos', productos:'Mis productos', promotores:'Mis promotores', anuncios:'Mis anuncios', proveedores:'Comprar mercancía' };
+    const titulos = { resumen:'Resumen del negocio', pedidos:'Gestión de pedidos', productos:'Mis productos', promotores:'Mis promotores', anuncios:'Mis anuncios', proveedores:'Comprar mercancía', reposicion:'Reposición sugerida' };
     document.getElementById('topbarTitle').textContent = titulos[screen] || screen;
     const btnTopbar = document.getElementById('btnTopbar');
     const textosBtnTopbar = { promotores:'+ Invitar promotor', anuncios:'+ Publicar anuncio' };
-    btnTopbar.style.display = (screen === 'proveedores') ? 'none' : 'flex';
+    btnTopbar.style.display = (screen === 'proveedores' || screen === 'reposicion') ? 'none' : 'flex';
     btnTopbar.textContent = textosBtnTopbar[screen] || '+ Agregar producto';
     const btnMasiva = document.getElementById('btnCargaMasiva');
     if (btnMasiva) btnMasiva.style.display = screen === 'productos' ? 'inline-block' : 'none';
     if (screen === 'productos') renderTabla();
     if (screen === 'anuncios') cargarAnuncios();
+    if (screen === 'reposicion') cargarReposicionSugerida();
     if (screen === 'proveedores') {
       volverAProveedores();
       cargarProveedores();
