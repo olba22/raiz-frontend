@@ -951,6 +951,7 @@
     <div id="carritoProvLista"></div>
     <div style="text-align:right;font-family:'Syne',sans-serif;font-weight:800;font-size:1.15rem;margin:1rem 0;">
       Total: <span style="color:var(--verde);">RD$<span id="carritoProvTotalPanel">0</span></span>
+      <div id="carritoProvNotaConfirmar" style="display:none;font-family:'Inter',sans-serif;font-weight:500;font-size:.75rem;color:var(--texto-sec);margin-top:.2rem;">+ productos con precio a confirmar por el proveedor</div>
     </div>
     <button class="btn-guardar" id="btnEnviarPedidoProveedor" onclick="enviarPedidoProveedor()">✓ Enviar pedido al proveedor</button>
   </div>
@@ -1918,8 +1919,8 @@
       const res = await fetch(`${API}/proveedores/${encodeURIComponent(slug)}/productos`);
       if (!res.ok) throw new Error();
       const data = await res.json();
-      // Solo mostramos productos a los que el proveedor ya les puso precio mayorista
-      catalogoProveedorActual = data.productos.filter(p => p.precio_mayorista !== null && p.disponible !== false);
+      // Mostramos todos los productos disponibles, tengan o no precio mayorista puesto
+      catalogoProveedorActual = data.productos.filter(p => p.disponible !== false);
       catalogoProveedorCategorias = [...new Set(catalogoProveedorActual.map(p => p.categoria))];
       categoriaProveedorFiltro = 'todas';
       renderChipsCategoriaProveedor();
@@ -1964,7 +1965,7 @@
       <div class="prov-prod-card">
         <strong>${p.nombre}</strong>
         <span class="pp-cat">${p.categoria}</span>
-        <div class="pp-precio">RD$${Number(p.precio_mayorista).toLocaleString()} <span class="pp-unidad">/ ${p.unidad_venta}</span></div>
+        <div class="pp-precio">${p.precio_mayorista !== null && p.precio_mayorista !== undefined ? `RD$${Number(p.precio_mayorista).toLocaleString()} <span class="pp-unidad">/ ${p.unidad_venta}</span>` : `<span style="color:var(--texto-sec);font-weight:600;">Precio a confirmar</span>`}</div>
         <div class="pp-footer">
           <div class="pp-qty">
             <button onclick="cambiarCantidadPedidoProveedor('${p.id}', -1)">−</button>
@@ -2001,7 +2002,8 @@
       carritoProveedor.push({
         producto_id: id,
         nombre: producto.nombre,
-        precio: Number(producto.precio_mayorista),
+        precio: producto.precio_mayorista !== null && producto.precio_mayorista !== undefined ? Number(producto.precio_mayorista) : 0,
+        precio_confirmar: producto.precio_mayorista === null || producto.precio_mayorista === undefined,
         unidad: producto.unidad_venta,
         cantidad
       });
@@ -2042,20 +2044,22 @@
         <div class="carrito-prov-item">
           <div class="carrito-prov-item-info">
             <strong>${item.nombre}</strong>
-            <span>RD$${item.precio.toLocaleString()} / ${item.unidad}</span>
+            <span>${item.precio_confirmar ? 'Precio a confirmar' : `RD$${item.precio.toLocaleString()} / ${item.unidad}`}</span>
           </div>
           <div class="pp-qty">
             <button onclick="ajustarCantidadCarritoProveedor(${i}, -1)">−</button>
             <span>${item.cantidad}</span>
             <button onclick="ajustarCantidadCarritoProveedor(${i}, 1)">+</button>
           </div>
-          <strong style="min-width:70px;text-align:right;color:var(--verde);">RD$${(item.cantidad * item.precio).toLocaleString()}</strong>
+          <strong style="min-width:70px;text-align:right;color:var(--verde);">${item.precio_confirmar ? 'A confirmar' : `RD$${(item.cantidad * item.precio).toLocaleString()}`}</strong>
           <button class="action-btn del" onclick="quitarDelCarritoProveedor(${i})">🗑️</button>
         </div>
       `).join('');
     }
     const total = carritoProveedor.reduce((s, i) => s + i.precio * i.cantidad, 0);
     document.getElementById('carritoProvTotalPanel').textContent = total.toLocaleString();
+    const notaConfirmar = document.getElementById('carritoProvNotaConfirmar');
+    if (notaConfirmar) notaConfirmar.style.display = carritoProveedor.some(i => i.precio_confirmar) ? 'block' : 'none';
   }
 
   function ajustarCantidadCarritoProveedor(i, delta) {
