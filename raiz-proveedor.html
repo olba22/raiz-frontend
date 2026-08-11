@@ -277,6 +277,7 @@
   <div class="tabs">
     <div class="tab-btn activo" id="tabCatalogo" onclick="cambiarTab('catalogo')">📋 Catálogo y precios</div>
     <div class="tab-btn" id="tabPedidos" onclick="cambiarTab('pedidos')">🛒 Pedidos recibidos<span class="badge-contador" id="contadorPendientes" style="display:none;">0</span></div>
+    <div class="tab-btn" id="tabClientes" onclick="cambiarTab('clientes')">🏪 Mis clientes</div>
   </div>
 
   <div id="vistaCatalogo" style="padding: 16px 16px 0 16px;">
@@ -297,6 +298,10 @@
 
   <div id="vistaPedidos" style="display:none;padding:16px;">
     <div id="listaPedidos"></div>
+  </div>
+
+  <div id="vistaClientes" style="display:none;padding:16px;">
+    <div id="listaClientes"></div>
   </div>
 </div>
 
@@ -580,8 +585,35 @@ let TODOS_LOS_PEDIDOS = [];
 function cambiarTab(tab) {
   document.getElementById('tabCatalogo').classList.toggle('activo', tab === 'catalogo');
   document.getElementById('tabPedidos').classList.toggle('activo', tab === 'pedidos');
+  document.getElementById('tabClientes').classList.toggle('activo', tab === 'clientes');
   document.getElementById('vistaCatalogo').style.display = tab === 'catalogo' ? 'block' : 'none';
   document.getElementById('vistaPedidos').style.display = tab === 'pedidos' ? 'block' : 'none';
+  document.getElementById('vistaClientes').style.display = tab === 'clientes' ? 'block' : 'none';
+  if (tab === 'clientes') renderizarClientes();
+}
+
+function renderizarClientes() {
+  const cont = document.getElementById('listaClientes');
+  const compras = TODOS_LOS_PEDIDOS.filter(p => p.estado_actual !== 'rechazado');
+  if (!compras.length) {
+    cont.innerHTML = '<div class="vacio">Todavía ningún comerciante te ha comprado 🌱</div>';
+    return;
+  }
+  const porCliente = {};
+  compras.forEach(p => {
+    const key = p.comerciante_slug || p.comerciante_nombre;
+    if (!porCliente[key]) porCliente[key] = { nombre: p.comerciante_nombre, whatsapp: p.comerciante_whatsapp, pedidos: 0, total: 0 };
+    porCliente[key].pedidos += 1;
+    porCliente[key].total += Number(p.total);
+  });
+  const lista = Object.values(porCliente).sort((a, b) => b.total - a.total);
+  cont.innerHTML = lista.map(c => `
+    <div class="pedido-card">
+      <div class="pedido-comerciante">🏪 ${c.nombre}${c.whatsapp ? ' · ' + c.whatsapp : ''}</div>
+      <div class="pedido-items">${c.pedidos} pedido${c.pedidos === 1 ? '' : 's'}</div>
+      <div class="pedido-total">Total comprado: RD$${c.total.toLocaleString()}</div>
+    </div>
+  `).join('');
 }
 
 async function cargarPedidosProveedor() {
