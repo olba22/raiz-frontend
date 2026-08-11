@@ -138,6 +138,10 @@
       if (data.negocio_slug) {
         localStorage.setItem('raiz_negocio_slug', data.negocio_slug);
         window.location.href = `/raiz-dashboard.html?slug=${data.negocio_slug}`;
+      } else if (data.proveedor_slug) {
+        localStorage.setItem('raiz_proveedor_token', data.token);
+        localStorage.setItem('raiz_proveedor_slug', data.proveedor_slug);
+        window.location.href = '/raiz-proveedor.html';
       } else {
         window.location.href = '/raiz.html';
       }
