@@ -471,6 +471,7 @@
     <div class="sb-item" id="sbItemProductos" onclick="irA('productos',this)"><span class="sb-icon">📦</span> Productos</div>
     <div class="sb-item" onclick="irA('proveedores',this)"><span class="sb-icon">🏭</span> Comprar mercancía</div>
     <div class="sb-item" id="sbItemReposicion" onclick="irA('reposicion',this)"><span class="sb-icon">🔁</span> Reposición sugerida <span id="badgeReposicion" style="display:none;background:var(--naranja);color:#fff;border-radius:99px;font-size:.7rem;font-weight:700;padding:.1rem .45rem;margin-left:.3rem;">0</span></div>
+    <div class="sb-item" onclick="irA('miscompras',this)"><span class="sb-icon">🧾</span> Mis compras</div>
     <div class="sb-label">Negocio</div>
     <div class="sb-item" onclick="irAPlanes()"><span class="sb-icon">⭐</span> Planes</div>
     <div class="sb-item" onclick="irA('promotores',this)"><span class="sb-icon">📣</span> Promotores</div>
@@ -545,6 +546,16 @@
           <div class="kpi-label">Pedidos hoy <span>🛒</span></div>
           <div class="kpi-val">0</div>
           <div class="kpi-delta" style="color:var(--texto-sec);">Aún sin pedidos</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">Ganancia estimada <span>📈</span></div>
+          <div class="kpi-val" id="kpiGanancia">RD$0</div>
+          <div class="kpi-delta" style="color:var(--texto-sec);">Solo productos con costo conocido</div>
+        </div>
+        <div class="kpi-card" style="cursor:pointer;" onclick="irA('reposicion',document.getElementById('sbItemReposicion'))">
+          <div class="kpi-label">Pedidos a proveedores <span>🏭</span></div>
+          <div class="kpi-val" id="kpiPedidosProveedor">0</div>
+          <div class="kpi-delta" style="color:var(--texto-sec);">En curso ahora mismo</div>
         </div>
         <div class="kpi-card">
           <div class="kpi-label">Productos activos <span>📦</span></div>
@@ -641,6 +652,15 @@
       <div id="reposicionVacio" style="text-align:center;padding:3rem 1rem;color:var(--texto-sec);display:none;">
         <div style="font-size:2rem;margin-bottom:.5rem;">✅</div>
         <p>No hay reposiciones sugeridas por ahora. Van a aparecer solas cuando un producto vinculado a un distribuidor llegue a su stock mínimo.</p>
+      </div>
+    </div>
+
+    <!-- ══ MIS COMPRAS ══ -->
+    <div class="screen" id="screenMiscompras">
+      <div id="miscomprasLista"></div>
+      <div id="miscomprasVacio" style="text-align:center;padding:3rem 1rem;color:var(--texto-sec);display:none;">
+        <div style="font-size:2rem;margin-bottom:.5rem;">🧾</div>
+        <p>Todavía no le has comprado a ningún distribuidor.</p>
       </div>
     </div>
 
@@ -953,7 +973,7 @@
     <button class="modal-close" onclick="toggleAsistente()">✕</button>
   </div>
   <div class="asistente-mensajes" id="asistenteMensajes">
-    <div class="asistente-msg asistente-msg-bot">¡Hola! Soy tu asistente. Puedo agregar productos, cambiar precios o stock, y contarte cómo van tus ventas de hoy. ¿Qué necesitas?</div>
+    <div class="asistente-msg asistente-msg-bot">¡Hola! Soy tu asistente. Puedo facturar una venta, agregar productos, cambiar precios o stock, y contarte cómo van tus ventas de hoy. ¿Qué necesitas?</div>
   </div>
   <div class="asistente-input-row">
     <input class="asistente-input" id="asistenteInput" type="text" placeholder="Escribe aquí..." autocomplete="off" />
@@ -1061,9 +1081,22 @@
       // Cargar los pedidos reales de este negocio
       await cargarPedidos(slug);
       await actualizarBadgeReposicion(slug);
+      await cargarResumenHoy(slug);
     } catch (e) {
       console.log('No se pudo cargar el negocio real, se mantiene el estado por defecto.', e);
     }
+  }
+
+  async function cargarResumenHoy(slug) {
+    try {
+      const res = await fetch(`${API}/negocios/${encodeURIComponent(slug)}/resumen-hoy`);
+      if (!res.ok) return;
+      const data = await res.json();
+      const kpiGanancia = document.getElementById('kpiGanancia');
+      const kpiPedidosProveedor = document.getElementById('kpiPedidosProveedor');
+      if (kpiGanancia) kpiGanancia.textContent = `RD$${Number(data.ganancia_estimada_hoy).toLocaleString()}`;
+      if (kpiPedidosProveedor) kpiPedidosProveedor.textContent = data.pedidos_proveedores_activos;
+    } catch (e) { /* silencioso: el resto del dashboard igual funciona */ }
   }
 
   let pedidosReales = [];
@@ -1071,7 +1104,7 @@
 
   async function actualizarBadgeReposicion(slug) {
     try {
-      const res = await fetch(`${API}/negocios/${encodeURIComponent(slug)}/pedidos-proveedor`);
+      const res = await fetch(`${API}/negocios/${encodeURIComponent(slug)}/pedidos-proveedor`, { headers: authHeaders() });
       if (!res.ok) return;
       const data = await res.json();
       borradoresReposicion = data.filter(p => p.estado_actual === 'borrador');
@@ -1147,6 +1180,78 @@
     } catch (e) {
       toast('⚠️ No se pudo descartar', 'error');
     }
+  }
+
+  const ETIQUETAS_ESTADO_COMPRA = {
+    pendiente: '🟡 Pendiente', confirmado: '🔵 Confirmado', preparando: '🟠 Preparando',
+    en_despacho: '🚚 En despacho', entregado: '🟢 Entregado', rechazado: '🔴 Rechazado'
+  };
+
+  async function cargarMisCompras() {
+    const cont = document.getElementById('miscomprasLista');
+    const vacio = document.getElementById('miscomprasVacio');
+    cont.innerHTML = '<p style="color:var(--texto-sec);font-size:.85rem;">Cargando...</p>';
+    try {
+      const res = await fetch(`${API}/negocios/${encodeURIComponent(NEGOCIO_SLUG)}/pedidos-proveedor`, { headers: authHeaders() });
+      if (!res.ok) throw new Error();
+      const data = await res.json();
+      const compras = data.filter(p => p.estado_actual !== 'borrador');
+      if (!compras.length) { cont.innerHTML = ''; vacio.style.display = 'block'; return; }
+      vacio.style.display = 'none';
+      cont.innerHTML = compras.map(p => {
+        const fecha = new Date(p.created_at).toLocaleString('es-DO', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+        const etiqueta = ETIQUETAS_ESTADO_COMPRA[p.estado_actual] || p.estado_actual;
+        return `
+          <div class="card" style="padding:1.25rem;margin-bottom:1rem;">
+            <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:.5rem;">
+              <div>
+                <strong>🏭 ${p.proveedor_nombre}</strong><br>
+                <span style="color:var(--texto-sec);font-size:.78rem;">${p.codigo} · ${fecha}</span>
+              </div>
+              <span class="estado-badge">${etiqueta}</span>
+            </div>
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-top:.75rem;">
+              <strong>RD$${Number(p.total).toLocaleString()}</strong>
+              <button class="btn-cancel" onclick='verFacturaCompra(${JSON.stringify(p).replace(/'/g, "&apos;")})'>🧾 Ver factura</button>
+            </div>
+          </div>
+        `;
+      }).join('');
+    } catch (e) {
+      cont.innerHTML = '<p style="color:var(--texto-sec);font-size:.85rem;">No se pudo cargar tu historial de compras.</p>';
+    }
+  }
+
+  function verFacturaCompra(p) {
+    const fecha = new Date(p.created_at).toLocaleString('es-DO', { day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+    const filas = (p.items || []).map(it => `
+      <tr>
+        <td style="padding:.5rem;border-bottom:1px solid #eee;">${it.nombre_producto}</td>
+        <td style="padding:.5rem;border-bottom:1px solid #eee;text-align:center;">${it.cantidad}</td>
+        <td style="padding:.5rem;border-bottom:1px solid #eee;text-align:right;">${it.precio_unitario > 0 ? 'RD$' + Number(it.precio_unitario).toLocaleString() : 'A confirmar'}</td>
+        <td style="padding:.5rem;border-bottom:1px solid #eee;text-align:right;">RD$${Number(it.subtotal).toLocaleString()}</td>
+      </tr>
+    `).join('');
+    const html = `
+      <html><head><title>${p.codigo}</title>
+      <style>body{font-family:Arial,sans-serif;padding:2rem;color:#222;} h1{font-size:1.3rem;margin-bottom:.2rem;} table{width:100%;border-collapse:collapse;margin-top:1.5rem;} th{text-align:left;padding:.5rem;border-bottom:2px solid #222;} .total{font-size:1.2rem;font-weight:bold;text-align:right;margin-top:1rem;}</style>
+      </head><body>
+        <h1>RAÍZ · Factura de compra</h1>
+        <p><strong>Pedido:</strong> ${p.codigo}<br>
+           <strong>Distribuidor:</strong> ${p.proveedor_nombre}<br>
+           <strong>Fecha:</strong> ${fecha}<br>
+           <strong>Estado:</strong> ${ETIQUETAS_ESTADO_COMPRA[p.estado_actual] || p.estado_actual}</p>
+        <table>
+          <thead><tr><th>Producto</th><th style="text-align:center;">Cant.</th><th style="text-align:right;">Precio</th><th style="text-align:right;">Subtotal</th></tr></thead>
+          <tbody>${filas}</tbody>
+        </table>
+        <div class="total">Total: RD$${Number(p.total).toLocaleString()}</div>
+        <script>window.onload = () => window.print();</script>
+      </body></html>
+    `;
+    const ventana = window.open('', '_blank');
+    ventana.document.write(html);
+    ventana.document.close();
   }
 
   async function cargarPedidos(slug) {
@@ -2663,17 +2768,18 @@
     document.querySelectorAll('.sb-item').forEach(i => i.classList.remove('active'));
     if (el) el.classList.add('active');
     cerrarMenuMovil();
-    const titulos = { resumen:'Resumen del negocio', pedidos:'Gestión de pedidos', productos:'Mis productos', promotores:'Mis promotores', anuncios:'Mis anuncios', proveedores:'Comprar mercancía', reposicion:'Reposición sugerida' };
+    const titulos = { resumen:'Resumen del negocio', pedidos:'Gestión de pedidos', productos:'Mis productos', promotores:'Mis promotores', anuncios:'Mis anuncios', proveedores:'Comprar mercancía', reposicion:'Reposición sugerida', miscompras:'Mis compras' };
     document.getElementById('topbarTitle').textContent = titulos[screen] || screen;
     const btnTopbar = document.getElementById('btnTopbar');
     const textosBtnTopbar = { promotores:'+ Invitar promotor', anuncios:'+ Publicar anuncio' };
-    btnTopbar.style.display = (screen === 'proveedores' || screen === 'reposicion') ? 'none' : 'flex';
+    btnTopbar.style.display = (screen === 'proveedores' || screen === 'reposicion' || screen === 'miscompras') ? 'none' : 'flex';
     btnTopbar.textContent = textosBtnTopbar[screen] || '+ Agregar producto';
     const btnMasiva = document.getElementById('btnCargaMasiva');
     if (btnMasiva) btnMasiva.style.display = screen === 'productos' ? 'inline-block' : 'none';
     if (screen === 'productos') renderTabla();
     if (screen === 'anuncios') cargarAnuncios();
     if (screen === 'reposicion') cargarReposicionSugerida();
+    if (screen === 'miscompras') cargarMisCompras();
     if (screen === 'proveedores') {
       volverAProveedores();
       cargarProveedores();
