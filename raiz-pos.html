@@ -82,6 +82,65 @@
     .voz-btn-reintentar { background: var(--gris-card); color: var(--blanco); }
     .voz-btn-confirmar { background: var(--verde); color: var(--negro); border-color: var(--verde); }
 
+    /* ── DICTADO / FACTURACIÓN POR VOZ COMO FLUJO PRINCIPAL ── */
+    .pos-dictado-wrap {
+      display: flex; align-items: center; gap: .9rem; padding: 1rem 1rem .6rem;
+      background: var(--negro); flex-shrink: 0;
+    }
+    .pos-dictado-mic {
+      width: 62px; height: 62px; border-radius: 50%; border: none; flex-shrink: 0;
+      background: var(--verde); color: var(--negro); font-size: 1.7rem; cursor: pointer;
+      display: flex; align-items: center; justify-content: center; box-shadow: 0 0 0 4px rgba(29,185,84,.15);
+      transition: all .15s;
+    }
+    .pos-dictado-mic:hover { transform: scale(1.05); }
+    .pos-dictado-mic.escuchando { background: var(--rojo); box-shadow: 0 0 0 4px rgba(255,68,68,.18); animation: pos-pulso 1s infinite; }
+    .pos-dictado-textos { flex: 1; }
+    .pos-dictado-titulo { font-family: 'Syne', sans-serif; font-weight: 800; font-size: .98rem; line-height: 1.25; }
+    .pos-dictado-sub { font-size: .76rem; color: var(--texto-sec); margin-top: .15rem; }
+    .pos-dictado-textarea-wrap { display: flex; gap: .5rem; padding: 0 1rem .75rem; background: var(--negro); flex-shrink: 0; }
+    .pos-dictado-textarea {
+      flex: 1; resize: none; background: var(--gris-card); border: 1px solid var(--gris-brd);
+      border-radius: 12px; padding: .7rem .9rem; color: var(--blanco); font-size: .88rem; font-family: inherit;
+    }
+    .pos-dictado-textarea:focus { outline: none; border-color: var(--verde); }
+    .pos-dictado-enviar {
+      flex-shrink: 0; padding: 0 1.1rem; border-radius: 12px; border: 1px solid var(--verde);
+      background: var(--verde); color: var(--negro); font-weight: 700; font-size: .85rem; cursor: pointer; font-family: inherit;
+    }
+    .pos-buscar-toggle {
+      padding: .6rem 1rem 0; font-size: .74rem; color: var(--texto-sec); font-weight: 600;
+      text-transform: uppercase; letter-spacing: .05em; flex-shrink: 0; background: var(--negro);
+    }
+
+    /* ── MODAL ENTREGA: LOCAL O DELIVERY ── */
+    .entrega-overlay {
+      position: fixed; inset: 0; background: rgba(0,0,0,.78); z-index: 700;
+      display: flex; align-items: center; justify-content: center; padding: 1.25rem;
+    }
+    .entrega-modal {
+      background: var(--gris-osc); border: 1px solid var(--gris-brd); border-radius: 16px;
+      padding: 1.25rem; max-width: 420px; width: 100%;
+      display: flex; flex-direction: column; gap: .9rem;
+    }
+    .entrega-botones { display: flex; gap: .6rem; flex-wrap: wrap; }
+    .entrega-botones button {
+      flex: 1; min-width: 130px; padding: 1rem .6rem; border-radius: 12px; border: 1px solid var(--gris-brd);
+      background: var(--gris-card); color: var(--blanco); font-weight: 700; font-size: .88rem; cursor: pointer;
+      font-family: inherit; transition: border-color .15s;
+    }
+    .entrega-botones button:hover { border-color: var(--verde); }
+    .entrega-input {
+      width: 100%; background: var(--gris-card); border: 1px solid var(--gris-brd);
+      border-radius: 10px; padding: .7rem .9rem; color: var(--blanco); font-size: .86rem;
+      font-family: inherit; margin-bottom: .55rem;
+    }
+    .entrega-input:focus { outline: none; border-color: var(--verde); }
+    .entrega-aviso {
+      font-size: .78rem; padding: .6rem .75rem; border-radius: 10px; margin-bottom: .7rem;
+      background: var(--gris-card); border: 1px solid var(--gris-brd); color: var(--texto-sec);
+    }
+
     /* ── CATEGORIAS ── */
     .pos-cats {
       display: flex; gap: .5rem; padding: .85rem 1rem; overflow-x: auto;
@@ -215,9 +274,21 @@
     </div>
   </div>
 
+  <div class="pos-dictado-wrap">
+    <button class="pos-dictado-mic" id="posDictadoMic" onclick="posToggleVoz()" title="Facturar por voz">🎤</button>
+    <div class="pos-dictado-textos">
+      <div class="pos-dictado-titulo">Toca y di todo lo que despachaste</div>
+      <div class="pos-dictado-sub">Ej: "2 fundas de agua, 1 libra de arroz y una Coca-Cola"</div>
+    </div>
+  </div>
+  <div class="pos-dictado-textarea-wrap">
+    <textarea class="pos-dictado-textarea" id="posDictadoTexto" rows="1" placeholder="...o escribe aquí lo que despachaste" onkeydown="if(event.key==='Enter' && !event.shiftKey){event.preventDefault();posFacturarDesdeTexto();}"></textarea>
+    <button class="pos-dictado-enviar" onclick="posFacturarDesdeTexto()">Facturar</button>
+  </div>
+
+  <div class="pos-buscar-toggle">🔍 O busca un producto manualmente</div>
   <div class="pos-buscar-wrap">
-    <input class="pos-buscar" id="posBuscar" type="text" placeholder="🔍 Buscar producto..." oninput="posFiltrar()" autocomplete="off" />
-    <button class="pos-mic-btn" id="posMicBtn" onclick="posToggleVoz()" title="Facturar por voz">🎤</button>
+    <input class="pos-buscar" id="posBuscar" type="text" placeholder="Buscar producto..." oninput="posFiltrar()" autocomplete="off" />
   </div>
 
   <div class="pos-cats" id="posCats"></div>
@@ -283,6 +354,28 @@
     </div>
   </div>
 
+  <!-- MODAL: LOCAL O DELIVERY -->
+  <div class="entrega-overlay" id="entregaOverlay" style="display:none;">
+    <div class="entrega-modal">
+      <div class="voz-modal-header">📦 ¿Cómo se entrega esta venta?</div>
+      <div class="entrega-botones" id="entregaBotonesTipo">
+        <button onclick="posSeleccionarEntrega('local')">🏠 En el local</button>
+        <button onclick="posSeleccionarEntrega('delivery')">🛵 Para llevar</button>
+      </div>
+      <div id="entregaFormDelivery" style="display:none;">
+        <div class="entrega-aviso" id="entregaAvisoTipo"></div>
+        <input class="entrega-input" id="entregaNombre" placeholder="Nombre del cliente" />
+        <input class="entrega-input" id="entregaTelefono" placeholder="Teléfono / WhatsApp" />
+        <input class="entrega-input" id="entregaDireccion" placeholder="Dirección de entrega" />
+        <div class="voz-modal-botones">
+          <button class="voz-btn-cancelar" onclick="cerrarModalEntrega()">✕ Cancelar</button>
+          <button class="voz-btn-confirmar" onclick="posEnviarVentaDelivery()">✓ Confirmar entrega</button>
+        </div>
+      </div>
+      <button class="voz-btn-cancelar" id="entregaBtnCancelarSolo" style="padding:.7rem;border-radius:10px;font-weight:700;font-size:.84rem;font-family:inherit;cursor:pointer;" onclick="cerrarModalEntrega()">✕ Cancelar</button>
+    </div>
+  </div>
+
   <div class="toast" id="toast"></div>
 
   <script>
@@ -290,6 +383,7 @@
     let NEGOCIO_ID = null;
     let NEGOCIO_SLUG = null;
     let NEGOCIO_TIPO = 'general';
+    let NEGOCIO_TIENE_DELIVERY = false;
     let productos = [];
     let categoriaActiva = 'todas';
     let carrito = []; // { idx, nombre, emoji, precio, cantidad, unidad, personalizado? }
@@ -343,6 +437,7 @@
         NEGOCIO_ID = negocio.id;
         NEGOCIO_SLUG = negocio.slug;
         NEGOCIO_TIPO = negocio.tipo_negocio || 'general';
+        NEGOCIO_TIENE_DELIVERY = negocio.tiene_delivery === true;
         document.getElementById('posSubtitulo').textContent = negocio.nombre || 'Mi negocio';
 
         productos = (data.productos || [])
@@ -592,9 +687,56 @@
       document.getElementById('posMobileBar').classList.toggle('open');
     }
 
-    async function posConfirmarVenta() {
+    function posConfirmarVenta() {
       if (!carrito.length) { toast('⚠️ Agrega al menos un producto', 'error'); return; }
+      abrirModalEntrega();
+    }
 
+    // ══════════════ LOCAL O DELIVERY ══════════════
+    function abrirModalEntrega() {
+      document.getElementById('entregaBotonesTipo').style.display = 'flex';
+      document.getElementById('entregaBtnCancelarSolo').style.display = 'block';
+      document.getElementById('entregaFormDelivery').style.display = 'none';
+      document.getElementById('entregaNombre').value = '';
+      document.getElementById('entregaTelefono').value = '';
+      document.getElementById('entregaDireccion').value = '';
+      document.getElementById('entregaOverlay').style.display = 'flex';
+    }
+
+    function cerrarModalEntrega() {
+      document.getElementById('entregaOverlay').style.display = 'none';
+    }
+
+    function posSeleccionarEntrega(tipo) {
+      if (tipo === 'local') {
+        cerrarModalEntrega();
+        posEnviarVenta('local');
+        return;
+      }
+      // Delivery: pedir datos del cliente antes de enviar
+      document.getElementById('entregaBotonesTipo').style.display = 'none';
+      document.getElementById('entregaBtnCancelarSolo').style.display = 'none';
+      document.getElementById('entregaFormDelivery').style.display = 'block';
+      const aviso = document.getElementById('entregaAvisoTipo');
+      aviso.textContent = NEGOCIO_TIENE_DELIVERY
+        ? '🟢 Delivery del negocio — sin costo adicional para el cliente.'
+        : '🔵 El negocio no tiene delivery propio: se enviará automáticamente a todos los conductores registrados.';
+      setTimeout(() => document.getElementById('entregaNombre').focus(), 100);
+    }
+
+    function posEnviarVentaDelivery() {
+      const nombre = document.getElementById('entregaNombre').value.trim();
+      const telefono = document.getElementById('entregaTelefono').value.trim();
+      const direccion = document.getElementById('entregaDireccion').value.trim();
+      if (!nombre || !telefono || !direccion) {
+        toast('⚠️ Completa nombre, teléfono y dirección', 'error');
+        return;
+      }
+      cerrarModalEntrega();
+      posEnviarVenta('delivery', { nombre, telefono, direccion });
+    }
+
+    async function posEnviarVenta(tipoEntrega, datosCliente) {
       const items = carrito.map(item => {
         const p = productos.find(x => x.idx === item.idx);
         return {
@@ -605,6 +747,30 @@
         };
       });
 
+      let body;
+      if (tipoEntrega === 'delivery') {
+        body = {
+          negocio_id: NEGOCIO_ID,
+          items,
+          costo_delivery: NEGOCIO_TIENE_DELIVERY ? 0 : 100,
+          canal: 'delivery',
+          cliente_nombre: datosCliente.nombre,
+          cliente_telefono: datosCliente.telefono,
+          cliente_direccion: datosCliente.direccion,
+          notas: NEGOCIO_TIENE_DELIVERY ? 'Delivery propio del negocio (facturado en mostrador)' : 'Delivery vía red de conductores RAIZ (facturado en mostrador)'
+        };
+      } else {
+        body = {
+          negocio_id: NEGOCIO_ID,
+          items,
+          costo_delivery: 0,
+          canal: 'local',
+          cliente_nombre: 'Cliente de mostrador',
+          cliente_direccion: 'Venta en mostrador',
+          notas: 'Venta facturada en mostrador (POS)'
+        };
+      }
+
       const btnD = document.getElementById('posBtnConfirmarDesktop');
       const btnM = document.getElementById('posBtnConfirmarMobile');
       [btnD, btnM].forEach(b => { b.disabled = true; b.textContent = 'Enviando...'; });
@@ -613,15 +779,7 @@
         const res = await fetch(`${API}/pedidos`, {
           method: 'POST',
           headers: authHeaders(),
-          body: JSON.stringify({
-            negocio_id: NEGOCIO_ID,
-            items,
-            costo_delivery: 0,
-            canal: 'local',
-            cliente_nombre: 'Cliente de mostrador',
-            cliente_direccion: 'Venta en mostrador',
-            notas: 'Venta facturada en mostrador (POS)'
-          })
+          body: JSON.stringify(body)
         });
         if (manejarRespuestaAuth(res)) return;
 
@@ -635,7 +793,7 @@
           return;
         }
 
-        toast(`✅ Venta facturada — ${data.codigo}`, 'success');
+        toast(tipoEntrega === 'delivery' ? `✅ Venta facturada y enviada a delivery — ${data.codigo}` : `✅ Venta facturada — ${data.codigo}`, 'success');
         carrito.forEach(item => {
           const p = productos.find(x => x.idx === item.idx);
           if (p && p.id) guardarProductoReciente(p.id);
@@ -763,11 +921,11 @@
       reconocimientoVoz.interimResults = false;
       reconocimientoVoz.maxAlternatives = 1;
 
-      const btn = document.getElementById('posMicBtn');
+      const btn = document.getElementById('posDictadoMic');
       escuchandoVoz = true;
       btn.classList.add('escuchando');
       btn.textContent = '🔴';
-      toast('🎙️ Escuchando... di los productos', '');
+      toast('🎙️ Escuchando... di todo lo que despachaste', '');
 
       reconocimientoVoz.onresult = (evento) => {
         const texto = evento.results[0][0].transcript;
@@ -782,6 +940,16 @@
         btn.textContent = '🎤';
       };
       reconocimientoVoz.start();
+    }
+
+    // Facturación por texto: el colmadero escribe todo lo que despachó
+    // y se procesa con el mismo motor que usa la facturación por voz.
+    function posFacturarDesdeTexto() {
+      const campo = document.getElementById('posDictadoTexto');
+      const texto = (campo.value || '').trim();
+      if (!texto) { toast('⚠️ Escribe lo que despachaste primero', 'error'); return; }
+      mostrarConfirmacionVoz(texto);
+      campo.value = '';
     }
 
     function mostrarConfirmacionVoz(textoOriginal) {
