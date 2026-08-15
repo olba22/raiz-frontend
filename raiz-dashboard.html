@@ -164,7 +164,7 @@
     }
     .filter-btn:hover, .filter-btn.active { border-color: var(--verde); color: var(--verde); }
 
-    .productos-table { width: 100%; border-collapse: collapse; }
+    .productos-table { width: 100%; border-collapse: collapse; min-width: 620px; }
     .productos-table th {
       text-align: left; font-size: .72rem; font-weight: 700;
       letter-spacing: .06em; text-transform: uppercase;
@@ -243,6 +243,7 @@
     .input::placeholder { color: var(--texto-sec); }
     textarea.input { resize: vertical; min-height: 80px; }
     .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+    .grid4 { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; }
     .select-wrap { position: relative; }
     .select-wrap select {
       width: 100%; appearance: none; background: var(--negro);
@@ -416,6 +417,7 @@
     .carrito-prov-item-info span { font-size: .75rem; color: var(--texto-sec); }
 
     /* RESPONSIVE */
+    html, body { max-width: 100%; overflow-x: hidden; }
     @media (max-width: 1100px) {
       .kpi-grid { grid-template-columns: repeat(2,1fr); }
       .dash-grid { grid-template-columns: 1fr; }
@@ -432,10 +434,19 @@
       .mobile-topbar { display: flex; }
       .mobile-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.5); z-index: 150; }
       .mobile-overlay.show { display: block; }
+      .content { padding: 1rem; }
+      .topbar { padding: .75rem 1rem; }
+      .pedidos-kanban { grid-template-columns: 1fr; }
+      .kpi-grid { grid-template-columns: repeat(2,1fr); gap: .6rem; }
+      .kpi-card { padding: 1rem .85rem; }
+      .grid4 { grid-template-columns: 1fr 1fr; gap: .5rem; }
+      .col-cat, .col-vendidos { display: none; }
+      .productos-table { min-width: 480px; }
     }
     @media (max-width: 480px) {
       .asistente-panel { width: calc(100vw - 2rem); right: 1rem; bottom: 5rem; }
       .asistente-fab { right: 1rem; bottom: 1rem; }
+      .kpi-grid { grid-template-columns: 1fr; }
     }
     .mobile-topbar {
       display: none; align-items: center; gap: .9rem;
@@ -608,15 +619,15 @@
         <button class="filter-btn" id="btnFiltroStockBajo" style="border-color:var(--naranja);color:var(--naranja);" onclick="filtrarCat('stock_bajo',this)">⚠️ Stock bajo</button>
       </div>
 
-      <div class="card">
+      <div class="card" style="overflow-x:auto;">
         <table class="productos-table" id="tablaProductos">
           <thead>
             <tr>
               <th>Producto</th>
-              <th>Categoría</th>
+              <th class="col-cat">Categoría</th>
               <th>Precio</th>
               <th>Stock</th>
-              <th>Vendidos</th>
+              <th class="col-vendidos">Vendidos</th>
               <th>Disponible</th>
               <th>Acciones</th>
             </tr>
@@ -1416,10 +1427,10 @@
     tbody.innerHTML = lista.map((p, i) => `
       <tr>
         <td><div class="prod-td-name"><div class="prod-td-emoji">${p.emoji}</div><div><strong>${p.nombre}</strong><span>${p.desc}</span></div></div></td>
-        <td>${catLabels[p.cat] || p.cat}</td>
+        <td class="col-cat">${catLabels[p.cat] || p.cat}</td>
         <td class="precio-td">RD$ ${p.precio.toLocaleString()}</td>
         <td>${p.stock === null || p.stock === undefined ? '<span style="color:var(--texto-sec);">—</span>' : (p.stock <= umbralDe(p) ? `<span style="color:var(--naranja);font-weight:700;">${p.stock} ⚠️</span>` : p.stock)}</td>
-        <td>${p.vendidos}</td>
+        <td class="col-vendidos">${p.vendidos}</td>
         <td><div class="disponible-toggle-sm ${p.activo?'on':''}" onclick="toggleActivo(${i})"></div></td>
         <td>
           <div class="row-actions">
@@ -1919,7 +1930,7 @@
     cont.innerHTML = masivaItemsPreview.map((item, i) => `
       <div style="border:1px solid var(--gris-brd);border-radius:10px;padding:.7rem;">
         <input class="input" style="margin-bottom:.5rem;" value="${item.nombre}" onchange="masivaItemsPreview[${i}].nombre=this.value" />
-        <div class="grid2" style="grid-template-columns:1fr 1fr 1fr 1fr;gap:.5rem;">
+        <div class="grid4" style="gap:.5rem;">
           <div>
             <label style="font-size:.72rem;color:var(--texto-sec);">Cantidad</label>
             <input class="input" type="number" step="0.01" value="${item.cantidad}" onchange="masivaItemsPreview[${i}].cantidad=parseFloat(this.value)||1" />
