@@ -321,7 +321,7 @@
     .kanban-monto { font-family: 'Syne', sans-serif; font-weight: 700; font-size: .9rem; color: var(--verde); }
     .kanban-time { font-size: .7rem; color: var(--texto-sec); }
 
-    /* ── ASISTENTE DE IA (chat flotante) ── */
+    /* ── ASISTENTE DE IA / CENTRO DE CONTROL ── */
     .asistente-fab {
       position: fixed; bottom: 1.5rem; right: 1.5rem; z-index: 300;
       width: 58px; height: 58px; border-radius: 50%;
@@ -329,33 +329,147 @@
       font-size: 1.5rem; cursor: pointer; box-shadow: 0 4px 16px rgba(29,185,84,.4);
       display: flex; align-items: center; justify-content: center; transition: transform .15s;
     }
-    .asistente-fab:hover { transform: scale(1.06); }
+    .asistente-fab:hover, .asistente-fab:focus-visible { transform: scale(1.06); }
     .asistente-panel {
       position: fixed; bottom: 5.5rem; right: 1.5rem; z-index: 300;
-      width: 360px; max-width: calc(100vw - 2rem); height: 480px; max-height: 70vh;
+      width: 380px; max-width: calc(100vw - 2rem); height: 560px; max-height: 75vh;
       background: var(--gris-card); border: 1px solid var(--gris-brd); border-radius: 16px;
       display: none; flex-direction: column; overflow: hidden;
       box-shadow: 0 8px 32px rgba(0,0,0,.5);
     }
     .asistente-panel.open { display: flex; }
-    .asistente-header {
-      padding: .9rem 1.1rem; background: var(--gris-osc); border-bottom: 1px solid var(--gris-brd);
-      display: flex; align-items: center; justify-content: space-between; font-weight: 800; font-family: 'Syne', sans-serif;
+    .asistente-panel.fullscreen {
+      position: fixed; inset: 0; width: 100%; height: 100%;
+      max-width: 100%; max-height: 100%; border-radius: 0; z-index: 500;
+      padding-top: env(safe-area-inset-top); padding-bottom: env(safe-area-inset-bottom);
     }
+    .asistente-panel.fullscreen .asistente-mensajes { max-width: 780px; width: 100%; margin: 0 auto; padding: 1.25rem 1rem; }
+    .asistente-panel.fullscreen .asistente-input-row { max-width: 780px; width: 100%; margin: 0 auto; }
+    .asistente-panel.fullscreen .asistente-msg { font-size: .95rem; }
+
+    /* Encabezado / centro de control */
+    .asistente-header {
+      flex-shrink: 0; background: var(--gris-osc); border-bottom: 1px solid var(--gris-brd);
+    }
+    .asistente-header-top {
+      padding: .8rem 1rem; display: flex; align-items: center; justify-content: space-between; gap: .5rem;
+    }
+    .asistente-header-id { display: flex; align-items: center; gap: .6rem; min-width: 0; }
+    .asistente-header-logo {
+      width: 34px; height: 34px; border-radius: 9px; background: var(--verde); color: var(--negro);
+      display: flex; align-items: center; justify-content: center; font-weight: 800; font-family: 'Syne', sans-serif;
+      flex-shrink: 0; font-size: 1rem;
+    }
+    .asistente-header-nombre { min-width: 0; }
+    .asistente-header-nombre strong {
+      display: block; font-family: 'Syne', sans-serif; font-weight: 800; font-size: .95rem;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .asistente-header-estado { font-size: .72rem; display: flex; align-items: center; gap: .3rem; }
+    .asistente-header-estado .dot { width: 7px; height: 7px; border-radius: 50%; display: inline-block; }
+    .asistente-header-estado.abierto { color: var(--verde); }
+    .asistente-header-estado.abierto .dot { background: var(--verde); box-shadow: 0 0 6px var(--verde); }
+    .asistente-header-estado.cerrado { color: var(--texto-sec); }
+    .asistente-header-estado.cerrado .dot { background: var(--texto-sec); }
+    .asistente-header-btns { display: flex; align-items: center; gap: .2rem; flex-shrink: 0; }
+    .asistente-header-btn {
+      background: none; border: none; color: var(--texto-sec); font-size: 1.05rem;
+      cursor: pointer; padding: .4rem .55rem; border-radius: 8px; line-height: 1;
+    }
+    .asistente-header-btn:hover, .asistente-header-btn:focus-visible { background: rgba(255,255,255,.08); color: var(--blanco); outline: none; }
+    .asistente-header-stats {
+      display: flex; gap: .5rem; padding: 0 1rem .75rem; overflow-x: auto; scrollbar-width: none;
+    }
+    .asistente-header-stats::-webkit-scrollbar { display: none; }
+    .asistente-stat-chip {
+      flex-shrink: 0; background: var(--gris-card); border: 1px solid var(--gris-brd); border-radius: 10px;
+      padding: .4rem .7rem; font-size: .72rem; color: var(--texto-sec); white-space: nowrap;
+    }
+    .asistente-stat-chip strong { color: var(--blanco); font-family: 'Syne', sans-serif; font-size: .8rem; }
+    .asistente-stat-chip.alerta strong { color: var(--naranja); }
+
     .asistente-mensajes { flex: 1; overflow-y: auto; padding: 1rem; display: flex; flex-direction: column; gap: .6rem; }
     .asistente-msg { max-width: 85%; padding: .6rem .85rem; border-radius: 12px; font-size: .85rem; line-height: 1.4; white-space: pre-wrap; }
     .asistente-msg-bot { background: var(--gris-osc); align-self: flex-start; border-bottom-left-radius: 3px; }
     .asistente-msg-user { background: var(--verde); color: var(--negro); align-self: flex-end; border-bottom-right-radius: 3px; }
     .asistente-msg-cargando { background: var(--gris-osc); align-self: flex-start; color: var(--texto-sec); font-style: italic; }
-    .asistente-input-row { display: flex; gap: .5rem; padding: .85rem; border-top: 1px solid var(--gris-brd); }
+    .asistente-msg-sistema { align-self: center; background: none; color: var(--texto-sec); font-size: .76rem; font-style: italic; padding: .2rem; }
+
+    /* Bienvenida / saludo */
+    .asistente-saludo { align-self: stretch; max-width: 100%; font-size: .88rem; line-height: 1.5; padding: .2rem .1rem .3rem; }
+    .asistente-saludo strong { font-family: 'Syne', sans-serif; }
+
+    /* Widget: acciones rápidas */
+    .asistente-widget { align-self: stretch; max-width: 100%; }
+    .asistente-widget-titulo { font-size: .72rem; text-transform: uppercase; letter-spacing: .05em; color: var(--texto-sec); margin: .3rem 0 .5rem; font-weight: 700; }
+    .asistente-quick-grid {
+      display: grid; grid-template-columns: repeat(4, 1fr); gap: .5rem; margin-bottom: 1rem;
+    }
+    .asistente-quick-btn {
+      display: flex; flex-direction: column; align-items: center; gap: .3rem;
+      background: var(--gris-osc); border: 1px solid var(--gris-brd); border-radius: 12px;
+      padding: .7rem .3rem; cursor: pointer; color: var(--blanco); font-family: inherit;
+      font-size: .68rem; text-align: center; line-height: 1.2; min-height: 64px; justify-content: center;
+    }
+    .asistente-quick-btn .ico { font-size: 1.3rem; }
+    .asistente-quick-btn:hover, .asistente-quick-btn:focus-visible { border-color: var(--verde); outline: none; }
+    .asistente-quick-btn:active { transform: scale(.96); }
+
+    /* Widget: tarjetas de resumen operativo */
+    .asistente-summary-grid { display: grid; grid-template-columns: 1fr 1fr; gap: .6rem; margin-bottom: 1rem; }
+    .asistente-summary-card {
+      background: var(--gris-osc); border: 1px solid var(--gris-brd); border-radius: 12px;
+      padding: .75rem .8rem; cursor: pointer; text-align: left; color: var(--blanco); font-family: inherit;
+    }
+    .asistente-summary-card:hover, .asistente-summary-card:focus-visible { border-color: var(--verde); outline: none; }
+    .asistente-summary-card .lbl { font-size: .68rem; color: var(--texto-sec); display: flex; align-items: center; gap: .3rem; margin-bottom: .25rem; }
+    .asistente-summary-card .val { font-family: 'Syne', sans-serif; font-weight: 800; font-size: 1.05rem; }
+
+    /* Tarjeta de confirmación de operación */
+    .asistente-confirm-card {
+      align-self: stretch; max-width: 92%; background: var(--gris-osc); border: 1px solid var(--verde);
+      border-radius: 12px; padding: .85rem; font-size: .85rem;
+    }
+    .asistente-confirm-card .titulo { font-weight: 700; margin-bottom: .4rem; }
+    .asistente-confirm-card .detalle { color: var(--texto-sec); line-height: 1.5; margin-bottom: .7rem; white-space: pre-wrap; }
+    .asistente-confirm-botones { display: flex; gap: .4rem; flex-wrap: wrap; }
+    .asistente-confirm-botones button {
+      flex: 1; min-width: 80px; padding: .5rem .4rem; border-radius: 8px; border: 1px solid var(--gris-brd);
+      background: var(--negro); color: var(--blanco); font-size: .78rem; font-weight: 600; cursor: pointer; font-family: inherit;
+    }
+    .asistente-confirm-botones .btn-confirmar { background: var(--verde); color: var(--negro); border-color: var(--verde); }
+    .asistente-confirm-botones button:active { transform: scale(.97); }
+
+    /* Alertas por prioridad */
+    .asistente-alerta { display: flex; align-items: flex-start; gap: .5rem; padding: .55rem .7rem; border-radius: 10px; font-size: .8rem; margin-bottom: .4rem; border-left: 3px solid; }
+    .asistente-alerta.rojo { background: rgba(255,68,68,.09); border-color: var(--rojo); }
+    .asistente-alerta.naranja { background: rgba(255,159,67,.09); border-color: var(--naranja); }
+    .asistente-alerta.verde { background: rgba(29,185,84,.09); border-color: var(--verde); }
+
+    /* Fila de entrada + botón de voz */
+    .asistente-input-row { display: flex; gap: .5rem; padding: .85rem; border-top: 1px solid var(--gris-brd); flex-shrink: 0; }
     .asistente-input {
       flex: 1; background: var(--negro); border: 1px solid var(--gris-brd); border-radius: 10px;
       padding: .6rem .8rem; color: var(--blanco); font-family: 'Inter', sans-serif; font-size: .85rem; outline: none;
     }
     .asistente-input:focus { border-color: var(--verde); }
-    .asistente-send {
+    .asistente-send, .asistente-mic-btn {
       width: 40px; height: 40px; border-radius: 10px; border: none; background: var(--verde); color: var(--negro);
       font-size: 1.1rem; cursor: pointer; flex-shrink: 0;
+    }
+    .asistente-mic-btn { background: var(--gris-osc); border: 1px solid var(--gris-brd); color: var(--blanco); }
+    .asistente-mic-btn.escuchando { background: var(--rojo); color: #fff; border-color: var(--rojo); animation: pos-pulso 1s infinite; }
+    .asistente-mic-btn:focus-visible, .asistente-send:focus-visible { outline: 2px solid var(--verde); outline-offset: 2px; }
+
+    @media (max-width: 480px) {
+      .asistente-quick-grid { grid-template-columns: repeat(2, 1fr); }
+      .asistente-summary-grid { grid-template-columns: 1fr; }
+      .asistente-header-top { padding: .65rem .75rem; }
+      .asistente-header-stats { padding: 0 .75rem .6rem; }
+    }
+    @keyframes pos-pulso {
+      0%, 100% { box-shadow: 0 0 0 0 rgba(255,68,68,.35); }
+      50% { box-shadow: 0 0 0 6px rgba(255,68,68,0); }
     }
 
     /* ── PROVEEDORES / COMPRAR MERCANCÍA ── */
@@ -479,6 +593,7 @@
   </div>
   <nav class="sb-nav">
     <div class="sb-label">Principal</div>
+    <div class="sb-item" onclick="abrirAsistenteFullscreen()"><span class="sb-icon">🤖</span> Asistente</div>
     <div class="sb-item active" onclick="irA('resumen',this)"><span class="sb-icon">📊</span> Resumen</div>
     <div class="sb-item" onclick="irA('pedidos',this)"><span class="sb-icon">🛒</span> Pedidos</div>
     <div class="sb-item" onclick="irAFacturarRapido()"><span class="sb-icon">🧾</span> Facturar rápido</div>
@@ -979,19 +1094,34 @@
   </div>
 </div>
 
-<!-- ASISTENTE DE IA (chat flotante) -->
-<button class="asistente-fab" id="asistenteFab" onclick="toggleAsistente()" title="Asistente RAIZ">🤖</button>
-<div class="asistente-panel" id="asistentePanel">
+<!-- ASISTENTE DE IA / CENTRO DE CONTROL -->
+<button class="asistente-fab" id="asistenteFab" onclick="toggleAsistente()" title="Asistente RAIZ" aria-label="Abrir el asistente de RAÍZ">🤖</button>
+<div class="asistente-panel" id="asistentePanel" role="dialog" aria-label="Centro de control RAÍZ">
   <div class="asistente-header">
-    <span>🤖 Asistente RAIZ</span>
-    <button class="modal-close" onclick="toggleAsistente()">✕</button>
+    <div class="asistente-header-top">
+      <div class="asistente-header-id">
+        <div class="asistente-header-logo">R.</div>
+        <div class="asistente-header-nombre">
+          <strong id="acNombreNegocio">Mi negocio</strong>
+          <span class="asistente-header-estado abierto" id="acEstadoNegocio"><span class="dot"></span> Abierto</span>
+        </div>
+      </div>
+      <div class="asistente-header-btns">
+        <button class="asistente-header-btn" id="asistenteExpandBtn" onclick="toggleAsistenteFullscreen()" title="Pantalla completa" aria-label="Alternar pantalla completa">⤢</button>
+        <button class="asistente-header-btn" onclick="toggleAsistente()" title="Cerrar" aria-label="Cerrar el asistente">✕</button>
+      </div>
+    </div>
+    <div class="asistente-header-stats" id="acHeaderStats">
+      <div class="asistente-stat-chip">Ventas hoy <strong id="acVentasHoy">RD$0</strong></div>
+      <div class="asistente-stat-chip">Pedidos <strong id="acPedidosPend">0</strong></div>
+      <div class="asistente-stat-chip alerta">Alertas <strong id="acAlertas">0</strong></div>
+    </div>
   </div>
-  <div class="asistente-mensajes" id="asistenteMensajes">
-    <div class="asistente-msg asistente-msg-bot">¡Hola! Soy tu asistente. Puedo facturar una venta, agregar productos, cambiar precios o stock, y contarte cómo van tus ventas de hoy. ¿Qué necesitas?</div>
-  </div>
+  <div class="asistente-mensajes" id="asistenteMensajes" aria-live="polite"></div>
   <div class="asistente-input-row">
-    <input class="asistente-input" id="asistenteInput" type="text" placeholder="Escribe aquí..." autocomplete="off" />
-    <button class="asistente-send" onclick="enviarMensajeAsistente()">➤</button>
+    <button type="button" class="asistente-mic-btn" id="acMicBtn" onclick="toggleVozAsistente()" title="Hablar con el asistente" aria-label="Dictar por voz">🎤</button>
+    <input class="asistente-input" id="asistenteInput" type="text" placeholder="Escribe o dicta aquí..." autocomplete="off" aria-label="Mensaje para el asistente" />
+    <button class="asistente-send" onclick="enviarMensajeAsistente()" aria-label="Enviar mensaje">➤</button>
   </div>
 </div>
 
@@ -2706,15 +2836,172 @@
   }
 
   // ═══════════════════════════════════════════════════════════
-  // ASISTENTE DE IA — chat flotante conectado a /asistente/chat
+  // ASISTENTE DE IA / CENTRO DE CONTROL — conectado a /asistente/chat
   // ═══════════════════════════════════════════════════════════
   let asistenteHistorial = [];
   let asistenteAbierto = false;
+  let asistenteFullscreen = false;
+  let asistenteBienvenidaLista = false;
+  let ALERTAS_STOCK_BAJO = 0;
 
   function toggleAsistente() {
     asistenteAbierto = !asistenteAbierto;
     document.getElementById('asistentePanel').classList.toggle('open', asistenteAbierto);
-    if (asistenteAbierto) setTimeout(() => document.getElementById('asistenteInput').focus(), 100);
+    if (!asistenteAbierto) { toggleAsistenteFullscreen(false); return; }
+    actualizarEncabezadoAsistente();
+    if (!asistenteBienvenidaLista) renderBienvenidaYWidgets();
+    setTimeout(() => document.getElementById('asistenteInput').focus(), 100);
+  }
+
+  function toggleAsistenteFullscreen(forzar) {
+    asistenteFullscreen = typeof forzar === 'boolean' ? forzar : !asistenteFullscreen;
+    document.getElementById('asistentePanel').classList.toggle('fullscreen', asistenteFullscreen);
+    const btn = document.getElementById('asistenteExpandBtn');
+    btn.textContent = asistenteFullscreen ? '⤡' : '⤢';
+    btn.title = asistenteFullscreen ? 'Achicar' : 'Pantalla completa';
+  }
+
+  // Acceso directo desde el menú lateral: abre el asistente ya en pantalla completa,
+  // como centro de control principal del negocio.
+  function abrirAsistenteFullscreen() {
+    if (!asistenteAbierto) toggleAsistente();
+    toggleAsistenteFullscreen(true);
+  }
+
+  // Cerrar con Escape (funciona tanto en pantalla completa como en el panel flotante)
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && asistenteAbierto) toggleAsistente();
+  });
+
+  // Salir del asistente y navegar a otra pantalla del dashboard (usado por las acciones rápidas)
+  function irDesdeAsistente(screen) {
+    if (asistenteAbierto) toggleAsistente();
+    irA(screen);
+  }
+
+  // ── Encabezado del centro de control (nombre, abierto/cerrado, ventas, pedidos, alertas) ──
+  function actualizarEncabezadoAsistente() {
+    const nombreEl = document.getElementById('acNombreNegocio');
+    const nombreNegocio = (document.getElementById('sbNombre') || {}).textContent || 'Mi negocio';
+    if (nombreEl) nombreEl.textContent = nombreNegocio;
+
+    const hora = new Date().getHours();
+    const abierto = hora >= 7 && hora < 21; // heurística simple: horario típico de colmado
+    const estadoEl = document.getElementById('acEstadoNegocio');
+    if (estadoEl) {
+      estadoEl.className = 'asistente-header-estado ' + (abierto ? 'abierto' : 'cerrado');
+      estadoEl.innerHTML = '<span class="dot"></span> ' + (abierto ? 'Abierto' : 'Cerrado');
+    }
+
+    const hoy = new Date().toDateString();
+    const pedidosHoy = (pedidosReales || []).filter(p => new Date(p.created_at).toDateString() === hoy);
+    const ventasHoy = pedidosHoy.reduce((s, p) => s + Number(p.total), 0);
+    const pendientes = (pedidosReales || []).filter(p => p.estado_actual !== 'entregado').length;
+    ALERTAS_STOCK_BAJO = (productos || []).filter(p => p.activo && p.stock !== null && p.stock !== undefined && p.stock <= umbralDe(p)).length;
+    const totalAlertas = ALERTAS_STOCK_BAJO + (typeof ULTIMAS_NO_LEIDAS === 'number' ? ULTIMAS_NO_LEIDAS : 0);
+
+    const elVentas = document.getElementById('acVentasHoy');
+    const elPedidos = document.getElementById('acPedidosPend');
+    const elAlertas = document.getElementById('acAlertas');
+    if (elVentas) elVentas.textContent = `RD$${ventasHoy.toLocaleString()}`;
+    if (elPedidos) elPedidos.textContent = pendientes;
+    if (elAlertas) elAlertas.textContent = totalAlertas;
+  }
+
+  // ── Saludo inteligente + acciones rápidas + tarjetas de resumen (se dibuja una sola vez) ──
+  function renderBienvenidaYWidgets() {
+    asistenteBienvenidaLista = true;
+    const cont = document.getElementById('asistenteMensajes');
+    const hora = new Date().getHours();
+    const saludo = hora < 12 ? 'Buenos días' : (hora < 19 ? 'Buenas tardes' : 'Buenas noches');
+    const pendientes = (pedidosReales || []).filter(p => p.estado_actual !== 'entregado').length;
+
+    let resumenTxt = '';
+    if (pendientes > 0) resumenTxt += `tienes ${pendientes} pedido${pendientes === 1 ? '' : 's'} pendiente${pendientes === 1 ? '' : 's'}`;
+    if (ALERTAS_STOCK_BAJO > 0) resumenTxt += (resumenTxt ? ' y ' : 'tienes ') + `${ALERTAS_STOCK_BAJO} producto${ALERTAS_STOCK_BAJO === 1 ? '' : 's'} con poco inventario`;
+    if (!resumenTxt) resumenTxt = 'todo está tranquilo por ahora';
+
+    const saludoDiv = document.createElement('div');
+    saludoDiv.className = 'asistente-saludo';
+    saludoDiv.innerHTML = `<strong>${saludo}.</strong> Hoy ${resumenTxt}. ¿Qué deseas hacer?`;
+    cont.appendChild(saludoDiv);
+
+    cont.appendChild(construirAccionesRapidas());
+    cont.appendChild(construirResumenOperativo());
+    cont.scrollTop = cont.scrollHeight;
+  }
+
+  // ── Acciones rápidas ──
+  const ACCIONES_RAPIDAS = [
+    { ico: '🧾', label: 'Registrar venta', accion: () => precargarMensaje('Quiero registrar una venta: ') },
+    { ico: '📦', label: 'Agregar mercancía', accion: () => irDesdeAsistente('productos') },
+    { ico: '🛒', label: 'Crear pedido', accion: () => irDesdeAsistente('proveedores') },
+    { ico: '🔍', label: 'Consultar inventario', accion: () => irDesdeAsistente('productos') },
+    { ico: '📊', label: 'Ver ventas', accion: () => irDesdeAsistente('resumen') },
+    { ico: '⚠️', label: 'Revisar alertas', accion: () => { toggleAsistente(); alternarPanelNotif(); } },
+    { ico: '👥', label: 'Administrar personal', accion: () => mensajeAsistenteSimulado('👥 La administración de personal todavía no está disponible en RAÍZ, pero ya está en camino.') },
+    { ico: '🚚', label: 'Solicitar motorista', accion: () => { const slug = NEGOCIO_SLUG || localStorage.getItem('raiz_negocio_slug') || ''; window.open('/raiz-motorista.html?slug=' + encodeURIComponent(slug), '_blank'); } }
+  ];
+
+  function construirAccionesRapidas() {
+    const wrap = document.createElement('div');
+    wrap.className = 'asistente-widget';
+    wrap.innerHTML = '<div class="asistente-widget-titulo">Acciones rápidas</div>';
+    const grid = document.createElement('div');
+    grid.className = 'asistente-quick-grid';
+    ACCIONES_RAPIDAS.forEach(a => {
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'asistente-quick-btn';
+      btn.setAttribute('aria-label', a.label);
+      btn.innerHTML = `<span class="ico">${a.ico}</span><span>${a.label}</span>`;
+      btn.onclick = a.accion;
+      grid.appendChild(btn);
+    });
+    wrap.appendChild(grid);
+    return wrap;
+  }
+
+  // ── Tarjetas de resumen operativo ──
+  function construirResumenOperativo() {
+    const hoy = new Date().toDateString();
+    const pedidosHoy = (pedidosReales || []).filter(p => new Date(p.created_at).toDateString() === hoy);
+    const ventasHoy = pedidosHoy.reduce((s, p) => s + Number(p.total), 0);
+    const pendientes = (pedidosReales || []).filter(p => p.estado_actual !== 'entregado').length;
+    const deliveryActivos = (pedidosReales || []).filter(p => p.canal === 'delivery' && p.estado_actual !== 'entregado').length;
+
+    const tarjetas = [
+      { lbl: '💰 Ventas del día', val: `RD$${ventasHoy.toLocaleString()}`, accion: () => irDesdeAsistente('resumen') },
+      { lbl: '📉 Inventario bajo', val: `${ALERTAS_STOCK_BAJO} producto${ALERTAS_STOCK_BAJO === 1 ? '' : 's'}`, accion: () => irDesdeAsistente('productos') },
+      { lbl: '🛒 Pedidos activos', val: `${pendientes}`, accion: () => irDesdeAsistente('pedidos') },
+      { lbl: '📅 Próximos a vencer', val: 'Próximamente', accion: () => mensajeAsistenteSimulado('📅 El control de fechas de vencimiento todavía no está disponible, pero ya está en el roadmap de RAÍZ.') },
+      { lbl: '🧮 Balance de caja', val: 'Próximamente', accion: () => mensajeAsistenteSimulado('🧮 El cierre de caja detallado (día/semana/mes) todavía no está disponible, pero ya está en camino. Por ahora pregúntame "cuánto vendí hoy".') },
+      { lbl: '🛵 Delivery activo', val: `${deliveryActivos}`, accion: () => irDesdeAsistente('pedidos') }
+    ];
+
+    const wrap = document.createElement('div');
+    wrap.className = 'asistente-widget';
+    wrap.innerHTML = '<div class="asistente-widget-titulo">Resumen operativo</div>';
+    const grid = document.createElement('div');
+    grid.className = 'asistente-summary-grid';
+    tarjetas.forEach(t => {
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'asistente-summary-card';
+      btn.innerHTML = `<div class="lbl">${t.lbl}</div><div class="val">${t.val}</div>`;
+      btn.onclick = t.accion;
+      grid.appendChild(btn);
+    });
+    wrap.appendChild(grid);
+    return wrap;
+  }
+
+  function precargarMensaje(texto) {
+    if (!asistenteAbierto) toggleAsistente();
+    const input = document.getElementById('asistenteInput');
+    input.value = texto;
+    input.focus();
+    input.setSelectionRange(texto.length, texto.length);
   }
 
   function agregarMensajeAsistenteUI(texto, tipo) {
@@ -2727,6 +3014,111 @@
     return div;
   }
 
+  // Mensaje del sistema para funciones simuladas / todavía no conectadas a datos reales
+  function mensajeAsistenteSimulado(texto) {
+    if (!asistenteAbierto) toggleAsistente();
+    agregarMensajeAsistenteUI(texto, 'bot');
+    const cont = document.getElementById('asistenteMensajes');
+    cont.scrollTop = cont.scrollHeight;
+  }
+
+  // ── Tarjeta de confirmación antes de registrar una operación ──
+  function mostrarConfirmacionAsistente(titulo, detalle, onConfirmar, textoBoton) {
+    const cont = document.getElementById('asistenteMensajes');
+    const card = document.createElement('div');
+    card.className = 'asistente-confirm-card';
+    card.innerHTML = `
+      <div class="titulo">${titulo}</div>
+      <div class="detalle">${detalle}</div>
+      <div class="asistente-confirm-botones">
+        <button type="button" class="btn-editar">✏️ Editar</button>
+        <button type="button" class="btn-cancelar">✕ Cancelar</button>
+        <button type="button" class="btn-confirmar">✓ ${textoBoton || 'Confirmar'}</button>
+      </div>
+    `;
+    card.querySelector('.btn-confirmar').onclick = () => {
+      card.remove();
+      onConfirmar();
+    };
+    card.querySelector('.btn-cancelar').onclick = () => {
+      card.remove();
+      const nota = document.createElement('div');
+      nota.className = 'asistente-msg-sistema';
+      nota.textContent = '❌ Operación cancelada';
+      cont.appendChild(nota);
+      cont.scrollTop = cont.scrollHeight;
+    };
+    card.querySelector('.btn-editar').onclick = () => {
+      card.remove();
+      document.getElementById('asistenteInput').focus();
+    };
+    cont.appendChild(card);
+    cont.scrollTop = cont.scrollHeight;
+  }
+
+  // ── Router de comandos locales: navegación y respuestas simuladas que no requieren IA ──
+  // Devuelve true si ya manejó el mensaje (no hace falta llamar al backend)
+  function interpretarComandoLocalAsistente(textoOriginal) {
+    const t = quitarAcentos(textoOriginal.toLowerCase());
+
+    if (/llevame al inventario|abre (el )?inventario|abre (los )?productos|muestrame (el )?inventario/.test(t)) {
+      mensajeAsistenteSimulado('📦 Abriendo tu inventario...');
+      irDesdeAsistente('productos');
+      return true;
+    }
+    if (/abre (los )?pedidos|llevame a (los )?pedidos|muestrame (los )?pedidos/.test(t)) {
+      mensajeAsistenteSimulado('🛒 Abriendo tus pedidos...');
+      irDesdeAsistente('pedidos');
+      return true;
+    }
+    if (/muestrame la caja|abre la caja|ver caja|balance de caja/.test(t)) {
+      mensajeAsistenteSimulado('🧮 El cierre de caja detallado todavía no está disponible, pero ya está en camino. Mientras tanto pregúntame "cuánto vendí hoy".');
+      return true;
+    }
+    if (/proximo(s)? a vencer|vencimiento|producto(s)? vencid/.test(t)) {
+      mensajeAsistenteSimulado('📅 El control de fechas de vencimiento todavía no está disponible, pero ya está en el roadmap de RAÍZ.');
+      return true;
+    }
+    if (/que (productos )?debo comprar|recomendacion(es)? de compra/.test(t)) {
+      mensajeAsistenteSimulado('📦 Esa recomendación inteligente de compras está en camino. Por ahora puedes revisar "Reposición sugerida" en el menú para ver qué te queda bajo.');
+      return true;
+    }
+    if (/solicita(r)? (un )?motorista|pide (un )?motorista|necesito (un )?delivery/.test(t)) {
+      mostrarConfirmacionAsistente('🚚 Solicitar motorista', 'Voy a abrirte el formulario para pedir un motorista o delivery.', () => {
+        const slug = NEGOCIO_SLUG || localStorage.getItem('raiz_negocio_slug') || '';
+        window.open('/raiz-motorista.html?slug=' + encodeURIComponent(slug), '_blank');
+      }, 'Abrir');
+      return true;
+    }
+    if (/registra(r)? un gasto|gaste rd\$?|gasto de rd\$?/.test(t)) {
+      const montoMatch = textoOriginal.match(/(\d+[.,]?\d*)/);
+      const monto = montoMatch ? montoMatch[1] : '?';
+      mostrarConfirmacionAsistente('💸 Registrar gasto', `Voy a registrar:\n\nGasto: RD$${monto}\nDescripción: ${textoOriginal}`, () => {
+        mensajeAsistenteSimulado('✅ Gasto anotado. (El registro de gastos aún es una función simulada — pronto se guardará junto a tus ventas.)');
+      }, 'Registrar');
+      return true;
+    }
+    if (/haz(me)? un pedido de|pedir al proveedor|ordenar a(l)? proveedor/.test(t)) {
+      mostrarConfirmacionAsistente('📦 Pedido a proveedor', `Voy a preparar:\n\n${textoOriginal}`, () => {
+        mensajeAsistenteSimulado('🚧 Los pedidos automáticos por chat a tu proveedor están en camino. Mientras tanto puedes hacerlo desde "Comprar mercancía" en el menú.');
+      }, 'Preparar pedido');
+      return true;
+    }
+    return false;
+  }
+
+  // Comandos que SÍ ejecutan una acción real (venta), pero primero piden confirmación
+  function interpretarComandoConfirmable(textoOriginal) {
+    const t = quitarAcentos(textoOriginal.toLowerCase());
+    if (/^vendi |vendi \d|me compraron|acabo de vender|registra(r)? una venta/.test(t)) {
+      mostrarConfirmacionAsistente('🧾 Registrar venta', `Voy a registrar:\n\n${textoOriginal}`, () => {
+        enviarMensajeAsistenteAlBackend(textoOriginal);
+      }, 'Confirmar');
+      return true;
+    }
+    return false;
+  }
+
   async function enviarMensajeAsistente() {
     const input = document.getElementById('asistenteInput');
     const mensaje = input.value.trim();
@@ -2736,10 +3128,21 @@
     agregarMensajeAsistenteUI(mensaje, 'user');
     input.value = '';
 
+    if (interpretarComandoLocalAsistente(mensaje)) return;
+    if (interpretarComandoConfirmable(mensaje)) return;
+
+    await enviarMensajeAsistenteAlBackend(mensaje);
+  }
+
+  async function enviarMensajeAsistenteAlBackend(mensaje) {
+    if (!navigator.onLine) {
+      agregarMensajeAsistenteUI('📡 Estás sin conexión — te responderé apenas vuelva el internet.', 'bot');
+      return;
+    }
     const cont = document.getElementById('asistenteMensajes');
     const cargando = document.createElement('div');
     cargando.className = 'asistente-msg asistente-msg-bot asistente-msg-cargando';
-    cargando.textContent = 'Escribiendo...';
+    cargando.textContent = 'RAÍZ está escribiendo...';
     cont.appendChild(cargando);
     cont.scrollTop = cont.scrollHeight;
 
@@ -2759,9 +3162,11 @@
       agregarMensajeAsistenteUI(data.respuesta || '(sin respuesta)', 'bot');
       asistenteHistorial = data.historial || asistenteHistorial;
 
-      // Si el asistente hizo cambios reales (productos, precios, stock), refresca lo que se ve en pantalla
+      // Si el asistente hizo cambios reales (productos, precios, stock, ventas), refresca la pantalla y el encabezado
       if (data.acciones && data.acciones.length) {
         await cargarNegocio();
+        await cargarPedidos(NEGOCIO_SLUG);
+        actualizarEncabezadoAsistente();
       }
     } catch (e) {
       cargando.remove();
@@ -2772,6 +3177,45 @@
   document.getElementById('asistenteInput').addEventListener('keydown', (e) => {
     if (e.key === 'Enter') { e.preventDefault(); enviarMensajeAsistente(); }
   });
+
+  // ── Dictado por voz para el asistente: llena el campo, NO envía automáticamente ──
+  let reconocimientoAsistente = null;
+  let escuchandoAsistente = false;
+
+  function toggleVozAsistente() {
+    if (escuchandoAsistente) {
+      if (reconocimientoAsistente) reconocimientoAsistente.stop();
+      return;
+    }
+    const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+    const micBtn = document.getElementById('acMicBtn');
+    if (!SR) {
+      mensajeAsistenteSimulado('⚠️ Tu navegador no admite dictado por voz — puedes escribir tu mensaje normalmente. Prueba desde Chrome para usar el micrófono.');
+      return;
+    }
+    reconocimientoAsistente = new SR();
+    reconocimientoAsistente.lang = 'es-419';
+    reconocimientoAsistente.interimResults = false;
+    reconocimientoAsistente.maxAlternatives = 1;
+
+    escuchandoAsistente = true;
+    micBtn.classList.add('escuchando');
+
+    reconocimientoAsistente.onresult = (evento) => {
+      const texto = evento.results[0][0].transcript;
+      const input = document.getElementById('asistenteInput');
+      input.value = texto;
+      input.focus();
+    };
+    reconocimientoAsistente.onerror = () => { toast('⚠️ No se entendió, intenta de nuevo', 'error'); };
+    reconocimientoAsistente.onend = () => {
+      escuchandoAsistente = false;
+      micBtn.classList.remove('escuchando');
+    };
+    reconocimientoAsistente.start();
+  }
+
+
 
   let pantallaActual = 'resumen';
 
@@ -2803,6 +3247,10 @@
     }
   }
 
+  function quitarAcentos(texto) {
+    return (texto || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+  }
+
   function toast(msg, tipo) {
     const t = document.getElementById('toast');
     t.textContent = msg;
@@ -2815,6 +3263,7 @@
   // ═══════════════════════════════════════════════════════════
   let ULTIMA_NOTIF_VISTA_ID = null;
   let PRIMERA_CARGA_NOTIF = true;
+  let ULTIMAS_NO_LEIDAS = 0;
 
   if (Notification && Notification.permission === 'default') {
     Notification.requestPermission();
@@ -2827,6 +3276,8 @@
       if (!res.ok) return;
       const data = await res.json();
       const badge = document.getElementById('notifBadge');
+      ULTIMAS_NO_LEIDAS = data.no_leidas || 0;
+      if (asistenteAbierto) actualizarEncabezadoAsistente();
       if (data.no_leidas > 0) {
         badge.style.display = 'flex';
         badge.textContent = data.no_leidas > 9 ? '9+' : data.no_leidas;
